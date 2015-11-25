@@ -1,5 +1,11 @@
 module RSA =
 struct
+  module Params =
+  struct
+    type t = unit
+    let grammar = Asn.null
+  end
+
   module Public =
   struct
     type t = {
@@ -146,84 +152,300 @@ struct
   end
 end
 
-module Algo =
+module EC =
 struct
-  let rsa_oid = Asn.OID.of_string "1.2.840.113549.1.1.1"
-  let dsa_oid = Asn.OID.of_string "1.2.840.10040.4.1"
-  let ec_oid = Asn.OID.of_string "1.2.840.10045.2.1"
+  type point = Cstruct.t
+  let point_grammar = Asn.octet_string
 
-  type t =
-    | DSA
-    | RSA
-    | EC
-    | Unknown of Asn.OID.t
+  module Field =
+  struct
+    let prime_oid = Asn.OID.of_string "1.2.840.10045.1.1"
+    let characteristic_two_oid = Asn.OID.of_string "1.2.840.10045.1.2"
 
-  let grammar =
-    let open Asn in
-    let f = function
-      | oid when oid = rsa_oid -> RSA
-      | oid when oid = dsa_oid -> DSA
-      | oid when oid = ec_oid -> EC
-      | oid ->  Unknown oid in
-    let g = function
-      | RSA -> rsa_oid
-      | DSA -> dsa_oid
-      | EC -> ec_oid
-      | Unknown oid -> oid in
-    map f g oid
-end
+    let gn_oid = Asn.OID.(characteristic_two_oid <| 3 <| 1)
+    let tp_oid = Asn.OID.(characteristic_two_oid <| 3 <| 2)
+    let pp_oid = Asn.OID.(characteristic_two_oid <| 3 <| 3)
 
-module Params =
-struct
-  type t =
-    | Null
-    | Oid of Asn.OID.t
-    | DSA of DSA.Params.t
+    type basis_type = | GN_typ | TP_typ | PP_typ
+    let basis_type_grammar =
+      let open Asn in
+      let f = function
+        | oid when oid = gn_oid -> GN_typ
+        | oid when oid = tp_oid -> TP_typ
+        | oid when oid = pp_oid -> PP_typ
+        | _ -> parse_error "EC: unexpected basis type OID" in
+      let g = function
+        | GN_typ -> gn_oid
+        | TP_typ -> tp_oid
+        | PP_typ -> pp_oid in
+      map f g oid
 
-  let grammar =
-    let open Asn in
-    let f = function
-      | `C1 () -> Null
-      | `C2 oid -> Oid oid
-      | `C3 dsa_params -> DSA dsa_params in
-    let g = function
-      | Null -> `C1 ()
-      | Oid oid -> `C2 oid
-      | DSA dsa_params -> `C3 dsa_params in
-    map f g @@ choice3 null oid DSA.Params.grammar
+    type basis =
+      | GN
+      | TP of Z.t
+      | PP of Z.t * Z.t * Z.t
+
+    let basis_grammar =
+      let open Asn in
+      let f = function
+        | `C1 () -> GN
+        | `C2 k -> TP k
+        | `C3 (k1, k2, k3) -> PP (k1, k2, k3) in
+      let g = function
+        | GN -> `C1 ()
+        | TP k -> `C2 k
+        | PP (k1, k2, k3) -> `C3 (k1, k2, k3) in
+      map f g @@ choice3
+        null
+        integer
+        (sequence3
+          (required ~label:"k1" integer)
+          (required ~label:"k2" integer)
+          (required ~label:"k3" integer))
+
+    type characteristic_two_params = {
+      m: Z.t;
+      basis: basis;
+    }
+
+    let ctwo_params_grammar =
+      let open Asn in
+      let f = function
+        | (m, GN_typ, GN) -> { m; basis=GN }
+        | (m, TP_typ, TP k) -> { m; basis=TP k }
+        | (m, PP_typ, PP (k1, k2, k3)) -> { m; basis=PP (k1, k2, k3) }
+        | _ -> parse_error "EC: field basis type and parameters doesn't match" in
+      let g { m; basis } =
+        match basis with
+          | GN -> (m, GN_typ, GN)
+          | TP k -> (m, TP_typ, TP k)
+          | PP (k1, k2, k3) -> (m, PP_typ, PP (k1, k2, k3)) in
+      map f g @@ sequence3
+        (required ~label:"m" integer)
+        (required ~label:"basis" basis_type_grammar)
+        (required ~label:"parameters" basis_grammar)
+
+    type typ =
+      | Prime_typ
+      | C_two_typ
+
+    let typ_grammar =
+      let open Asn in
+      let f = function
+        | oid when oid = prime_oid -> Prime_typ
+        | oid when oid = characteristic_two_oid -> C_two_typ
+        | _ -> parse_error "EC: unexpected field type OID" in
+      let g = function
+        | Prime_typ -> prime_oid
+        | C_two_typ -> characteristic_two_oid in
+      map f g oid
+
+    type parameters =
+      | Prime_p of Z.t
+      | C_two_p of characteristic_two_params
+
+    let parameters_grammar =
+      let open Asn in
+      let f = function
+        | `C1 p -> Prime_p p
+        | `C2 params -> C_two_p params in
+      let g = function
+        | Prime_p p -> `C1 p
+        | C_two_p params -> `C2 params in
+      map f g @@ choice2
+        integer
+        ctwo_params_grammar
+
+    type t =
+      | Prime of Z.t
+      | C_two of characteristic_two_params
+
+    let grammar =
+      let open Asn in
+      let f = function
+        | Prime_typ, Prime_p p -> Prime p
+        | C_two_typ, C_two_p params -> C_two params
+        | _ -> parse_error "EC: field type and parameters doesn't match" in
+      let g = function
+        | Prime p -> Prime_typ, Prime_p p
+        | C_two params -> C_two_typ, C_two_p params in
+      map f g @@ sequence2
+        (required ~label:"fieldType" typ_grammar)
+        (required ~label:"parameters" parameters_grammar)
+  end
+
+  module Specified_domain =
+  struct
+    type field_element = Cstruct.t
+    let field_element_grammar = Asn.octet_string
+
+    type curve = {
+      a: field_element;
+      b: field_element;
+      seed: Cstruct.t option;
+    }
+
+    let curve_grammar =
+      let open Asn in
+      let f (a, b, seed) = { a; b; seed } in
+      let g {a; b; seed } = (a, b, seed) in
+      map f g @@
+      sequence3
+        (required ~label:"a" field_element_grammar)
+        (required ~label:"b" field_element_grammar)
+        (optional ~label:"seed" bit_string_cs)
+
+    type t = {
+      field: Field.t;
+      curve: curve;
+      base: point;
+      order: Z.t;
+      cofactor: Z.t option;
+    }
+
+    let grammar =
+      let open Asn in
+      let f (version, field, curve, base, order , cofactor) =
+        if version = 1 then { field; curve; base; order; cofactor }
+        else parse_error "EC: Unknown ECParameters version" in
+      let g { field; curve; base; order; cofactor } =
+        (1, field, curve, base, order, cofactor) in
+      map f g @@ sequence6
+        (required ~label:"version" int)
+        (required ~label:"fieldID" Field.grammar)
+        (required ~label:"curve" curve_grammar)
+        (required ~label:"base" point_grammar)
+        (required ~label:"order" integer)
+        (optional ~label:"cofactor" integer)
+  end
+
+  module Params =
+  struct
+    type t =
+      | Named of Asn.OID.t
+      | Implicit
+      | Specified of Specified_domain.t
+
+    let grammar =
+      let open Asn in
+      let f = function
+        | `C1 oid -> Named oid
+        | `C2 () -> Implicit
+        | `C3 domain -> Specified domain in
+      let g = function
+        | Named oid -> `C1 oid
+        | Implicit -> `C2 ()
+        | Specified domain -> `C3 domain in
+      map f g @@ choice3
+        oid
+        null
+        Specified_domain.grammar
+  end
+
+  module Public =
+  struct
+    type t = point
+    let grammar = point_grammar
+
+    let encode = Asn.(encode (codec der grammar))
+    let decode key =
+      let open Asn in
+      let t, left = decode_exn (codec ber grammar) key in
+      if Cstruct.len left = 0 then t
+      else parse_error "EC: public key with non empty leftover"
+  end
+
+  module Private =
+  struct
+    type t = {
+      k: Cstruct.t;
+      params: Params.t option;
+      public_key: Public.t option;
+    }
+
+    let grammar =
+      let open Asn in
+      let f (version, k, params, public_key) =
+        if version = 1 then { k; params; public_key }
+        else parse_error "EC: unknown private key version" in
+      let g { k; params; public_key } =
+        (1, k, params, public_key) in
+      map f g @@ sequence4
+        (required ~label:"version" int)
+        (required ~label:"privateKey" octet_string)
+        (optional ~label:"ECParameters" @@ explicit 0 Params.grammar)
+        (optional ~label:"publicKey" @@ explicit 1 bit_string_cs)
+
+    let encode = Asn.(encode (codec der grammar))
+    let decode key =
+      let open Asn in
+      let t, left = decode_exn (codec ber grammar) key in
+      if Cstruct.len left = 0 then t
+      else parse_error "EC: private key with non empty leftover"
+  end
 end
 
 module Algorithm_identifier =
 struct
-  type t =
-    | RSA
-    | EC of Asn.OID.t
-    | DSA of DSA.Params.t
-    | Unknown of Asn.OID.t * Params.t
+  module Algo =
+  struct
+    let rsa_oid = Asn.OID.of_string "1.2.840.113549.1.1.1"
+    let dsa_oid = Asn.OID.of_string "1.2.840.10040.4.1"
+    let ec_oid = Asn.OID.of_string "1.2.840.10045.2.1"
 
-  let grammar =
+    let ec_dh = Asn.OID.of_string "1.3.132.1.12"
+    let ec_mqv = Asn.OID.of_string "1.3.132.1.13"
+
+    type t =
+      | DSA
+      | RSA
+      | EC
+      | Unknown of Asn.OID.t
+
+    let grammar =
+      let open Asn in
+      let f = function
+        | oid when oid = rsa_oid -> RSA
+        | oid when oid = dsa_oid -> DSA
+        | oid when oid = ec_oid -> EC
+        | oid ->  Unknown oid in
+      let g = function
+        | RSA -> rsa_oid
+        | DSA -> dsa_oid
+        | EC -> ec_oid
+        | Unknown oid -> oid in
+      map f g oid
+  end
+
+  let rsa_grammar =
     let open Asn in
     let f = function
-      | Algo.RSA, Params.Null -> RSA
-      | Algo.RSA, _ ->
-          parse_error "Algorithm_identifier: RSA params should be null"
-      | Algo.DSA, Params.DSA params -> DSA params
-      | Algo.DSA, _ ->
-          invalid_arg "Algorithm_identifier: invalid DSA params"
-      | Algo.EC, Params.Oid oid -> EC oid
-      | Algo.EC, _ ->
-          parse_error "Algorithm_identifier: EC params should be an oid"
-      | Algo.Unknown oid, (Params.Oid _ as params)
-      | Algo.Unknown oid, (Params.DSA _ as params)
-      | Algo.Unknown oid, (Params.Null as params) -> Unknown (oid, params) in
-    let g = function
-      | RSA -> Algo.RSA, Params.Null
-      | DSA params -> Algo.DSA, Params.DSA params
-      | EC curve -> Algo.EC, Params.Oid curve
-      | Unknown (algo, params) -> Algo.Unknown algo, params in
+      | Algo.RSA, () -> ()
+      | _ -> parse_error "Algorithm OID and parameters doesn't match" in
+    let g () = Algo.RSA, () in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
-      (required ~label:"params" Params.grammar)
+      (required ~label:"parameters" RSA.Params.grammar)
+
+  let dsa_grammar =
+    let open Asn in
+    let f = function
+      | Algo.DSA, params -> params
+      | _, _ -> parse_error "Algorithm OID and parameters doesn't match" in
+    let g params = Algo.DSA, params in
+    map f g @@ sequence2
+      (required ~label:"algorithm" Algo.grammar)
+      (required ~label:"parameters" DSA.Params.grammar)
+
+  let ec_grammar =
+    let open Asn in
+    let f = function
+      | Algo.EC, params -> params
+      | _, _ -> parse_error "Algorithm OID and parameters doesn't match" in
+    let g params = Algo.EC, params in
+    map f g @@ sequence2
+      (required ~label:"algorithm" Algo.grammar)
+      (required ~label:"parameters" EC.Params.grammar)
 end
 
 module X509 =
@@ -231,35 +453,67 @@ struct
   type t =
     [ `RSA of RSA.Public.t
     | `DSA of DSA.Params.t * DSA.Public.t
-    | `EC of Asn.OID.t * Cstruct.t
-    | `Unknown of Asn.OID.t
+    | `EC of EC.Params.t * EC.Public.t
     ]
 
-  let grammar =
+  let rsa_grammar =
     let open Asn in
-    let open Algorithm_identifier in
-    let f = function
-      | RSA, bit_string -> `RSA (RSA.Public.decode bit_string)
-      | DSA params, bit_string -> `DSA (params, DSA.Public.decode bit_string)
-      | EC curve, bit_string -> `EC (curve, bit_string)
-      | Unknown (oid, _), _ -> `Unknown oid in
-    let g = function
-      | `RSA key -> (RSA, RSA.Public.encode key)
-      | `DSA (params, key) -> (DSA params, DSA.Public.encode key)
-      | `EC (curve, key) -> (EC curve, key)
-      | `Unknown oid ->
-          invalid_arg "X509: cannot encode unknown key type" in
+    let f ((), bit_string) = RSA.Public.decode bit_string in
+    let g key = (), RSA.Public.encode key in
     map f g @@ sequence2
-      (required ~label:"alogrithm" Algorithm_identifier.grammar)
+      (required ~label:"alogrithm" Algorithm_identifier.rsa_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
 
-  let encode = Asn.(encode (codec der grammar))
-
-  let decode key =
+  let dsa_grammar =
     let open Asn in
-    let t, left = decode_exn (codec ber grammar) key in
+    let f (params, bit_string) = params, DSA.Public.decode bit_string in
+    let g (params, key) = params, DSA.Public.encode key in
+    map f g @@ sequence2
+      (required ~label:"alogrithm" Algorithm_identifier.dsa_grammar)
+      (required ~label:"subjectPublicKey" bit_string_cs)
+
+  let ec_grammar =
+    let open Asn in
+    let f (params, bit_string) = params, bit_string in
+    let g (params, key) = params, key in
+    map f g @@ sequence2
+      (required ~label:"alogrithm" Algorithm_identifier.ec_grammar)
+      (required ~label:"subjectPublicKey" bit_string_cs)
+
+  let encode_rsa = Asn.(encode (codec der rsa_grammar))
+  let encode_dsa = Asn.(encode (codec der dsa_grammar))
+  let encode_ec = Asn.(encode (codec der ec_grammar))
+
+  let encode = function
+    | `RSA key -> encode_rsa key
+    | `DSA key -> encode_dsa key
+    | `EC key -> encode_ec key
+
+  let decode_rsa key =
+    let open Asn in
+    let t, left = decode_exn (codec ber rsa_grammar) key in
     if Cstruct.len left = 0 then t
     else parse_error "X509: key with non empty leftover"
+
+  let decode_dsa key =
+    let open Asn in
+    let t, left = decode_exn (codec ber dsa_grammar) key in
+    if Cstruct.len left = 0 then t
+    else parse_error "X509: key with non empty leftover"
+
+  let decode_ec key =
+    let open Asn in
+    let t, left = decode_exn (codec ber ec_grammar) key in
+    if Cstruct.len left = 0 then t
+    else parse_error "X509: key with non empty leftover"
+
+  let decode key : t =
+    let open Asn in
+    try `RSA (decode_rsa key)
+    with Parse_error s_rsa -> try `DSA (decode_dsa key)
+      with Parse_error s_dsa -> try `EC (decode_ec key)
+        with Parse_error s_ec -> parse_error @@
+          String.concat " | " ["RSA: " ^ s_rsa; "DSA: " ^ s_dsa; "EC: " ^ s_ec]
 end
 
 module PKCS8 =
@@ -267,47 +521,83 @@ struct
   type t =
     [ `RSA of RSA.Private.t
     | `DSA of DSA.Params.t * DSA.Private.t
-    | `EC of Asn.OID.t * Cstruct.t
-    | `Unknown of Asn.OID.t
+    | `EC of EC.Params.t * EC.Private.t
     ]
 
-  let grammar =
+  let rsa_grammar =
     let open Asn in
-    let open Algorithm_identifier in
-    let f (version, alg, key, attributes) =
+    let f (version, (), octet_string, attributes) =
       if version = 0 then
-        match alg, key, attributes with
-          | RSA, bit_string, _ -> `RSA (RSA.Private.decode bit_string)
-          | DSA params, bit_string, _ -> `DSA (params, DSA.Private.decode bit_string)
-          | EC curve, bit_string, _ -> `EC (curve, bit_string)
-          | Unknown (oid, _), _ , _ -> `Unknown oid
+        RSA.Private.decode octet_string
       else
-        parse_error @@
-        Printf.sprintf "PKCS8: version %d not supported" version in
-    let g = function
-      | `RSA key -> (0, RSA, RSA.Private.encode key, None)
-      | `DSA (params, key) -> (0, DSA params, DSA.Private.encode key, None)
-      | `EC (curve, key) -> (0, EC curve, key, None)
-      | `Unknown _ ->
-          invalid_arg "PKCS8: cannot encode unknown key type" in
+        parse_error @@ Printf.sprintf "PKCS8: version %d not supported" version in
+    let g key = 0, (), RSA.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
-      (required ~label:"privateKeyAlgorithm" Algorithm_identifier.grammar)
+      (required ~label:"privateKeyAlogrithm" Algorithm_identifier.rsa_grammar)
       (required ~label:"privateKey" octet_string)
-      (optional ~label:"attributes" null)
+      (optional ~label:"attributes" @@ implicit 0 null)
 
-  let encode = Asn.(encode (codec der grammar))
-
-  let decode key =
+  let dsa_grammar =
     let open Asn in
-    let t, left = decode_exn (codec ber grammar) key in
+    let f (version, params, octet_string, attributes) =
+      if version = 0 then
+        params, DSA.Private.decode octet_string
+      else
+        parse_error @@ Printf.sprintf "PKCS8: version %d not supported" version in
+    let g (params, key) = 0, params, DSA.Private.encode key, None in
+    map f g @@ sequence4
+      (required ~label:"version" int)
+      (required ~label:"privateKeyAlogrithm" Algorithm_identifier.dsa_grammar)
+      (required ~label:"privateKey" octet_string)
+      (optional ~label:"attributes" @@ implicit 0 null)
+
+  let ec_grammar =
+    let open Asn in
+    let f (version, params, octet_string, attributes) =
+      if version = 0 then
+        params, EC.Private.decode octet_string
+      else
+        parse_error @@ Printf.sprintf "PKCS8: version %d not supported" version in
+    let g (params, key) = 0, params, EC.Private.encode key, None in
+    map f g @@ sequence4
+      (required ~label:"version" int)
+      (required ~label:"privateKeyAlogrithm" Algorithm_identifier.ec_grammar)
+      (required ~label:"privateKey" octet_string)
+      (optional ~label:"attributes" @@ implicit 0 null)
+
+  let encode_rsa = Asn.(encode (codec der rsa_grammar))
+  let encode_dsa = Asn.(encode (codec der dsa_grammar))
+  let encode_ec = Asn.(encode (codec der ec_grammar))
+
+  let encode = function
+    | `RSA key -> encode_rsa key
+    | `DSA key -> encode_dsa key
+    | `EC key -> encode_ec key
+
+  let decode_rsa key =
+    let open Asn in
+    let t, left = decode_exn (codec ber rsa_grammar) key in
     if Cstruct.len left = 0 then t
     else parse_error "PKCS8: key with non empty leftover"
 
-  let encode_rsa key = encode (`RSA key)
+  let decode_dsa key =
+    let open Asn in
+    let t, left = decode_exn (codec ber dsa_grammar) key in
+    if Cstruct.len left = 0 then t
+    else parse_error "PKCS8: key with non empty leftover"
 
-  let decode_rsa key =
-    match decode key with
-    | `RSA key -> key
-    | _ -> invalid_arg "PKCS8: Not a RSA key"
+  let decode_ec key =
+    let open Asn in
+    let t, left = decode_exn (codec ber ec_grammar) key in
+    if Cstruct.len left = 0 then t
+    else parse_error "PKCS8: key with non empty leftover"
+
+  let decode key : t =
+    let open Asn in
+    try `RSA (decode_rsa key)
+    with Parse_error s_rsa -> try `DSA (decode_dsa key)
+      with Parse_error s_dsa -> try `EC (decode_ec key)
+        with Parse_error s_ec -> parse_error @@
+          String.concat " | " ["RSA: " ^ s_rsa; "DSA: " ^ s_dsa; "EC: " ^ s_ec]
 end

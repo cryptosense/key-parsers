@@ -1,5 +1,11 @@
 module RSA :
 sig
+  module Params :
+  sig
+    type t = unit
+    val grammar : t Asn.t
+  end
+
   module Public :
   sig
     type t = {
@@ -78,19 +84,120 @@ sig
   end
 end
 
+module EC :
+sig
+  type point = Cstruct.t
+  val point_grammar : point Asn.t
+
+  module Field :
+  sig
+    type basis =
+      | GN
+      | TP of Z.t
+      | PP of Z.t * Z.t * Z.t
+
+    val basis_grammar : basis Asn.t
+
+    type characteristic_two_params = {
+      m: Z.t;
+      basis: basis;
+    }
+
+    val ctwo_params_grammar : characteristic_two_params Asn.t
+
+    type t =
+      | Prime of Z.t
+      | C_two of characteristic_two_params
+
+    val grammar : t Asn.t
+  end
+
+  module Specified_domain :
+  sig
+    type field_element = Cstruct.t
+    val field_element_grammar : field_element Asn.t
+
+    type curve = {
+      a: field_element;
+      b: field_element;
+      seed: Cstruct.t option;
+    }
+
+    val curve_grammar : curve Asn.t
+
+    type t = {
+      field: Field.t;
+      curve: curve;
+      base: point;
+      order: Z.t;
+      cofactor: Z.t option;
+    }
+
+    val grammar : t Asn.t
+  end
+
+  module Params :
+  sig
+    type t =
+      | Named of Asn.OID.t
+      | Implicit
+      | Specified of Specified_domain.t
+
+    val grammar : t Asn.t
+  end
+
+  module Public :
+  sig
+    type t = point
+
+    val grammar : t Asn.t
+
+    val encode : t -> Cstruct.t
+    val decode : Cstruct.t -> t
+  end
+
+  module Private :
+  sig
+    type t = {
+      k: Cstruct.t;
+      params: Params.t option;
+      public_key: Public.t option;
+    }
+
+    val grammar : t Asn.t
+
+    val encode : t -> Cstruct.t
+    val decode : Cstruct.t -> t
+  end
+end
+
+module Algorithm_identifier :
+sig
+  val rsa_grammar : RSA.Params.t Asn.t
+  val dsa_grammar : DSA.Params.t Asn.t
+  val ec_grammar : EC.Params.t Asn.t
+end
+
 module X509 :
 sig
   type t =
     [ `RSA of RSA.Public.t
     | `DSA of DSA.Params.t * DSA.Public.t
-    | `EC of Asn.OID.t * Cstruct.t
-    | `Unknown of Asn.OID.t
+    | `EC of EC.Params.t * EC.Public.t
     ]
 
-  val grammar : t Asn.t
+  val rsa_grammar : RSA.Public.t Asn.t
+  val dsa_grammar : (DSA.Params.t * DSA.Public.t) Asn.t
+  val ec_grammar : (EC.Params.t * EC.Public.t) Asn.t
 
   val encode : t -> Cstruct.t
+  val encode_rsa : RSA.Public.t -> Cstruct.t
+  val encode_dsa : (DSA.Params.t * DSA.Public.t) -> Cstruct.t
+  val encode_ec : (EC.Params.t * EC.Public.t) -> Cstruct.t
   val decode : Cstruct.t -> t
+  val decode_rsa : Cstruct.t -> RSA.Public.t
+  val decode_dsa : Cstruct.t -> (DSA.Params.t * DSA.Public.t)
+  val decode_ec : Cstruct.t -> (EC.Params.t * EC.Public.t)
 end
 
 module PKCS8 :
@@ -98,15 +205,19 @@ sig
   type t =
     [ `RSA of RSA.Private.t
     | `DSA of DSA.Params.t * DSA.Private.t
-    | `EC of Asn.OID.t * Cstruct.t
-    | `Unknown of Asn.OID.t
+    | `EC of EC.Params.t * EC.Private.t
     ]
 
-  val grammar : t Asn.t
+  val rsa_grammar : RSA.Private.t Asn.t
+  val dsa_grammar : (DSA.Params.t * DSA.Private.t) Asn.t
+  val ec_grammar : (EC.Params.t * EC.Private.t) Asn.t
 
   val encode : t -> Cstruct.t
-  val decode : Cstruct.t -> t
-
   val encode_rsa : RSA.Private.t -> Cstruct.t
+  val encode_dsa : (DSA.Params.t * DSA.Private.t) -> Cstruct.t
+  val encode_ec : (EC.Params.t * EC.Private.t) -> Cstruct.t
+  val decode : Cstruct.t -> t
   val decode_rsa : Cstruct.t -> RSA.Private.t
+  val decode_dsa : Cstruct.t -> (DSA.Params.t * DSA.Private.t)
+  val decode_ec : Cstruct.t -> (EC.Params.t * EC.Private.t)
 end
