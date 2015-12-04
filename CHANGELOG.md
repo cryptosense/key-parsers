@@ -1,6 +1,7 @@
 ## unreleased
 
 - Add EC keys and parameters parsers
+- Compile with `-safe-string`
 
 ## v0.1.0
 

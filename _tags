@@ -1,1 +1,2 @@
 true: package(asn1-combinators), package(zarith)
+true: safe_string
