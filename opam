@@ -6,10 +6,13 @@ bug-reports: "https://github.com/cryptosense/key-parsers/issues"
 license: "BSD-2"
 dev-repo: "https://github.com/cryptosense/key-parsers.git"
 build: [make]
+build-test: [make "check"]
 install: [make "install"]
+check
 remove: ["ocamlfind" "remove" "key-parsers"]
 depends: [
   "ocamlfind" {build}
+  "ounit" {test}
   "asn1-combinators"
   "zarith"
 ]

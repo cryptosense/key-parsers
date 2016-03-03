@@ -1,4 +1,4 @@
-.PHONY: all install uninstall clean
+.PHONY: all install uninstall clean check
 PACKAGE=key-parsers
 MLI=key_parsers
 OBJ=$(addprefix _build/, $(addsuffix .cmi, $(MLI)) $(MLI).cma $(MLI).cmxa $(MLI).a)
@@ -16,3 +16,6 @@ uninstall:
 
 clean:
 	ocamlbuild -clean
+
+check:
+	ocamlbuild -use-ocamlfind tests.byte --
