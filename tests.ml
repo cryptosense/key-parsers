@@ -1,5 +1,10 @@
 open OUnit2
 
+let assert_ok r test =
+  match r with
+  | Result.Ok x -> test x
+  | Result.Error s -> assert_failure s
+
 let test_ltpa =
   (* These parameters were generated using openssl. *)
   let e = Z.of_string_base 16 "010001" in
@@ -24,6 +29,7 @@ let test_ltpa =
   let test_private ctxt =
     let open Key_parsers.RSA_LTPA.Private in
     let k = decode (Cstruct.of_string private_encoded) in
+    assert_ok k @@ fun k ->
     assert_equal ~ctxt ~printer ~msg:"e" e k.e;
     assert_equal ~ctxt ~printer ~msg:"d" d k.d;
     assert_equal ~ctxt ~printer ~msg:"p" p k.p;
@@ -32,6 +38,7 @@ let test_ltpa =
   let test_public ctxt =
     let open Key_parsers.RSA_LTPA.Public in
     let k = decode (Cstruct.of_string public_encoded) in
+    assert_ok k @@ fun k ->
     assert_equal ~ctxt ~printer ~msg:"e" e k.e;
     assert_equal ~ctxt ~printer ~msg:"n" n k.n
   in

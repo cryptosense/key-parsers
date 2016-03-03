@@ -1,3 +1,6 @@
+let try_with_asn f = try Result.Ok (f ()) with Asn.Parse_error s -> Result.Error s
+let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.parse_error s
+
 module RSA =
 struct
   module Params =
@@ -25,6 +28,7 @@ struct
 
     let decode key =
       let open Asn in
+      try_with_asn @@ fun () ->
       let t, left = decode_exn (codec ber grammar) key in
       if Cstruct.len left = 0 then t
       else parse_error "PKCS1: RSA public key with non empty leftover"
@@ -33,9 +37,9 @@ struct
   module Private =
   struct
     type other_prime = {
-        r: Z.t;
-        d: Z.t;
-        t: Z.t;
+      r: Z.t;
+      d: Z.t;
+      t: Z.t;
     }
 
     let other_prime_grammar =
@@ -63,9 +67,9 @@ struct
       let open Asn in
       let f = function
         | (0, (n, (e, (d, (p, (q, (dp, (dq, (qinv, None))))))))) ->
-          { n; e; d; p; q; dp; dq; qinv; other_primes=[]; }
+            { n; e; d; p; q; dp; dq; qinv; other_primes=[]; }
         | (1, (n, (e, (d, (p, (q, (dp, (dq, (qinv, Some other_primes))))))))) ->
-          { n; e; d; p; q; dp; dq; qinv; other_primes; }
+            { n; e; d; p; q; dp; dq; qinv; other_primes; }
         | _ ->
             parse_error
               "PKCS#1: RSA private key version inconsistent with key data" in
@@ -87,6 +91,7 @@ struct
 
     let decode key =
       let open Asn in
+      try_with_asn @@ fun () ->
       let t, left = decode_exn (codec ber grammar) key in
       if Cstruct.len left = 0 then t
       else parse_error "PKCS1: RSA private key with non empty leftover"
@@ -116,6 +121,7 @@ struct
 
     let decode key =
       let open Asn in
+      try_with_asn @@ fun () ->
       let t, left = decode_exn (codec ber grammar) key in
       if Cstruct.len left = 0 then t
       else parse_error "DSA: Params with non empty leftover"
@@ -131,6 +137,7 @@ struct
 
     let decode key =
       let open Asn in
+      try_with_asn @@ fun () ->
       let t, left = decode_exn (codec ber grammar) key in
       if Cstruct.len left = 0 then t
       else parse_error "DSA: public key with non empty leftover"
@@ -146,6 +153,7 @@ struct
 
     let decode key =
       let open Asn in
+      try_with_asn @@ fun () ->
       let t, left = decode_exn (codec ber grammar) key in
       if Cstruct.len left = 0 then t
       else parse_error "DSA: private key with non empty leftover"
@@ -199,9 +207,9 @@ struct
         null
         integer
         (sequence3
-          (required ~label:"k1" integer)
-          (required ~label:"k2" integer)
-          (required ~label:"k3" integer))
+           (required ~label:"k1" integer)
+           (required ~label:"k2" integer)
+           (required ~label:"k3" integer))
 
     type characteristic_two_params = {
       m: Z.t;
@@ -350,6 +358,7 @@ struct
     let encode = Asn.(encode (codec der grammar))
     let decode key =
       let open Asn in
+      try_with_asn @@ fun () ->
       let t, left = decode_exn (codec ber grammar) key in
       if Cstruct.len left = 0 then t
       else parse_error "EC: public key with non empty leftover"
@@ -379,6 +388,7 @@ struct
     let encode = Asn.(encode (codec der grammar))
     let decode key =
       let open Asn in
+      try_with_asn @@ fun () ->
       let t, left = decode_exn (codec ber grammar) key in
       if Cstruct.len left = 0 then t
       else parse_error "EC: private key with non empty leftover"
@@ -448,6 +458,9 @@ struct
       (required ~label:"parameters" EC.Params.grammar)
 end
 
+let map_result f = function Result.Ok x -> Result.Ok (f x) | Result.Error _ as r -> r
+let default_result default = function Result.Error _ -> default () | Result.Ok _ as r -> r
+
 module X509 =
 struct
   type t =
@@ -458,7 +471,7 @@ struct
 
   let rsa_grammar =
     let open Asn in
-    let f ((), bit_string) = RSA.Public.decode bit_string in
+    let f ((), bit_string) = raise_asn @@ fun () -> RSA.Public.decode bit_string in
     let g key = (), RSA.Public.encode key in
     map f g @@ sequence2
       (required ~label:"alogrithm" Algorithm_identifier.rsa_grammar)
@@ -466,7 +479,7 @@ struct
 
   let dsa_grammar =
     let open Asn in
-    let f (params, bit_string) = params, DSA.Public.decode bit_string in
+    let f (params, bit_string) = params, raise_asn @@ fun () -> DSA.Public.decode bit_string in
     let g (params, key) = params, DSA.Public.encode key in
     map f g @@ sequence2
       (required ~label:"alogrithm" Algorithm_identifier.dsa_grammar)
@@ -491,29 +504,30 @@ struct
 
   let decode_rsa key =
     let open Asn in
+    try_with_asn @@ fun () ->
     let t, left = decode_exn (codec ber rsa_grammar) key in
     if Cstruct.len left = 0 then t
     else parse_error "X509: key with non empty leftover"
 
   let decode_dsa key =
     let open Asn in
+    try_with_asn @@ fun () ->
     let t, left = decode_exn (codec ber dsa_grammar) key in
     if Cstruct.len left = 0 then t
     else parse_error "X509: key with non empty leftover"
 
   let decode_ec key =
     let open Asn in
+    try_with_asn @@ fun () ->
     let t, left = decode_exn (codec ber ec_grammar) key in
     if Cstruct.len left = 0 then t
     else parse_error "X509: key with non empty leftover"
 
-  let decode key : t =
-    let open Asn in
-    try `RSA (decode_rsa key)
-    with Parse_error s_rsa -> try `DSA (decode_dsa key)
-      with Parse_error s_dsa -> try `EC (decode_ec key)
-        with Parse_error s_ec -> parse_error @@
-          String.concat " | " ["RSA: " ^ s_rsa; "DSA: " ^ s_dsa; "EC: " ^ s_ec]
+  let decode key : (t, string) Result.result =
+    (map_result (fun x -> `RSA x) (decode_rsa key))
+    |> default_result (fun () -> map_result (fun x -> `DSA x) (decode_dsa key))
+    |> default_result (fun () -> map_result (fun x -> `EC x) (decode_ec key))
+    |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end
 
 module PKCS8 =
@@ -528,7 +542,7 @@ struct
     let open Asn in
     let f (version, (), octet_string, attributes) =
       if version = 0 then
-        RSA.Private.decode octet_string
+        raise_asn @@ fun () -> RSA.Private.decode octet_string
       else
         parse_error @@ Printf.sprintf "PKCS8: version %d not supported" version in
     let g key = 0, (), RSA.Private.encode key, None in
@@ -542,7 +556,7 @@ struct
     let open Asn in
     let f (version, params, octet_string, attributes) =
       if version = 0 then
-        params, DSA.Private.decode octet_string
+        params, raise_asn @@ fun () -> DSA.Private.decode octet_string
       else
         parse_error @@ Printf.sprintf "PKCS8: version %d not supported" version in
     let g (params, key) = 0, params, DSA.Private.encode key, None in
@@ -556,7 +570,7 @@ struct
     let open Asn in
     let f (version, params, octet_string, attributes) =
       if version = 0 then
-        params, EC.Private.decode octet_string
+        params, raise_asn @@ fun () -> EC.Private.decode octet_string
       else
         parse_error @@ Printf.sprintf "PKCS8: version %d not supported" version in
     let g (params, key) = 0, params, EC.Private.encode key, None in
@@ -577,29 +591,30 @@ struct
 
   let decode_rsa key =
     let open Asn in
+    try_with_asn @@ fun () ->
     let t, left = decode_exn (codec ber rsa_grammar) key in
     if Cstruct.len left = 0 then t
     else parse_error "PKCS8: key with non empty leftover"
 
   let decode_dsa key =
     let open Asn in
+    try_with_asn @@ fun () ->
     let t, left = decode_exn (codec ber dsa_grammar) key in
     if Cstruct.len left = 0 then t
     else parse_error "PKCS8: key with non empty leftover"
 
   let decode_ec key =
     let open Asn in
+    try_with_asn @@ fun () ->
     let t, left = decode_exn (codec ber ec_grammar) key in
     if Cstruct.len left = 0 then t
     else parse_error "PKCS8: key with non empty leftover"
 
-  let decode key : t =
-    let open Asn in
-    try `RSA (decode_rsa key)
-    with Parse_error s_rsa -> try `DSA (decode_dsa key)
-      with Parse_error s_dsa -> try `EC (decode_ec key)
-        with Parse_error s_ec -> parse_error @@
-          String.concat " | " ["RSA: " ^ s_rsa; "DSA: " ^ s_dsa; "EC: " ^ s_ec]
+  let decode key : (t, string) Result.result =
+    (map_result (fun x -> `RSA x) (decode_rsa key))
+    |> default_result (fun () -> map_result (fun x -> `DSA x) (decode_dsa key))
+    |> default_result (fun () -> map_result (fun x -> `EC x) (decode_ec key))
+    |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end
 
 (** Read a big-endian arbitrary length number *)
@@ -626,17 +641,19 @@ module RSA_LTPA = struct
     }
 
     let decode cs =
-      let d_len = Int32.to_int @@ Cstruct.BE.get_uint32 cs 0 in
-      let d = get_z_be cs 4 d_len in
-      let e_off = 4 + d_len in
-      let e_len = 3 in
-      let e = get_z_be cs e_off e_len in
-      check_public_exponent e;
-      let p_len = d_len / 2 + 1 in
-      let p_off = e_off + 3 in
-      let p = get_z_be cs p_off p_len in
-      let q = get_z_be cs (p_off + p_len) p_len in
-      { e ; d ; p ; q }
+      try
+        let d_len = Int32.to_int @@ Cstruct.BE.get_uint32 cs 0 in
+        let d = get_z_be cs 4 d_len in
+        let e_off = 4 + d_len in
+        let e_len = 3 in
+        let e = get_z_be cs e_off e_len in
+        check_public_exponent e;
+        let p_len = d_len / 2 + 1 in
+        let p_off = e_off + 3 in
+        let p = get_z_be cs p_off p_len in
+        let q = get_z_be cs (p_off + p_len) p_len in
+        Result.Ok { e ; d ; p ; q }
+      with Invalid_argument s -> Result.Error s
   end
 
   module Public = struct
@@ -646,12 +663,14 @@ module RSA_LTPA = struct
     }
 
     let decode cs =
-      let e_off = Cstruct.len cs - 3 in
-      let e_len = 3 in
-      let e = get_z_be cs e_off e_len in
-      check_public_exponent e;
-      let n_len = e_off in
-      let n = get_z_be cs 0 n_len in
-      { e ; n }
+      try
+        let e_off = Cstruct.len cs - 3 in
+        let e_len = 3 in
+        let e = get_z_be cs e_off e_len in
+        check_public_exponent e;
+        let n_len = e_off in
+        let n = get_z_be cs 0 n_len in
+        Result.Ok { e ; n }
+      with Invalid_argument s -> Result.Error s
   end
 end

@@ -16,7 +16,7 @@ sig
     val grammar : t Asn.t
 
     val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 
   module Private :
@@ -43,7 +43,7 @@ sig
     val grammar : t Asn.t
 
     val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 end
 
@@ -60,7 +60,7 @@ sig
     val grammar : t Asn.t
 
     val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 
   module Public :
@@ -70,7 +70,7 @@ sig
     val grammar : t Asn.t
 
     val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 
   module Private :
@@ -80,7 +80,7 @@ sig
     val grammar : t Asn.t
 
     val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 end
 
@@ -153,7 +153,7 @@ sig
     val grammar : t Asn.t
 
     val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 
   module Private :
@@ -167,7 +167,7 @@ sig
     val grammar : t Asn.t
 
     val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 end
 
@@ -194,10 +194,10 @@ sig
   val encode_rsa : RSA.Public.t -> Cstruct.t
   val encode_dsa : (DSA.Params.t * DSA.Public.t) -> Cstruct.t
   val encode_ec : (EC.Params.t * EC.Public.t) -> Cstruct.t
-  val decode : Cstruct.t -> t
-  val decode_rsa : Cstruct.t -> RSA.Public.t
-  val decode_dsa : Cstruct.t -> (DSA.Params.t * DSA.Public.t)
-  val decode_ec : Cstruct.t -> (EC.Params.t * EC.Public.t)
+  val decode : Cstruct.t -> (t, string) Result.result
+  val decode_rsa : Cstruct.t -> (RSA.Public.t, string) Result.result
+  val decode_dsa : Cstruct.t -> ((DSA.Params.t * DSA.Public.t), string) Result.result
+  val decode_ec : Cstruct.t -> ((EC.Params.t * EC.Public.t), string) Result.result
 end
 
 module PKCS8 :
@@ -216,10 +216,10 @@ sig
   val encode_rsa : RSA.Private.t -> Cstruct.t
   val encode_dsa : (DSA.Params.t * DSA.Private.t) -> Cstruct.t
   val encode_ec : (EC.Params.t * EC.Private.t) -> Cstruct.t
-  val decode : Cstruct.t -> t
-  val decode_rsa : Cstruct.t -> RSA.Private.t
-  val decode_dsa : Cstruct.t -> (DSA.Params.t * DSA.Private.t)
-  val decode_ec : Cstruct.t -> (EC.Params.t * EC.Private.t)
+  val decode : Cstruct.t -> (t, string) Result.result
+  val decode_rsa : Cstruct.t -> (RSA.Private.t, string) Result.result
+  val decode_dsa : Cstruct.t -> ((DSA.Params.t * DSA.Private.t), string) Result.result
+  val decode_ec : Cstruct.t -> ((EC.Params.t * EC.Private.t), string) Result.result
 end
 
 module RSA_LTPA : sig
@@ -249,7 +249,7 @@ module RSA_LTPA : sig
       q: Z.t;
     }
 
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 
   module Public : sig
@@ -266,6 +266,6 @@ module RSA_LTPA : sig
       n: Z.t;
     }
 
-    val decode : Cstruct.t -> t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 end

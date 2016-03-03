@@ -1,3 +1,4 @@
 true: package(asn1-combinators), package(zarith)
+true: package(result)
 true: safe_string
 <tests.*>: package(oUnit)

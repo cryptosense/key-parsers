@@ -1,5 +1,8 @@
 ## unreleased
 
+- Decode functions now return ('a, string) Result.result.
+  Breaks compatibility with previous versions.
+
 ## v0.2.0
 
 *2016-02-15*
