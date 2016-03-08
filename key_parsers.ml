@@ -1,6 +1,34 @@
 let try_with_asn f = try Result.Ok (f ()) with Asn.Parse_error s -> Result.Error s
 let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.parse_error s
 
+let pp_of_to_string to_string fmt x =
+  Format.pp_print_string fmt (to_string x)
+
+module Asn = struct
+  include (Asn : module type of Asn with module OID := Asn.OID and type 'a t = 'a Asn.t)
+
+  module OID = struct
+    include Asn.OID
+    let pp = pp_of_to_string to_string
+  end
+end
+
+module Z = struct
+  include Z
+  let pp = pp_of_to_string to_string
+end
+
+module Cstruct = struct
+  include Cstruct
+
+  let to_hex_string cs =
+    let buf = Buffer.create 0 in
+    hexdump_to_buffer buf cs;
+    Buffer.contents buf
+
+  let pp = pp_of_to_string to_hex_string
+end
+
 module RSA =
 struct
   module Params =
@@ -163,6 +191,8 @@ end
 module EC =
 struct
   type point = Cstruct.t
+    [@@deriving show]
+
   let point_grammar = Asn.octet_string
 
   module Field =
@@ -192,6 +222,7 @@ struct
       | GN
       | TP of Z.t
       | PP of Z.t * Z.t * Z.t
+      [@@deriving show]
 
     let basis_grammar =
       let open Asn in
@@ -215,6 +246,7 @@ struct
       m: Z.t;
       basis: basis;
     }
+      [@@deriving show]
 
     let ctwo_params_grammar =
       let open Asn in
@@ -267,6 +299,7 @@ struct
     type t =
       | Prime of Z.t
       | C_two of characteristic_two_params
+      [@@deriving show]
 
     let grammar =
       let open Asn in
@@ -285,6 +318,8 @@ struct
   module Specified_domain =
   struct
     type field_element = Cstruct.t
+      [@@deriving show]
+
     let field_element_grammar = Asn.octet_string
 
     type curve = {
@@ -292,6 +327,7 @@ struct
       b: field_element;
       seed: Cstruct.t option;
     }
+      [@@deriving show]
 
     let curve_grammar =
       let open Asn in
@@ -310,6 +346,7 @@ struct
       order: Z.t;
       cofactor: Z.t option;
     }
+      [@@deriving show]
 
     let grammar =
       let open Asn in
@@ -333,6 +370,7 @@ struct
       | Named of Asn.OID.t
       | Implicit
       | Specified of Specified_domain.t
+      [@@deriving show]
 
     let grammar =
       let open Asn in

@@ -142,6 +142,7 @@ sig
       | Named of Asn.OID.t
       | Implicit
       | Specified of Specified_domain.t
+      [@@deriving show]
 
     val grammar : t Asn.t
   end
