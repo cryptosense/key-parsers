@@ -10,6 +10,8 @@ module Asn = struct
   module OID = struct
     include Asn.OID
     let pp = pp_of_to_string to_string
+    let compare a b =
+      String.compare (to_string a) (to_string b)
   end
 end
 
@@ -191,7 +193,7 @@ end
 module EC =
 struct
   type point = Cstruct.t
-    [@@deriving show]
+    [@@deriving ord,show]
 
   let point_grammar = Asn.octet_string
 
@@ -222,7 +224,7 @@ struct
       | GN
       | TP of Z.t
       | PP of Z.t * Z.t * Z.t
-      [@@deriving show]
+      [@@deriving ord,show]
 
     let basis_grammar =
       let open Asn in
@@ -246,7 +248,7 @@ struct
       m: Z.t;
       basis: basis;
     }
-      [@@deriving show]
+      [@@deriving ord,show]
 
     let ctwo_params_grammar =
       let open Asn in
@@ -299,7 +301,7 @@ struct
     type t =
       | Prime of Z.t
       | C_two of characteristic_two_params
-      [@@deriving show]
+      [@@deriving ord,show]
 
     let grammar =
       let open Asn in
@@ -318,7 +320,7 @@ struct
   module Specified_domain =
   struct
     type field_element = Cstruct.t
-      [@@deriving show]
+      [@@deriving ord,show]
 
     let field_element_grammar = Asn.octet_string
 
@@ -327,7 +329,7 @@ struct
       b: field_element;
       seed: Cstruct.t option;
     }
-      [@@deriving show]
+      [@@deriving ord,show]
 
     let curve_grammar =
       let open Asn in
@@ -346,7 +348,7 @@ struct
       order: Z.t;
       cofactor: Z.t option;
     }
-      [@@deriving show]
+      [@@deriving ord,show]
 
     let grammar =
       let open Asn in
@@ -370,7 +372,7 @@ struct
       | Named of Asn.OID.t
       | Implicit
       | Specified of Specified_domain.t
-      [@@deriving show]
+      [@@deriving ord,show]
 
     let grammar =
       let open Asn in
