@@ -134,6 +134,7 @@ sig
       order: Z.t;
       cofactor: Z.t option;
     }
+      [@@deriving ord,show,yojson]
 
     val grammar : t Asn.t
   end
