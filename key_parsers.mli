@@ -87,6 +87,8 @@ end
 module EC :
 sig
   type point = Cstruct.t
+    [@@deriving ord,show,yojson]
+
   val point_grammar : point Asn.t
 
   module Field :
