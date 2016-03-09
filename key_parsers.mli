@@ -142,7 +142,7 @@ sig
       | Named of Asn.OID.t
       | Implicit
       | Specified of Specified_domain.t
-      [@@deriving ord,show]
+      [@@deriving ord,show,yojson]
 
     val grammar : t Asn.t
   end

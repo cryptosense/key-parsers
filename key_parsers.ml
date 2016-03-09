@@ -12,12 +12,26 @@ module Asn = struct
     let pp = pp_of_to_string to_string
     let compare a b =
       String.compare (to_string a) (to_string b)
+
+    let of_yojson = function
+      | `String s -> `Ok (Asn.OID.of_string s)
+      | _ -> `Error "Cannot convert this json value to Asn.OID.t"
+
+    let to_yojson oid =
+      `String (Asn.OID.to_string oid)
   end
 end
 
 module Z = struct
   include Z
   let pp = pp_of_to_string to_string
+
+  let of_yojson = function
+    | `String s -> `Ok (Z.of_string s)
+    | _ -> `Error "Cannot convert this json value to Z.t"
+
+  let to_yojson z =
+    `String (Z.to_string z)
 end
 
 module Cstruct = struct
@@ -29,6 +43,13 @@ module Cstruct = struct
     Buffer.contents buf
 
   let pp = pp_of_to_string to_hex_string
+
+  let to_yojson cs =
+    `String (to_string cs)
+
+  let of_yojson = function
+    | `String s -> `Ok (of_string s)
+    | _ -> `Error "Cannot convert this json value to Cstruct.t"
 end
 
 module RSA =
@@ -193,7 +214,7 @@ end
 module EC =
 struct
   type point = Cstruct.t
-    [@@deriving ord,show]
+    [@@deriving ord,show,yojson]
 
   let point_grammar = Asn.octet_string
 
@@ -224,7 +245,7 @@ struct
       | GN
       | TP of Z.t
       | PP of Z.t * Z.t * Z.t
-      [@@deriving ord,show]
+      [@@deriving ord,show,yojson]
 
     let basis_grammar =
       let open Asn in
@@ -248,7 +269,7 @@ struct
       m: Z.t;
       basis: basis;
     }
-      [@@deriving ord,show]
+      [@@deriving ord,show,yojson]
 
     let ctwo_params_grammar =
       let open Asn in
@@ -301,7 +322,7 @@ struct
     type t =
       | Prime of Z.t
       | C_two of characteristic_two_params
-      [@@deriving ord,show]
+      [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -320,7 +341,7 @@ struct
   module Specified_domain =
   struct
     type field_element = Cstruct.t
-      [@@deriving ord,show]
+      [@@deriving ord,show,yojson]
 
     let field_element_grammar = Asn.octet_string
 
@@ -329,7 +350,7 @@ struct
       b: field_element;
       seed: Cstruct.t option;
     }
-      [@@deriving ord,show]
+      [@@deriving ord,show,yojson]
 
     let curve_grammar =
       let open Asn in
@@ -348,7 +369,7 @@ struct
       order: Z.t;
       cofactor: Z.t option;
     }
-      [@@deriving ord,show]
+      [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -372,7 +393,7 @@ struct
       | Named of Asn.OID.t
       | Implicit
       | Specified of Specified_domain.t
-      [@@deriving ord,show]
+      [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in

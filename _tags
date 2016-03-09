@@ -1,6 +1,6 @@
 true: package(asn1-combinators), package(zarith)
 true: package(result)
-true: package(ppx_deriving)
+true: package(ppx_deriving), package(ppx_deriving_yojson.runtime)
 true: safe_string
 <tests.*>: package(oUnit)
-<key_parsers.*>: package(ppx_deriving.std)
+<key_parsers.*>: package(ppx_deriving.std), package(ppx_deriving_yojson)

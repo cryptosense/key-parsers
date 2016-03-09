@@ -12,6 +12,7 @@ remove: ["ocamlfind" "remove" "key-parsers"]
 depends: [
   "ocamlfind" {build}
   "ppx_deriving"
+  "ppx_deriving_yojson"
   "ounit" {test}
   "asn1-combinators"
   "zarith"
