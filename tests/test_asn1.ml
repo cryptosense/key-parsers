@@ -147,7 +147,134 @@ let dsa_suite =
   ; "PKCS8" >::: pkcs8_suite
   ]
 
+let ec_suite =
+  let open Key_parsers.EC in
+  let cstruct_of_hex str = `Hex (String.lowercase str) |> Hex.to_cstruct in
+  let p256v1_oid = Asn.OID.of_string "1.2.840.10045.3.1.7" in
+  let exp_named_params = Params.Named p256v1_oid in
+  let test_params expected real ctxt =
+    let printer = Params.show in
+    let cmp p p' = Params.compare p p' = 0 in
+    assert_equal ~ctxt ~cmp ~printer ~msg:"params" expected real
+  in
+  let param_suite =
+    let exp_specified_prime =
+      let field =
+        let p =
+          Z.of_string
+            "0x00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF"
+        in
+        Field.Prime p
+      in
+      let curve =
+        let a =
+          cstruct_of_hex
+            "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC"
+        in
+        let b =
+          cstruct_of_hex
+            "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B"
+        in
+        let seed =
+          Some (cstruct_of_hex
+                  "C49D360886E704936A6678E1139D26B7819F7E90")
+        in
+        Specified_domain.{ a; b; seed }
+      in
+      let base =
+        cstruct_of_hex
+          "046B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C2964F\
+           E342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5"
+      in
+      let order =
+        Z.of_string
+          "0x00FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"
+      in
+      let cofactor = Some (Z.of_int 1) in
+      Params.Specified Specified_domain.{ field; curve; base; order; cofactor }
+    in
+    let exp_specified_binary =
+      let field =
+        let m = Z.of_int 113 in
+        let basis = Field.TP (Z.of_int 9) in
+        Field.(C_two { m; basis })
+      in
+      let curve =
+        let a = cstruct_of_hex "3088250CA6E7C7FE649CE85820F7" in
+        let b = cstruct_of_hex "E8BEE4D3E2260744188BE0E9C723" in
+        let seed = Some (cstruct_of_hex "10E723AB14D696E6768756151756FEBF8FCB49A9") in
+        Specified_domain.{ a; b; seed }
+      in
+      let base =
+        cstruct_of_hex
+          "04009D73616F35F4AB1407D73562C10F00A52830277958EE84D1315ED31886"
+      in
+      let order = Z.of_string "0x0100000000000000D9CCEC8A39E56F" in
+      let cofactor = Some (Z.of_int 2) in
+      Params.Specified Specified_domain.{ field; curve; base; order; cofactor }
+    in
+    let test_params expected der ctxt =
+      let real = Params.decode der in
+      Test_util.assert_ok real @@ fun real -> test_params expected real ctxt
+    in
+    let named_der = Cstruct.of_string @@ [%blob "../tests/keys/p256v1_named_param.der"] in
+    let prime_der = Cstruct.of_string @@ [%blob "../tests/keys/p256v1_explicit_param.der"] in
+    let bin_der = Cstruct.of_string @@ [%blob "../tests/keys/sect113r1_explicit_param.der"] in
+    [ "Named" >:: test_params exp_named_params named_der
+    ; "Specifed" >:::
+      [ "PrimeField" >:: test_params exp_specified_prime prime_der
+      ; "BinaryField" >:: test_params exp_specified_binary bin_der
+      ]
+    ]
+  in
+  let h =
+    cstruct_of_hex
+      "04DB81688B7871A0762ADCDC6109F37C45AA689BDB300E3036614C8FE21E7AB1C1E8\
+       A133D358F0ED65B478D97064535ECE5BC2809A2BC974D25639DEFE5D38EE89"
+  in
+  let exp_public = (exp_named_params, h) in
+  let exp_private =
+    let params = None in
+    let k =
+      cstruct_of_hex
+        "3F05F839F41567FF8A2D2ACA64BA92AEC698B43C52D4CF0D2264F4615F07FB86"
+    in
+    let public_key = Some h in
+    (exp_named_params, Private.{ k; params; public_key })
+  in
+  let x509_suite =
+    let test (expected_params, expected_key) der ctxt =
+      let printer = Public.show in
+      let cmp pub pub' = Public.compare pub pub' = 0 in
+      let real = Key_parsers.X509.decode_ec der in
+      Test_util.assert_ok real @@ fun (real_params, real_key) ->
+      test_params expected_params real_params ctxt;
+      assert_equal ~ctxt ~cmp ~printer ~msg:"H" expected_key real_key
+    in
+    let der = Cstruct.of_string @@ [%blob "../tests/keys/p256v1_x509.der"] in
+    [ "Public" >:: test exp_public der
+    ]
+  in
+  let pkcs8_suite =
+    let test (expected_params, expected_key) der ctxt =
+      let printer = Private.show in
+      let cmp priv priv' = Private.compare priv priv' = 0 in
+      let real = Key_parsers.PKCS8.decode_ec der in
+      Test_util.assert_ok real @@ fun (real_params, real_key) ->
+      test_params expected_params real_params ctxt;
+      assert_equal ~ctxt ~cmp ~printer ~msg:"privateKey" expected_key real_key
+    in
+    let der = Cstruct.of_string @@ [%blob "../tests/keys/p256v1_pkcs8.der"] in
+    [ "Private" >:: test exp_private der
+    ]
+  in
+  [ "Params" >::: param_suite
+  ; "X509" >::: x509_suite
+  ; "PKCS8" >::: pkcs8_suite
+  ]
+
 let suite =
   [ "RSA" >::: rsa_suite
   ; "DSA" >::: dsa_suite
+  ; "EC" >::: ec_suite
   ]

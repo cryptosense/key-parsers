@@ -15,6 +15,7 @@ depends: [
   "ppx_deriving_yojson"
   "ounit" {test}
   "ppx_blob" {test}
+  "hex" {test}
   "asn1-combinators"
   "zarith"
   "result"

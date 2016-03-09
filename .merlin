@@ -6,3 +6,4 @@ PKG zarith
 PKG result
 PKG oUnit
 PKG ppx_blob
+PKG hex
