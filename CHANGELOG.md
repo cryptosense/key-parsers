@@ -1,5 +1,6 @@
 ## unreleased
 
+- Add some tests
 - Decode functions now return ('a, string) Result.result.
   Breaks compatibility with previous versions.
 
