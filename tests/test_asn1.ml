@@ -1,7 +1,7 @@
 open OUnit2
 
 let rsa_suite =
-  let open Key_parsers.RSA in
+  let open Key_parsers.Asn1.RSA in
   (* This key pair was generated using openssl genrsa*)
   let expected_public, expected_private =
     let n =
@@ -68,12 +68,12 @@ let rsa_suite =
   in
   let x509_suite =
     let der = Cstruct.of_string @@ [%blob "../tests/keys/rsa_x509.der"] in
-    [ "Public" >:: test_pub ~decode:Key_parsers.X509.decode_rsa expected_public der
+    [ "Public" >:: test_pub ~decode:Key_parsers.Asn1.X509.decode_rsa expected_public der
     ]
   in
   let pkcs8_suite =
     let der = Cstruct.of_string @@ [%blob "../tests/keys/rsa_pkcs8.der"] in
-    [ "Private" >:: test_priv ~decode:Key_parsers.PKCS8.decode_rsa expected_private der
+    [ "Private" >:: test_priv ~decode:Key_parsers.Asn1.PKCS8.decode_rsa expected_private der
     ]
   in
   [ "PKCS1" >::: pkcs1_suite
@@ -82,7 +82,7 @@ let rsa_suite =
   ]
 
 let dsa_suite =
-  let open Key_parsers.DSA in
+  let open Key_parsers.Asn1.DSA in
   (* These parameters and key pair were generated using openssl dsaparam and gendsa *)
   let expected_params =
     let p =
@@ -134,13 +134,13 @@ let dsa_suite =
   let x509_suite =
     let typ = `Public in
     let der = Cstruct.of_string @@ [%blob "../tests/keys/dsa_x509.der"] in
-    [ "Public" >:: test ~typ ~decode:Key_parsers.X509.decode_dsa expected_public der
+    [ "Public" >:: test ~typ ~decode:Key_parsers.Asn1.X509.decode_dsa expected_public der
     ]
   in
   let pkcs8_suite =
     let typ = `Private in
     let der = Cstruct.of_string @@ [%blob "../tests/keys/dsa_pkcs8.der"] in
-    [ "Private" >:: test ~typ ~decode:Key_parsers.PKCS8.decode_dsa expected_private der
+    [ "Private" >:: test ~typ ~decode:Key_parsers.Asn1.PKCS8.decode_dsa expected_private der
     ]
   in
   [ "X509" >::: x509_suite
@@ -148,7 +148,7 @@ let dsa_suite =
   ]
 
 let ec_suite =
-  let open Key_parsers.EC in
+  let open Key_parsers.Asn1.EC in
   let cstruct_of_hex str = `Hex (String.lowercase str) |> Hex.to_cstruct in
   let p256v1_oid = Asn.OID.of_string "1.2.840.10045.3.1.7" in
   let exp_named_params = Params.Named p256v1_oid in
@@ -246,7 +246,7 @@ let ec_suite =
     let test (expected_params, expected_key) der ctxt =
       let printer = Public.show in
       let cmp pub pub' = Public.compare pub pub' = 0 in
-      let real = Key_parsers.X509.decode_ec der in
+      let real = Key_parsers.Asn1.X509.decode_ec der in
       Test_util.assert_ok real @@ fun (real_params, real_key) ->
       test_params expected_params real_params ctxt;
       assert_equal ~ctxt ~cmp ~printer ~msg:"H" expected_key real_key
@@ -259,7 +259,7 @@ let ec_suite =
     let test (expected_params, expected_key) der ctxt =
       let printer = Private.show in
       let cmp priv priv' = Private.compare priv priv' = 0 in
-      let real = Key_parsers.PKCS8.decode_ec der in
+      let real = Key_parsers.Asn1.PKCS8.decode_ec der in
       Test_util.assert_ok real @@ fun (real_params, real_key) ->
       test_params expected_params real_params ctxt;
       assert_equal ~ctxt ~cmp ~printer ~msg:"privateKey" expected_key real_key

@@ -22,7 +22,7 @@ let suite =
   in
   let printer = Z.to_string in
   let test_private ctxt =
-    let open Key_parsers.RSA_LTPA.Private in
+    let open Key_parsers.Ltpa.RSA.Private in
     let k = decode (Cstruct.of_string private_encoded) in
     Test_util.assert_ok k @@ fun k ->
     assert_equal ~ctxt ~printer ~msg:"e" e k.e;
@@ -31,7 +31,7 @@ let suite =
     assert_equal ~ctxt ~printer ~msg:"q" q k.q
   in
   let test_public ctxt =
-    let open Key_parsers.RSA_LTPA.Public in
+    let open Key_parsers.Ltpa.RSA.Public in
     let k = decode (Cstruct.of_string public_encoded) in
     Test_util.assert_ok k @@ fun k ->
     assert_equal ~ctxt ~printer ~msg:"e" e k.e;
