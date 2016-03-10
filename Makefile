@@ -1,7 +1,7 @@
 .PHONY: all install uninstall clean check
 PACKAGE=key-parsers
 MLI=key_parsers
-OBJ=$(addprefix _build/, $(addsuffix .cmi, $(MLI)) $(MLI).cma $(MLI).cmxa $(MLI).a)
+OBJ=$(addprefix _build/src/, $(addsuffix .cmi, $(MLI)) $(MLI).cma $(MLI).cmxa $(MLI).a)
 
 all: $(OBJ)
 
