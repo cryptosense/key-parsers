@@ -1,11 +1,6 @@
 open OUnit2
 
-let assert_ok r test =
-  match r with
-  | Result.Ok x -> test x
-  | Result.Error s -> assert_failure s
-
-let test_ltpa =
+let suite =
   (* These parameters were generated using openssl. *)
   let e = Z.of_string_base 16 "010001" in
   let n = Z.of_string_base 16 "A8CA9E1529C91688FC0DC99FAA59D32ABEC31135E6A872F0AB541078B73E881582A658AFE4E5650D91FD9A354832EB1904617E7B26B63571FA8DA2E3743DB09A1DD328274D7C9360BEAE8212801F7BBE00F1AA6C9ACEDAF395681F0A983996E806E991204394DBA628A34E47C81075846F01780B5CB39848B20DA2222D2A9F3D" in
@@ -29,7 +24,7 @@ let test_ltpa =
   let test_private ctxt =
     let open Key_parsers.RSA_LTPA.Private in
     let k = decode (Cstruct.of_string private_encoded) in
-    assert_ok k @@ fun k ->
+    Test_util.assert_ok k @@ fun k ->
     assert_equal ~ctxt ~printer ~msg:"e" e k.e;
     assert_equal ~ctxt ~printer ~msg:"d" d k.d;
     assert_equal ~ctxt ~printer ~msg:"p" p k.p;
@@ -38,17 +33,10 @@ let test_ltpa =
   let test_public ctxt =
     let open Key_parsers.RSA_LTPA.Public in
     let k = decode (Cstruct.of_string public_encoded) in
-    assert_ok k @@ fun k ->
+    Test_util.assert_ok k @@ fun k ->
     assert_equal ~ctxt ~printer ~msg:"e" e k.e;
     assert_equal ~ctxt ~printer ~msg:"n" n k.n
   in
   [ "Private" >:: test_private
   ; "Public" >:: test_public
   ]
-
-let suite =
-  "Key-parsers" >:::
-  [ "LTPA" >::: test_ltpa
-  ]
-
-let _ = run_test_tt_main suite

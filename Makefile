@@ -18,4 +18,4 @@ clean:
 	ocamlbuild -clean
 
 check:
-	ocamlbuild -use-ocamlfind tests.byte --
+	ocamlbuild -use-ocamlfind -I tests test_all.byte --

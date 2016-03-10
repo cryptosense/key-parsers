@@ -409,11 +409,21 @@ struct
         oid
         null
         Specified_domain.grammar
+
+    let encode = Asn.(encode (codec der grammar))
+    let decode params =
+      let open Asn in
+      try_with_asn @@ fun () ->
+      let t, left = decode_exn (codec ber grammar) params in
+      if Cstruct.len left = 0 then t
+      else parse_error "EC: parameters with non empty leftover"
   end
 
   module Public =
   struct
     type t = point
+      [@@deriving ord,show]
+
     let grammar = point_grammar
 
     let encode = Asn.(encode (codec der grammar))
@@ -432,6 +442,7 @@ struct
       params: Params.t option;
       public_key: Public.t option;
     }
+      [@@deriving ord,show]
 
     let grammar =
       let open Asn in

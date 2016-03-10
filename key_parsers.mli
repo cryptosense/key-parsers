@@ -148,11 +148,15 @@ sig
       [@@deriving ord,show,yojson]
 
     val grammar : t Asn.t
+
+    val encode : t -> Cstruct.t
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 
   module Public :
   sig
     type t = point
+      [@@deriving ord,show]
 
     val grammar : t Asn.t
 
@@ -167,6 +171,7 @@ sig
       params: Params.t option;
       public_key: Public.t option;
     }
+      [@@deriving ord,show]
 
     val grammar : t Asn.t
 
