@@ -87,6 +87,8 @@ end
 module EC :
 sig
   type point = Cstruct.t
+    [@@deriving ord,show,yojson]
+
   val point_grammar : point Asn.t
 
   module Field :
@@ -132,6 +134,7 @@ sig
       order: Z.t;
       cofactor: Z.t option;
     }
+      [@@deriving ord,show,yojson]
 
     val grammar : t Asn.t
   end
@@ -142,6 +145,7 @@ sig
       | Named of Asn.OID.t
       | Implicit
       | Specified of Specified_domain.t
+      [@@deriving ord,show,yojson]
 
     val grammar : t Asn.t
   end
