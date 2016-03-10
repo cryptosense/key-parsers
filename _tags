@@ -2,6 +2,8 @@ true: package(asn1-combinators), package(zarith)
 true: package(result)
 true: package(ppx_deriving), package(ppx_deriving_yojson.runtime)
 true: safe_string
+true: bin_annot
+true: debug
 
 "src": include
 
