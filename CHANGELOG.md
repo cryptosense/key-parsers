@@ -1,5 +1,6 @@
 ## unreleased
 
+- Split Key_parsers content between Asn1 and Ltpa submodules
 - Add some tests
 - Decode functions now return ('a, string) Result.result.
   Breaks compatibility with previous versions.
