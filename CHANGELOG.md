@@ -1,9 +1,14 @@
-## unreleased
+## v0.3.0
 
-- Split Key_parsers content between Asn1 and Ltpa submodules
+*2016-03-10*
+
+- Add converters and compare functions to Asn1.EC
+- Split Key_parsers content between Asn1 and Ltpa submodules.
+  Breaks compatibility with previous versions.
 - Add some tests
 - Decode functions now return ('a, string) Result.result.
   Breaks compatibility with previous versions.
+- Add LTPA RSA parsers
 
 ## v0.2.0
 
