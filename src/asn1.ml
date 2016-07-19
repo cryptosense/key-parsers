@@ -467,6 +467,68 @@ struct
   end
 end
 
+module DH =
+struct 
+  module Params =
+  struct
+      type t = {
+        p: Z.t;
+        g: Z.t;
+        l: Z.t option; (* privateValueLength *)
+      }
+
+      let grammar =
+        let open Asn in
+        let to_struct (p, g, l) = { p; g; l } in
+        let of_struct {p; g; l} = ( p, g, l ) in
+        map to_struct of_struct @@ sequence3
+          (required ~label:"p" integer)
+          (required ~label:"g" integer)
+          (optional ~label:"l" integer)
+
+      let encode = Asn.(encode (codec der grammar))
+
+      let decode key =
+        let open Asn in
+        try_with_asn @@ fun () ->
+        let t, left = decode_exn (codec ber grammar) key in
+        if Cstruct.len left = 0 then t
+        else parse_error "DH: Params with non empty leftover"
+  end
+
+  module Public =
+  struct
+    type t = Z.t
+
+    let grammar = Asn.integer
+
+    let encode = Asn.(encode (codec der grammar))
+
+    let decode key =
+      let open Asn in
+      try_with_asn @@ fun () ->
+      let t, left = decode_exn (codec ber grammar) key in
+      if Cstruct.len left = 0 then t
+      else parse_error "DH: public key with non empty leftover"
+  end
+
+  module Private =
+  struct
+    type t = Z.t
+
+    let grammar = Asn.integer
+
+    let encode = Asn.(encode (codec der grammar))
+
+    let decode key =
+      let open Asn in
+      try_with_asn @@ fun () ->
+      let t, left = decode_exn (codec ber grammar) key in
+      if Cstruct.len left = 0 then t
+      else parse_error "DH: private key with non empty leftover"
+  end
+end
+
 module Algorithm_identifier =
 struct
   module Algo =
@@ -474,6 +536,7 @@ struct
     let rsa_oid = Asn.OID.of_string "1.2.840.113549.1.1.1"
     let dsa_oid = Asn.OID.of_string "1.2.840.10040.4.1"
     let ec_oid = Asn.OID.of_string "1.2.840.10045.2.1"
+    let dh_oid = Asn.OID.of_string "1.2.840.113549.1.3.1"
 
     let ec_dh = Asn.OID.of_string "1.3.132.1.12"
     let ec_mqv = Asn.OID.of_string "1.3.132.1.13"
@@ -482,6 +545,7 @@ struct
       | DSA
       | RSA
       | EC
+      | DH
       | Unknown of Asn.OID.t
 
     let grammar =
@@ -490,11 +554,13 @@ struct
         | oid when oid = rsa_oid -> RSA
         | oid when oid = dsa_oid -> DSA
         | oid when oid = ec_oid -> EC
-        | oid ->  Unknown oid in
+        | oid when oid = dh_oid -> DH
+        | oid -> Unknown oid in
       let g = function
         | RSA -> rsa_oid
         | DSA -> dsa_oid
         | EC -> ec_oid
+        | DH -> dh_oid
         | Unknown oid -> oid in
       map f g oid
   end
@@ -528,6 +594,16 @@ struct
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
       (required ~label:"parameters" EC.Params.grammar)
+
+  let dh_grammar =
+    let open Asn in
+    let f = function
+      | Algo.DH, params -> params
+      | _, _ -> parse_error "Algorithm OID and parameters doesn't match" in
+    let g params = Algo.DH, params in
+    map f g @@ sequence2
+      (required ~label:"algorithm" Algo.grammar)
+      (required ~label:"parameters" DH.Params.grammar)
 end
 
 let map_result f = function Result.Ok x -> Result.Ok (f x) | Result.Error _ as r -> r
@@ -539,6 +615,7 @@ struct
     [ `RSA of RSA.Public.t
     | `DSA of DSA.Params.t * DSA.Public.t
     | `EC of EC.Params.t * EC.Public.t
+    | `DH of DH.Params.t * DH.Public.t
     ]
 
   let rsa_grammar =
@@ -565,14 +642,24 @@ struct
       (required ~label:"alogrithm" Algorithm_identifier.ec_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
 
+  let dh_grammar =
+    let open Asn in
+    let f (params, bit_string) = params, raise_asn @@ fun () -> DH.Public.decode bit_string in
+    let g (params, key) = params, DH.Public.encode key in
+    map f g @@ sequence2
+      (required ~label:"algorithm" Algorithm_identifier.dh_grammar)
+      (required ~label:"subjectPublicKey" bit_string_cs)
+
   let encode_rsa = Asn.(encode (codec der rsa_grammar))
   let encode_dsa = Asn.(encode (codec der dsa_grammar))
   let encode_ec = Asn.(encode (codec der ec_grammar))
+  let encode_dh = Asn.(encode (codec der dh_grammar))
 
   let encode = function
     | `RSA key -> encode_rsa key
     | `DSA key -> encode_dsa key
     | `EC key -> encode_ec key
+    | `DH key -> encode_dh key
 
   let decode_rsa key =
     let open Asn in
@@ -595,10 +682,18 @@ struct
     if Cstruct.len left = 0 then t
     else parse_error "X509: key with non empty leftover"
 
+  let decode_dh key =
+    let open Asn in
+    try_with_asn @@ fun () ->
+    let t, left = decode_exn (codec ber dh_grammar) key in
+    if Cstruct.len left = 0 then t
+    else parse_error "X509: key with non empty leftover"
+
   let decode key : (t, string) Result.result =
     (map_result (fun x -> `RSA x) (decode_rsa key))
     |> default_result (fun () -> map_result (fun x -> `DSA x) (decode_dsa key))
     |> default_result (fun () -> map_result (fun x -> `EC x) (decode_ec key))
+    |> default_result (fun () -> map_result (fun x -> `DH x) (decode_dh key))
     |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end
 
@@ -608,6 +703,7 @@ struct
     [ `RSA of RSA.Private.t
     | `DSA of DSA.Params.t * DSA.Private.t
     | `EC of EC.Params.t * EC.Private.t
+    | `DH of DH.Params.t * DH.Private.t
     ]
 
   let rsa_grammar =
@@ -651,15 +747,31 @@ struct
       (required ~label:"privateKeyAlogrithm" Algorithm_identifier.ec_grammar)
       (required ~label:"privateKey" octet_string)
       (optional ~label:"attributes" @@ implicit 0 null)
+    
+  let dh_grammar =
+    let open Asn in
+    let f (version, params, octet_string, attributes) =
+      if version = 0 then
+        params, raise_asn @@ fun () -> DH.Private.decode octet_string
+      else
+        parse_error @@ Printf.sprintf "PKCS8: version %d not supported" version in
+    let g (params, key) = 0, params, DH.Private.encode key, None in
+    map f g @@ sequence4
+      (required ~label:"version" int)
+      (required ~label:"privateKeyAlogrithm" Algorithm_identifier.dh_grammar)
+      (required ~label:"privateKey" octet_string)
+      (optional ~label:"attributes" @@ implicit 0 null)
 
   let encode_rsa = Asn.(encode (codec der rsa_grammar))
   let encode_dsa = Asn.(encode (codec der dsa_grammar))
   let encode_ec = Asn.(encode (codec der ec_grammar))
+  let encode_dh = Asn.(encode (codec der dh_grammar))
 
   let encode = function
     | `RSA key -> encode_rsa key
     | `DSA key -> encode_dsa key
     | `EC key -> encode_ec key
+    | `DH key -> encode_dh key
 
   let decode_rsa key =
     let open Asn in
@@ -682,9 +794,17 @@ struct
     if Cstruct.len left = 0 then t
     else parse_error "PKCS8: key with non empty leftover"
 
+  let decode_dh key =
+    let open Asn in
+    try_with_asn @@ fun () ->
+    let t, left = decode_exn (codec ber dh_grammar) key in
+    if Cstruct.len left = 0 then t
+    else parse_error "PKCS8: key with non empty leftover"
+
   let decode key : (t, string) Result.result =
     (map_result (fun x -> `RSA x) (decode_rsa key))
     |> default_result (fun () -> map_result (fun x -> `DSA x) (decode_dsa key))
     |> default_result (fun () -> map_result (fun x -> `EC x) (decode_ec key))
+    |> default_result (fun () -> map_result (fun x -> `DH x) (decode_dh key))
     |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end

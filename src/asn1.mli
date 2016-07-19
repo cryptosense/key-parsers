@@ -180,11 +180,49 @@ sig
   end
 end
 
+module DH :
+sig
+  module Params :
+  sig
+    type t = {
+      p: Z.t;
+      g: Z.t;
+      l: Z.t option;
+    }
+
+    val grammar : t Asn.t
+
+    val encode : t -> Cstruct.t
+    val decode : Cstruct.t -> (t, string) Result.result
+  end
+
+  module Public :
+  sig
+    type t = Z.t
+
+    val grammar : t Asn.t
+
+    val encode : t -> Cstruct.t
+    val decode : Cstruct.t -> (t, string) Result.result
+  end
+
+  module Private :
+  sig
+    type t = Z.t
+
+    val grammar : t Asn.t
+
+    val encode : t -> Cstruct.t
+    val decode : Cstruct.t -> (t, string) Result.result
+  end
+end
+
 module Algorithm_identifier :
 sig
   val rsa_grammar : RSA.Params.t Asn.t
   val dsa_grammar : DSA.Params.t Asn.t
   val ec_grammar : EC.Params.t Asn.t
+  val dh_grammar : DH.Params.t Asn.t
 end
 
 module X509 :
@@ -193,20 +231,24 @@ sig
     [ `RSA of RSA.Public.t
     | `DSA of DSA.Params.t * DSA.Public.t
     | `EC of EC.Params.t * EC.Public.t
+    | `DH of DH.Params.t * DH.Public.t
     ]
 
   val rsa_grammar : RSA.Public.t Asn.t
   val dsa_grammar : (DSA.Params.t * DSA.Public.t) Asn.t
   val ec_grammar : (EC.Params.t * EC.Public.t) Asn.t
+  val dh_grammar : (DH.Params.t * DH.Public.t) Asn.t
 
   val encode : t -> Cstruct.t
   val encode_rsa : RSA.Public.t -> Cstruct.t
   val encode_dsa : (DSA.Params.t * DSA.Public.t) -> Cstruct.t
   val encode_ec : (EC.Params.t * EC.Public.t) -> Cstruct.t
+  val encode_dh : (DH.Params.t * DH.Public.t) -> Cstruct.t
   val decode : Cstruct.t -> (t, string) Result.result
   val decode_rsa : Cstruct.t -> (RSA.Public.t, string) Result.result
   val decode_dsa : Cstruct.t -> ((DSA.Params.t * DSA.Public.t), string) Result.result
   val decode_ec : Cstruct.t -> ((EC.Params.t * EC.Public.t), string) Result.result
+  val decode_dh : Cstruct.t -> ((DH.Params.t * DH.Public.t), string) Result.result
 end
 
 module PKCS8 :
@@ -215,18 +257,22 @@ sig
     [ `RSA of RSA.Private.t
     | `DSA of DSA.Params.t * DSA.Private.t
     | `EC of EC.Params.t * EC.Private.t
+    | `DH of DH.Params.t * DH.Private.t
     ]
 
   val rsa_grammar : RSA.Private.t Asn.t
   val dsa_grammar : (DSA.Params.t * DSA.Private.t) Asn.t
   val ec_grammar : (EC.Params.t * EC.Private.t) Asn.t
+  val dh_grammar : (DH.Params.t * DH.Private.t) Asn.t
 
   val encode : t -> Cstruct.t
   val encode_rsa : RSA.Private.t -> Cstruct.t
   val encode_dsa : (DSA.Params.t * DSA.Private.t) -> Cstruct.t
   val encode_ec : (EC.Params.t * EC.Private.t) -> Cstruct.t
+  val encode_dh : (DH.Params.t * DH.Private.t) -> Cstruct.t
   val decode : Cstruct.t -> (t, string) Result.result
   val decode_rsa : Cstruct.t -> (RSA.Private.t, string) Result.result
   val decode_dsa : Cstruct.t -> ((DSA.Params.t * DSA.Private.t), string) Result.result
   val decode_ec : Cstruct.t -> ((EC.Params.t * EC.Private.t), string) Result.result
+  val decode_dh : Cstruct.t -> ((DH.Params.t * DH.Private.t), string) Result.result
 end
