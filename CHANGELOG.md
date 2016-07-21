@@ -1,5 +1,7 @@
 ## unreleased
 
+- Use `ppx_deriving_yojson` 3.0
+
 ## v0.3.0
 
 *2016-03-10*

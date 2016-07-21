@@ -14,8 +14,8 @@ module Asn = struct
       String.compare (to_string a) (to_string b)
 
     let of_yojson = function
-      | `String s -> `Ok (Asn.OID.of_string s)
-      | _ -> `Error "Cannot convert this json value to Asn.OID.t"
+      | `String s -> Result.Ok (Asn.OID.of_string s)
+      | _ -> Result.Error "Cannot convert this json value to Asn.OID.t"
 
     let to_yojson oid =
       `String (Asn.OID.to_string oid)
@@ -27,8 +27,8 @@ module Z = struct
   let pp = pp_of_to_string to_string
 
   let of_yojson = function
-    | `String s -> `Ok (Z.of_string s)
-    | _ -> `Error "Cannot convert this json value to Z.t"
+    | `String s -> Result.Ok (Z.of_string s)
+    | _ -> Result.Error "Cannot convert this json value to Z.t"
 
   let to_yojson z =
     `String (Z.to_string z)
@@ -48,8 +48,8 @@ module Cstruct = struct
     `String (to_string cs)
 
   let of_yojson = function
-    | `String s -> `Ok (of_string s)
-    | _ -> `Error "Cannot convert this json value to Cstruct.t"
+    | `String s -> Result.Ok (of_string s)
+    | _ -> Result.Error "Cannot convert this json value to Cstruct.t"
 end
 
 module RSA =

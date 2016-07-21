@@ -12,7 +12,7 @@ remove: ["ocamlfind" "remove" "key-parsers"]
 depends: [
   "ocamlfind" {build}
   "ppx_deriving" {>= "2.0"}
-  "ppx_deriving_yojson"
+  "ppx_deriving_yojson" {= "3.0"}
   "ounit" {test}
   "ppx_blob" {test}
   "hex" {test}
