@@ -277,7 +277,7 @@ struct
         | (m, GN_typ, GN) -> { m; basis=GN }
         | (m, TP_typ, TP k) -> { m; basis=TP k }
         | (m, PP_typ, PP (k1, k2, k3)) -> { m; basis=PP (k1, k2, k3) }
-        | _ -> parse_error "EC: field basis type and parameters doesn't match" in
+        | _ -> parse_error "EC: field basis type and parameters don't match" in
       let g { m; basis } =
         match basis with
           | GN -> (m, GN_typ, GN)
@@ -329,7 +329,7 @@ struct
       let f = function
         | Prime_typ, Prime_p p -> Prime p
         | C_two_typ, C_two_p params -> C_two params
-        | _ -> parse_error "EC: field type and parameters doesn't match" in
+        | _ -> parse_error "EC: field type and parameters don't match" in
       let g = function
         | Prime p -> Prime_typ, Prime_p p
         | C_two params -> C_two_typ, C_two_p params in
@@ -569,7 +569,7 @@ struct
     let open Asn in
     let f = function
       | Algo.RSA, () -> ()
-      | _ -> parse_error "Algorithm OID and parameters doesn't match" in
+      | _ -> parse_error "Algorithm OID and parameters don't match" in
     let g () = Algo.RSA, () in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
@@ -579,7 +579,7 @@ struct
     let open Asn in
     let f = function
       | Algo.DSA, params -> params
-      | _, _ -> parse_error "Algorithm OID and parameters doesn't match" in
+      | _, _ -> parse_error "Algorithm OID and parameters don't match" in
     let g params = Algo.DSA, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
@@ -589,7 +589,7 @@ struct
     let open Asn in
     let f = function
       | Algo.EC, params -> params
-      | _, _ -> parse_error "Algorithm OID and parameters doesn't match" in
+      | _, _ -> parse_error "Algorithm OID and parameters don't match" in
     let g params = Algo.EC, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
@@ -599,7 +599,7 @@ struct
     let open Asn in
     let f = function
       | Algo.DH, params -> params
-      | _, _ -> parse_error "Algorithm OID and parameters doesn't match" in
+      | _, _ -> parse_error "Algorithm OID and parameters don't match" in
     let g params = Algo.DH, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
@@ -747,7 +747,7 @@ struct
       (required ~label:"privateKeyAlogrithm" Algorithm_identifier.ec_grammar)
       (required ~label:"privateKey" octet_string)
       (optional ~label:"attributes" @@ implicit 0 null)
-    
+
   let dh_grammar =
     let open Asn in
     let f (version, params, octet_string, attributes) =
