@@ -1,5 +1,8 @@
 ## unreleased
 
+*2016-7-22*
+
+- Add support for encoding/decoding Diffie-Hellman keys
 - Use `ppx_deriving_yojson` 3.0
 
 ## v0.3.0

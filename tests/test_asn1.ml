@@ -273,8 +273,74 @@ let ec_suite =
   ; "PKCS8" >::: pkcs8_suite
   ]
 
+let dh_suite =
+  let open Key_parsers.Asn1.DH in
+  (* These parameters and key pair were generated using openssl dhparam and genpkey *)
+  let expected_params =
+    let p =
+      Z.of_string
+        "0x00FD5E02F538091F7380991F204E931C62633358124FA1C3DE6A9F852B2C621F040F\
+         44B56F6C6605CFBBC4CF4ECD449BB2889CEA53E0FF88F1FE8D9471030EE893"
+    in
+    let g = Z.of_string "2" in
+    Params.{ p; g; l = None }
+  in
+  let expected_public =
+    let y =
+      Z.of_string
+        "0x00DBF090700954EA1B1B05DBC33494D0EBC8E2C5E66AFB24D322877021C76C634A9227\
+         D5E6B77F15673AF5814DAA7106F8F040F89DDC3294362888B934F4D8E95E"
+    in
+    (expected_params, y)
+  in
+  let expected_private =
+    let x =
+      Z.of_string
+        "0x4BE30C58EB827B66F853E57AC44E0D42850C284EF08D8406EFBED228A47F93667CCA\
+         1A84F1496AAFF545212B96D2E66FB8DE4AB20DB7E6747D21E8B1CFE040BE"
+    in
+    (expected_params, x)
+  in
+  let cmp = Z.equal in
+  let printer = Z.to_string in
+  let test_params expected real ctxt =
+    let open Params in
+    assert_equal ~ctxt ~cmp ~printer ~msg:"p" expected.p real.p;
+    assert_equal ~ctxt ~cmp ~printer ~msg:"g" expected.g real.g;
+    assert_equal
+      ~ctxt
+      ~cmp:(Test_util.equal_options ~equal:Z.equal)
+      ~printer:(function Some x -> Z.to_string x | None -> "nothing")
+      ~msg:"l"
+      expected.l
+      real.l
+  in
+  let test ~typ ~decode (expected_params, expected_key) der ctxt =
+    let real = decode der in
+    let msg = match typ with `Public-> "y" | `Private -> "x" in
+    Test_util.assert_ok real @@ fun (real_params, real_key) ->
+    test_params expected_params real_params ctxt;
+    assert_equal ~ctxt ~cmp ~printer ~msg expected_key real_key
+  in
+  let x509_suite =
+    let typ = `Public in
+    let der = Cstruct.of_string @@ [%blob "../tests/keys/dh_public.der"] in
+    [ "Public" >:: test ~typ ~decode:Key_parsers.Asn1.X509.decode_dh expected_public der
+    ]
+  in
+  let pkcs8_suite =
+    let typ = `Private in
+    let der = Cstruct.of_string @@ [%blob "../tests/keys/dh_private.der"] in
+    [ "Private" >:: test ~typ ~decode:Key_parsers.Asn1.PKCS8.decode_dh expected_private der
+    ]
+  in
+  [ "X509" >::: x509_suite
+  ; "PKCS8" >::: pkcs8_suite
+  ]
+
 let suite =
   [ "RSA" >::: rsa_suite
   ; "DSA" >::: dsa_suite
   ; "EC" >::: ec_suite
+  ; "DH" >::: dh_suite
   ]
