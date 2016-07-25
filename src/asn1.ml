@@ -468,7 +468,7 @@ struct
 end
 
 module DH =
-struct 
+struct
   module Params =
   struct
       type t = {
@@ -553,7 +553,9 @@ struct
       let f = function
         | oid when oid = rsa_oid -> RSA
         | oid when oid = dsa_oid -> DSA
-        | oid when oid = ec_oid -> EC
+        | oid when oid = ec_oid
+                || oid = ec_dh
+                || oid = ec_mqv -> EC
         | oid when oid = dh_oid -> DH
         | oid -> Unknown oid in
       let g = function

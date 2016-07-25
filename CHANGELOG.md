@@ -1,7 +1,6 @@
 ## unreleased
 
-*2016-7-22*
-
+- Accept ECDH and ECMQV OIDs for EC keys AlorithmIdentifier
 - Add support for encoding/decoding Diffie-Hellman keys
 - Use `ppx_deriving_yojson` 3.0
 
