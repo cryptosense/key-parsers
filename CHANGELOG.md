@@ -1,4 +1,6 @@
-## unreleased
+## v0.4.0
+
+*2016-07-25*
 
 - Accept ECDH and ECMQV OIDs for EC keys AlorithmIdentifier
 - Add support for encoding/decoding Diffie-Hellman keys
