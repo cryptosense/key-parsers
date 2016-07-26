@@ -1,5 +1,8 @@
 ## unreleased
 
+- Explicitly define ocaml version
+- Widen dependencies version ranges
+
 ## v0.4.0
 
 *2016-07-25*
