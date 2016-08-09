@@ -1,3 +1,18 @@
+let pp_of_to_string to_string fmt x =
+  Format.pp_print_string fmt (to_string x)
+
+module Z = struct
+  include Z
+  let pp = pp_of_to_string to_string
+
+  let of_yojson = function
+    | `String s -> Result.Ok (Z.of_string s)
+    | _ -> Result.Error "Cannot convert this json value to Z.t"
+
+  let to_yojson z =
+    `String (Z.to_string z)
+end
+
 (** Read a big-endian arbitrary length number *)
 let get_z_be cs off len =
   let r = ref Z.zero in
@@ -20,6 +35,7 @@ module RSA = struct
       p: Z.t;
       q: Z.t;
     }
+    [@@deriving ord,yojson]
 
     let decode cs =
       try
@@ -42,6 +58,7 @@ module RSA = struct
       e: Z.t;
       n: Z.t;
     }
+    [@@deriving ord,yojson]
 
     let decode cs =
       try
