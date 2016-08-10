@@ -1,4 +1,6 @@
-## unreleased
+## v0.5.0
+
+*2016-08-10*
 
 - Explicitly define ocaml version
 - Widen dependencies version ranges
