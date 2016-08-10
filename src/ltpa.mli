@@ -24,6 +24,7 @@ module RSA : sig
       p: Z.t;
       q: Z.t;
     }
+    [@@deriving ord,yojson]
 
     val decode : Cstruct.t -> (t, string) Result.result
   end
@@ -41,6 +42,7 @@ module RSA : sig
       e: Z.t;
       n: Z.t;
     }
+    [@@deriving ord,yojson]
 
     val decode : Cstruct.t -> (t, string) Result.result
   end

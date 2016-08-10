@@ -9,6 +9,7 @@ true: debug
 
 <src/*.ml>: for-pack(Key_parsers)
 <src/asn1.*>: package(ppx_deriving.std), package(ppx_deriving_yojson)
+<src/ltpa.*>: package(ppx_deriving.ord), package(ppx_deriving_yojson)
 
 <tests/*>: package(oUnit)
 <tests/*>: package(hex)

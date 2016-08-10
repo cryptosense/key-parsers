@@ -66,6 +66,7 @@ struct
       n: Z.t;
       e: Z.t;
     }
+    [@@deriving ord,yojson]
 
     let grammar =
       let open Asn in
@@ -92,6 +93,7 @@ struct
       d: Z.t;
       t: Z.t;
     }
+    [@@deriving ord,yojson]
 
     let other_prime_grammar =
       let open Asn in
@@ -113,6 +115,7 @@ struct
       qinv: Z.t;
       other_primes: other_prime list;
     }
+    [@@deriving ord,yojson]
 
     let grammar =
       let open Asn in
@@ -158,6 +161,7 @@ struct
       q: Z.t;
       g: Z.t;
     }
+    [@@deriving ord,yojson]
 
     let grammar =
       let open Asn in
@@ -181,6 +185,7 @@ struct
   module Public =
   struct
     type t = Z.t
+    [@@deriving ord,yojson]
 
     let grammar = Asn.integer
 
@@ -197,6 +202,7 @@ struct
   module Private =
   struct
     type t = Z.t
+    [@@deriving ord,yojson]
 
     let grammar = Asn.integer
 
@@ -214,7 +220,7 @@ end
 module EC =
 struct
   type point = Cstruct.t
-    [@@deriving ord,show,yojson]
+  [@@deriving ord,show,yojson]
 
   let point_grammar = Asn.octet_string
 
@@ -245,7 +251,7 @@ struct
       | GN
       | TP of Z.t
       | PP of Z.t * Z.t * Z.t
-      [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson]
 
     let basis_grammar =
       let open Asn in
@@ -269,7 +275,7 @@ struct
       m: Z.t;
       basis: basis;
     }
-      [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson]
 
     let ctwo_params_grammar =
       let open Asn in
@@ -322,7 +328,7 @@ struct
     type t =
       | Prime of Z.t
       | C_two of characteristic_two_params
-      [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -341,7 +347,7 @@ struct
   module Specified_domain =
   struct
     type field_element = Cstruct.t
-      [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson]
 
     let field_element_grammar = Asn.octet_string
 
@@ -350,7 +356,7 @@ struct
       b: field_element;
       seed: Cstruct.t option;
     }
-      [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson]
 
     let curve_grammar =
       let open Asn in
@@ -369,7 +375,7 @@ struct
       order: Z.t;
       cofactor: Z.t option;
     }
-      [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -393,7 +399,7 @@ struct
       | Named of Asn.OID.t
       | Implicit
       | Specified of Specified_domain.t
-      [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -422,7 +428,7 @@ struct
   module Public =
   struct
     type t = point
-      [@@deriving ord,show]
+    [@@deriving ord,show,yojson]
 
     let grammar = point_grammar
 
@@ -442,7 +448,7 @@ struct
       params: Params.t option;
       public_key: Public.t option;
     }
-      [@@deriving ord,show]
+    [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -471,34 +477,36 @@ module DH =
 struct
   module Params =
   struct
-      type t = {
-        p: Z.t;
-        g: Z.t;
-        l: Z.t option; (* privateValueLength *)
-      }
+    type t = {
+      p: Z.t;
+      g: Z.t;
+      l: Z.t option; (* privateValueLength *)
+    }
+    [@@deriving ord,yojson]
 
-      let grammar =
-        let open Asn in
-        let to_struct (p, g, l) = { p; g; l } in
-        let of_struct {p; g; l} = ( p, g, l ) in
-        map to_struct of_struct @@ sequence3
-          (required ~label:"p" integer)
-          (required ~label:"g" integer)
-          (optional ~label:"l" integer)
+    let grammar =
+      let open Asn in
+      let to_struct (p, g, l) = { p; g; l } in
+      let of_struct {p; g; l} = ( p, g, l ) in
+      map to_struct of_struct @@ sequence3
+        (required ~label:"p" integer)
+        (required ~label:"g" integer)
+        (optional ~label:"l" integer)
 
-      let encode = Asn.(encode (codec der grammar))
+    let encode = Asn.(encode (codec der grammar))
 
-      let decode key =
-        let open Asn in
-        try_with_asn @@ fun () ->
-        let t, left = decode_exn (codec ber grammar) key in
-        if Cstruct.len left = 0 then t
-        else parse_error "DH: Params with non empty leftover"
+    let decode key =
+      let open Asn in
+      try_with_asn @@ fun () ->
+      let t, left = decode_exn (codec ber grammar) key in
+      if Cstruct.len left = 0 then t
+      else parse_error "DH: Params with non empty leftover"
   end
 
   module Public =
   struct
     type t = Z.t
+    [@@deriving ord,yojson]
 
     let grammar = Asn.integer
 
@@ -515,6 +523,7 @@ struct
   module Private =
   struct
     type t = Z.t
+    [@@deriving ord,yojson]
 
     let grammar = Asn.integer
 
@@ -619,6 +628,7 @@ struct
     | `EC of EC.Params.t * EC.Public.t
     | `DH of DH.Params.t * DH.Public.t
     ]
+  [@@deriving ord,yojson]
 
   let rsa_grammar =
     let open Asn in
@@ -707,6 +717,7 @@ struct
     | `EC of EC.Params.t * EC.Private.t
     | `DH of DH.Params.t * DH.Private.t
     ]
+  [@@deriving ord,yojson]
 
   let rsa_grammar =
     let open Asn in
