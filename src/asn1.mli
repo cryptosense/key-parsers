@@ -50,6 +50,46 @@ sig
   end
 end
 
+module RSA_CVC :
+sig
+  module Params :
+  sig
+    type t = unit
+    val grammar : t Asn.t
+  end
+
+  module Public :
+  sig
+    type t = {
+      n: Z.t;
+      e: Z.t;
+    }
+    [@@deriving ord,yojson]
+
+    val grammar : t Asn.t
+
+    val encode : t -> Cstruct.t
+    val decode : Cstruct.t -> (t, string) Result.result
+  end
+end
+
+module ECDSA_CVC :
+sig
+  module Public :
+  sig
+    type t =
+      { modulus : Z.t
+      ; coefficient_a : Z.t
+      ; coefficient_b : Z.t
+      ; base_point_g : Z.t
+      ; base_point_r_order : Z.t
+      ; public_point_y : Z.t
+      ; cofactor_f : Z.t
+      }
+      [@@deriving ord,yojson]
+  end
+end
+
 module DSA :
 sig
   module Params :
@@ -236,6 +276,14 @@ sig
   val dsa_grammar : DSA.Params.t Asn.t
   val ec_grammar : EC.Params.t Asn.t
   val dh_grammar : DH.Params.t Asn.t
+end
+
+module CVC :
+sig
+  type t =
+    [ `RSA of RSA_CVC.Public.t | `ECDSA of ECDSA_CVC.Public.t | `UNKNOWN ]
+
+  val decode : Cstruct.t -> t
 end
 
 module X509 :

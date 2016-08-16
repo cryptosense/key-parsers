@@ -152,6 +152,58 @@ struct
   end
 end
 
+module RSA_CVC =
+struct
+  module Params =
+  struct
+    type t = unit
+    let grammar = Asn.null
+  end
+
+  module Public =
+  struct
+    type t = {
+      n: Z.t;
+      e: Z.t;
+    }
+    [@@deriving ord,yojson]
+
+    let grammar =
+      let open Asn in
+      let f (n, e) = { n; e } in
+      let g { n; e } = (n, e) in
+      map f g @@ sequence2
+        (required ~label:"modulus" integer)
+        (required ~label:"publicExponent" integer)
+
+    let encode = Asn.(encode (codec der grammar))
+
+    let decode key =
+      let open Asn in
+      try_with_asn @@ fun () ->
+      let t, left = decode_exn (codec ber grammar) key in
+      if Cstruct.len left = 0 then t
+      else parse_error "PKCS1: RSA public key with non empty leftover"
+  end
+end
+
+module ECDSA_CVC =
+struct
+  module Public =
+  struct
+    type t =
+      { modulus : Z.t
+      ; coefficient_a : Z.t
+      ; coefficient_b : Z.t
+      ; base_point_g : Z.t
+      ; base_point_r_order : Z.t
+      ; public_point_y : Z.t
+      ; cofactor_f : Z.t
+      }
+      [@@deriving ord,yojson]
+  end
+end
+
 module DSA =
 struct
   module Params =
@@ -615,10 +667,250 @@ struct
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
       (required ~label:"parameters" DH.Params.grammar)
+
 end
 
 let map_result f = function Result.Ok x -> Result.Ok (f x) | Result.Error _ as r -> r
 let default_result default = function Result.Error _ -> default () | Result.Ok _ as r -> r
+
+module CVC = struct
+  let rsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.1.4"
+  let ecdsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.2.3"
+
+  type t =
+    [ `RSA of RSA_CVC.Public.t | `ECDSA of ECDSA_CVC.Public.t | `UNKNOWN ]
+
+  type algo_typ =
+    | RSA
+    | ECDSA
+    | Unknown of Asn.OID.t
+
+  type parser_state =
+    | Init
+    | Type
+    | Length
+    | Value of int
+
+  let cvc_object_types =
+    [ 0x7F21, (`CV_CERTIFICATE, true)
+    ; 0x7F4E, (`CERTIFICATE_BODY, true)
+    ; 0x5F29, (`PROFILE_IDENTIFIER, false)
+    ; 0x7F49, (`PUBLIC_KEY, true)
+    ; 0x5F20, (`HOLDER_REFERENCE, false)
+    ; 0x7F4C, (`HOLDER_AUTH_TEMPLATE, true)
+    ; 0x5F25, (`EFFECTIVE_DATE, false)
+    ; 0x5F24, (`EXPIRATION_DATE, false)
+    ; 0x5F37, (`SIGNATURE, false)
+    ; 0x06, (`OID, false)
+    ; 0x42, (`CA_REFERENCE, false)
+    ; 0x67, (`REQ_AUTHENTICATION, true)
+    ; 0x53, (`ROLE_AND_ACCESS_RIGHTS, false)
+    ; 0x81, (`MODULUS, false)
+    ; 0x82, (`EXPONENT, false)
+    ; 0x82, (`COEFFICIENT_A, false)
+    ; 0x83, (`COEFFICIENT_B, false)
+    ; 0x84, (`BASE_POINT_G, false)
+    ; 0x85, (`BASE_POINT_R_ORDER, false)
+    ; 0x86, (`PUBLIC_POINT_Y, false)
+    ; 0x87, (`COFACTOR_F, false)
+    ]
+
+  let find_cvc_object_type tag =
+    let code =
+      String.get tag 0
+      |> Char.code
+    in
+    try code, List.assoc code cvc_object_types
+    with Not_found ->
+      let code =
+        let msb = code * 0x100 in
+        let lsb =
+          String.get tag 1
+          |> Char.code
+        in
+        msb + lsb
+      in
+      code, List.assoc code cvc_object_types
+
+  let atoi_bigendian s =
+    let rec aux acc i =
+      if i >= String.length s then acc
+      else
+        let acc = Char.code (String.get s i) + (acc * 0x100) in
+        aux acc (i + 1)
+    in aux 0 0
+
+  (* because this function allocations a new buffer, it is not very memory efficient.
+   * Should reverse the string in-place, or find a better way to do this. *)
+  let atoz_bigendian s =
+    let bytes = Bytes.of_string s in
+    let s = Bytes.make (Bytes.length bytes) '\000' in
+    let () =
+      for i = 0 to Bytes.length bytes - 1 do
+        let ilast = Bytes.length bytes - (1 + i) in
+        Bytes.set s i (Bytes.get bytes ilast);
+      done;
+    in
+    let s = Bytes.to_string s in
+    Z.of_bits s
+
+  let grammar =
+    let open Asn in
+    let f = function
+      | oid when oid = rsa_oid -> RSA
+      | oid when oid = ecdsa_oid -> ECDSA
+      | oid -> Unknown oid in
+    let g = function
+      | RSA -> rsa_oid
+      | ECDSA -> ecdsa_oid
+      | Unknown oid -> oid in
+    map f g oid
+
+  let decode_oid str =
+    let t, left = Asn.(decode_exn (codec ber grammar) str) in
+    t
+
+  let decode bytes =
+    let open Result in
+    let buffer = Bytes.make 4096 '\000' in
+    (* it's been a while since I took a class which covered FSM's, so this is not ideal.
+     * I should probably rewrite this with an accumulator parameter, so that it can take
+     * advantage of tailcall optimization and eliminate that part of the memory waste.
+     *)
+    let rec tokenize bytes i state = function
+      | Init ->
+          if String.length bytes <= i then raise (Failure "Trying to tokenize an empty string")
+          else tokenize bytes i None Type
+      | Type ->
+          String.blit bytes i buffer 0 2;
+          let cvc_type = find_cvc_object_type (Bytes.to_string buffer) in
+          begin match cvc_type with
+            | tag, _ when tag <= 0xff ->
+                let i = i + 1 in
+                (`Type cvc_type) :: tokenize bytes i (Some cvc_type) Length
+            | tag, _ when tag > 0xff ->
+                let i = i + 2 in
+                (`Type cvc_type) :: tokenize bytes i (Some cvc_type) Length
+          end
+      | Length ->
+          let code = Char.code (String.get bytes i) in
+          if code < 0x80
+          then begin
+            let i = i + 1 in
+            (`Length code) :: tokenize bytes i state (Value code)
+          end
+          else
+            begin match code with
+              | 0x81 ->
+                  let code = Char.code (String.get bytes (i + 1)) in
+                  let i = i + 2 in
+                  (`Length code) :: tokenize bytes i state (Value code)
+              | 0x82 ->
+                  let code =
+                    let msb = Char.code (String.get bytes (i + 1)) * 0x100 in
+                    let lsb = Char.code (String.get bytes (i + 2)) in
+                    msb + lsb
+                  in
+                  let i = i + 3 in
+                  (`Length code) :: tokenize bytes i state (Value code)
+              | _ ->
+                  raise (Failure "Invalid LENGTH field in TLV encoded CVC data")
+            end
+      | Value length ->
+          let is_rec =
+            match state with
+              | None -> false
+              | Some (_, (_, x)) -> x
+          in
+          let bytes' =
+            String.sub bytes i length
+          in
+          let v =
+            if is_rec
+            then
+              `Value (tokenize bytes' 0 None Init)
+            else `Bytes bytes'
+          in
+          v :: (if length + i >= String.length bytes then [] else tokenize bytes (i + length) None Init)
+    in
+    let tokens = tokenize (Cstruct.to_string bytes) 0 None Init in
+    let rec parse = function
+      | `Type (_, (`PUBLIC_KEY, _)) :: `Length _ :: `Value ls :: _ ->
+          parse ls
+      | `Type (_, (`OID, _)) :: `Length _ :: `Bytes bytes :: tl ->
+          let bytes = Printf.sprintf "\006%c%s" (Char.chr (String.length bytes)) bytes in
+          `Oid (decode_oid (Cstruct.of_string bytes)) :: parse tl
+      | `Type (_, (`MODULUS, _)) :: `Length _ :: `Bytes bytes :: tl ->
+          `Modulus (atoz_bigendian bytes) :: parse tl
+      | `Type (0x82, ((*`EXPONENT*) _ , _)) :: `Length _ :: `Bytes bytes :: tl ->
+          `Exponent (atoz_bigendian bytes) :: parse tl
+      | `Type (_, (`COEFFICIENT_B, _)) :: `Length _ :: `Bytes bytes :: tl ->
+          `Coefficient_b (atoz_bigendian bytes) :: parse tl
+      | `Type (_, (`BASE_POINT_G, _)) :: `Length _ :: `Bytes bytes :: tl ->
+          `Base_point_g (atoz_bigendian bytes) :: parse tl
+      | `Type (_, (`BASE_POINT_R_ORDER, _)) :: `Length _ :: `Bytes bytes :: tl ->
+          `Base_point_r_order (atoz_bigendian bytes) :: parse tl
+      | `Type (_, (`PUBLIC_POINT_Y, _)) :: `Length _ :: `Bytes bytes :: tl ->
+          `Public_point_y (atoz_bigendian bytes) :: parse tl
+      | `Type (_, (`COFACTOR_F, _)) :: `Length _ :: `Bytes bytes :: tl ->
+          `Cofactor_f (atoz_bigendian bytes) :: parse tl
+      | [] ->
+          []
+      | _ ->
+          raise (Failure "unaccounted for case")
+    in
+    let symbols = parse tokens in
+    let oid = List.find (function `Oid x -> true | _ -> false) symbols in
+    match oid with
+      | `Oid RSA ->
+          `RSA
+            RSA_CVC.Public.(
+              let n =
+                List.fold_left (fun acc x -> (match x with `Modulus x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              let e =
+                List.fold_left (fun acc x -> (match x with `Exponent x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              {n; e})
+      | `Oid ECDSA ->
+          `ECDSA
+            ECDSA_CVC.Public.(
+              let modulus =
+                List.fold_left (fun acc x -> (match x with `Modulus x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              let coefficient_a =
+                List.fold_left (fun acc x -> (match x with `Coefficient_a x | `Exponent x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              let coefficient_b =
+                List.fold_left (fun acc x -> (match x with `Coefficient_b x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              let base_point_g =
+                List.fold_left (fun acc x -> (match x with `Base_point_g x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              let base_point_r_order =
+                List.fold_left (fun acc x -> (match x with `Base_point_r_order x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              let public_point_y =
+                List.fold_left (fun acc x -> (match x with `Public_point_y x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              let cofactor_f =
+                List.fold_left (fun acc x -> (match x with `Cofactor_f x -> [x] | _ -> []) @ acc) [] symbols
+                |> List.hd
+              in
+              { modulus; coefficient_a; coefficient_b; base_point_g; base_point_r_order; public_point_y; cofactor_f
+              }
+            )
+      | `Oid (Unknown _) -> `UNKNOWN
+
+end
 
 module X509 =
 struct
