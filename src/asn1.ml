@@ -717,7 +717,7 @@ module CVC = struct
 
   let find_cvc_object_type tag =
     let code =
-      String.get tag 0
+      Cstruct.get_char tag 0
       |> Char.code
     in
     try code, List.assoc code cvc_object_types
@@ -725,34 +725,20 @@ module CVC = struct
       let code =
         let msb = code * 0x100 in
         let lsb =
-          String.get tag 1
+          Cstruct.get_char tag 1
           |> Char.code
         in
         msb + lsb
       in
       code, List.assoc code cvc_object_types
 
-  let atoi_bigendian s =
-    let rec aux acc i =
-      if i >= String.length s then acc
-      else
-        let acc = Char.code (String.get s i) + (acc * 0x100) in
-        aux acc (i + 1)
-    in aux 0 0
-
-  (* because this function allocations a new buffer, it is not very memory efficient.
-   * Should reverse the string in-place, or find a better way to do this. *)
+  (* utility function to parse a big-endian blob as a Z.t *)
   let atoz_bigendian s =
-    let bytes = Bytes.of_string s in
-    let s = Bytes.make (Bytes.length bytes) '\000' in
-    let () =
-      for i = 0 to Bytes.length bytes - 1 do
-        let ilast = Bytes.length bytes - (1 + i) in
-        Bytes.set s i (Bytes.get bytes ilast);
-      done;
+    let reverse s =
+      let n = String.length s in
+      String.init n (fun i -> s.[n-1-i])
     in
-    let s = Bytes.to_string s in
-    Z.of_bits s
+    Z.of_bits @@ reverse @@ Cstruct.to_string s
 
   let grammar =
     let open Asn in
@@ -771,48 +757,48 @@ module CVC = struct
     t
 
   let decode bytes =
-    let open Result in
-    let buffer = Bytes.make 4096 '\000' in
-    (* it's been a while since I took a class which covered FSM's, so this is not ideal.
-     * I should probably rewrite this with an accumulator parameter, so that it can take
-     * advantage of tailcall optimization and eliminate that part of the memory waste.
+    let buffer = Cstruct.create 4_096 in
+    (* FSM to produce `Type ..., `Length ..., `Value ... tokens from a blob.
+     * This tries to exploit tailcall recursion as much as possible in order to
+     * avoid a stack explosion
      *)
-    let rec tokenize bytes i state = function
+    let rec tokenize ~acc bytes i lim state = function
       | Init ->
-          if String.length bytes <= i then raise (Failure "Trying to tokenize an empty string")
-          else tokenize bytes i None Type
+          if i >= lim then List.rev acc
+          else tokenize ~acc bytes i lim None Type
       | Type ->
-          String.blit bytes i buffer 0 2;
-          let cvc_type = find_cvc_object_type (Bytes.to_string buffer) in
+          Cstruct.blit bytes i buffer 0 2;
+          let cvc_type = find_cvc_object_type buffer in
+          let acc = `Type cvc_type :: acc in
           begin match cvc_type with
             | tag, _ when tag <= 0xff ->
                 let i = i + 1 in
-                (`Type cvc_type) :: tokenize bytes i (Some cvc_type) Length
-            | tag, _ when tag > 0xff ->
+                (tokenize[@tailcall]) ~acc bytes i lim (Some cvc_type) Length
+            | tag, _ ->
                 let i = i + 2 in
-                (`Type cvc_type) :: tokenize bytes i (Some cvc_type) Length
+                (tokenize[@tailcall]) ~acc bytes i lim (Some cvc_type) Length
           end
       | Length ->
-          let code = Char.code (String.get bytes i) in
+          let code = Char.code (Cstruct.get_char bytes i) in
           if code < 0x80
           then begin
             let i = i + 1 in
-            (`Length code) :: tokenize bytes i state (Value code)
+            (tokenize[@tailcall]) ~acc:((`Length code) :: acc) bytes i lim state (Value code)
           end
           else
             begin match code with
               | 0x81 ->
-                  let code = Char.code (String.get bytes (i + 1)) in
+                  let code = Char.code (Cstruct.get_char bytes (i + 1)) in
                   let i = i + 2 in
-                  (`Length code) :: tokenize bytes i state (Value code)
+                  (tokenize[@tailcall]) ~acc:((`Length code) :: acc) bytes i lim state (Value code)
               | 0x82 ->
                   let code =
-                    let msb = Char.code (String.get bytes (i + 1)) * 0x100 in
-                    let lsb = Char.code (String.get bytes (i + 2)) in
+                    let msb = Char.code (Cstruct.get_char bytes (i + 1)) * 0x100 in
+                    let lsb = Char.code (Cstruct.get_char bytes (i + 2)) in
                     msb + lsb
                   in
                   let i = i + 3 in
-                  (`Length code) :: tokenize bytes i state (Value code)
+                  (tokenize[@tailcall]) ~acc:((`Length code) :: acc) bytes i lim state (Value code)
               | _ ->
                   raise (Failure "Invalid LENGTH field in TLV encoded CVC data")
             end
@@ -822,24 +808,31 @@ module CVC = struct
               | None -> false
               | Some (_, (_, x)) -> x
           in
-          let bytes' =
-            String.sub bytes i length
-          in
-          let v =
+          let acc =
             if is_rec
             then
-              `Value (tokenize bytes' 0 None Init)
-            else `Bytes bytes'
+              `Value (tokenize ~acc:[] bytes i (i + length) None Init) :: acc
+            else
+              let bytes' =
+                Cstruct.sub bytes i length
+              in
+              `Bytes bytes' :: acc
           in
-          v :: (if length + i >= String.length bytes then [] else tokenize bytes (i + length) None Init)
+          (if length + i >= Cstruct.len bytes then List.rev acc else (tokenize[@tailcall]) ~acc bytes (i + length) lim None Init)
     in
-    let tokens = tokenize (Cstruct.to_string bytes) 0 None Init in
+    let tokens = tokenize ~acc:[] bytes 0 (Cstruct.len bytes) None Init in
     let rec parse = function
       | `Type (_, (`PUBLIC_KEY, _)) :: `Length _ :: `Value ls :: _ ->
           parse ls
       | `Type (_, (`OID, _)) :: `Length _ :: `Bytes bytes :: tl ->
-          let bytes = Printf.sprintf "\006%c%s" (Char.chr (String.length bytes)) bytes in
-          `Oid (decode_oid (Cstruct.of_string bytes)) :: parse tl
+          let bytes =
+            let prefix =
+              Printf.sprintf "\006%c" (Char.chr (Cstruct.len bytes))
+              |> Cstruct.of_string
+            in
+            Cstruct.append prefix bytes
+          in
+          `Oid (decode_oid bytes) :: parse tl
       | `Type (_, (`MODULUS, _)) :: `Length _ :: `Bytes bytes :: tl ->
           `Modulus (atoz_bigendian bytes) :: parse tl
       | `Type (0x82, ((*`EXPONENT*) _ , _)) :: `Length _ :: `Bytes bytes :: tl ->
@@ -856,11 +849,27 @@ module CVC = struct
           `Cofactor_f (atoz_bigendian bytes) :: parse tl
       | [] ->
           []
+      | `Type (t, _) :: tl ->
+          let () = Printf.printf "`Type (0x%x, _) :: tl found\n" t in
+          parse tl
+      | `Length _ :: tl ->
+          let () = Printf.printf "`Length _ :: tl found\n" in
+          parse tl
+      | `Bytes _ :: tl ->
+          let () = Printf.printf "`Bytes _ :: tl found\n" in
+          parse tl
+      | `Value _ :: tl ->
+          let () = Printf.printf "`Value _ :: tl found\n" in
+          parse tl
       | _ ->
           raise (Failure "unaccounted for case")
     in
     let symbols = parse tokens in
-    let oid = List.find (function `Oid x -> true | _ -> false) symbols in
+    let oid =
+      try
+        List.find (function `Oid x -> true | _ -> false) symbols
+      with Not_found -> `Oid (Unknown (Asn.OID.of_string "0.0.0.0.0.0.0.0.0.0"))
+    in
     match oid with
       | `Oid RSA ->
           `RSA
@@ -909,6 +918,8 @@ module CVC = struct
               }
             )
       | `Oid (Unknown _) -> `UNKNOWN
+      | _ ->
+          raise (Failure "This should be impossible, if you're seeing this message please report.")
 
 end
 
