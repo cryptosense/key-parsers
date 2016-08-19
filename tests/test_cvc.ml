@@ -15,7 +15,7 @@ let rsa_suite =
   let test_pub ~decode (expected : Public.t) cvc ctxt =
     let real = decode cvc in
     let open Public in
-    match real with
+    Test_util.assert_ok real @@ function
       | `RSA real ->
           assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
           assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
@@ -57,7 +57,7 @@ let ecdsa_suite =
   let test_pub ~decode (expected : Public.t) cvc ctxt =
     let real = decode cvc in
     let open Public in
-    match real with
+    Test_util.assert_ok real @@ function
       | `ECDSA real ->
           assert_equal ~ctxt ~cmp ~printer ~msg:"modulus" expected.modulus real.modulus;
           assert_equal ~ctxt ~cmp ~printer ~msg:"coefficient_a" expected.coefficient_a real.coefficient_a;

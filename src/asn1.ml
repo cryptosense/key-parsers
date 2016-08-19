@@ -870,56 +870,57 @@ module CVC = struct
         List.find (function `Oid x -> true | _ -> false) symbols
       with Not_found -> `Oid (Unknown (Asn.OID.of_string "0.0.0.0.0.0.0.0.0.0"))
     in
+    let open Result in
     match oid with
       | `Oid RSA ->
-          `RSA
-            RSA_CVC.Public.(
-              let n =
-                List.fold_left (fun acc x -> (match x with `Modulus x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              let e =
-                List.fold_left (fun acc x -> (match x with `Exponent x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              {n; e})
+          Ok (
+            `RSA
+              RSA_CVC.Public.(
+                let n =
+                  List.fold_left (fun acc x -> (match x with `Modulus x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                let e =
+                  List.fold_left (fun acc x -> (match x with `Exponent x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                {n; e}))
       | `Oid ECDSA ->
-          `ECDSA
-            ECDSA_CVC.Public.(
-              let modulus =
-                List.fold_left (fun acc x -> (match x with `Modulus x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              let coefficient_a =
-                List.fold_left (fun acc x -> (match x with `Coefficient_a x | `Exponent x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              let coefficient_b =
-                List.fold_left (fun acc x -> (match x with `Coefficient_b x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              let base_point_g =
-                List.fold_left (fun acc x -> (match x with `Base_point_g x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              let base_point_r_order =
-                List.fold_left (fun acc x -> (match x with `Base_point_r_order x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              let public_point_y =
-                List.fold_left (fun acc x -> (match x with `Public_point_y x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              let cofactor_f =
-                List.fold_left (fun acc x -> (match x with `Cofactor_f x -> [x] | _ -> []) @ acc) [] symbols
-                |> List.hd
-              in
-              { modulus; coefficient_a; coefficient_b; base_point_g; base_point_r_order; public_point_y; cofactor_f
-              }
-            )
-      | `Oid (Unknown _) -> `UNKNOWN
+          Ok
+            (`ECDSA
+              ECDSA_CVC.Public.(
+                let modulus =
+                  List.fold_left (fun acc x -> (match x with `Modulus x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                let coefficient_a =
+                  List.fold_left (fun acc x -> (match x with `Coefficient_a x | `Exponent x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                let coefficient_b =
+                  List.fold_left (fun acc x -> (match x with `Coefficient_b x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                let base_point_g =
+                  List.fold_left (fun acc x -> (match x with `Base_point_g x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                let base_point_r_order =
+                  List.fold_left (fun acc x -> (match x with `Base_point_r_order x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                let public_point_y =
+                  List.fold_left (fun acc x -> (match x with `Public_point_y x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                let cofactor_f =
+                  List.fold_left (fun acc x -> (match x with `Cofactor_f x -> [x] | _ -> []) @ acc) [] symbols
+                  |> List.hd
+                in
+                { modulus; coefficient_a; coefficient_b; base_point_g; base_point_r_order; public_point_y; cofactor_f }))
+      | `Oid (Unknown oid) -> Error (Printf.sprintf "unknown OID \"%s\"." (Asn.OID.to_string oid))
       | _ ->
-          raise (Failure "This should be impossible, if you're seeing this message please report.")
+          Error "This should be impossible, if you're seeing this message please report."
 
 end
 

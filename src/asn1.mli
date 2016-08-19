@@ -283,7 +283,7 @@ sig
   type t =
     [ `RSA of RSA_CVC.Public.t | `ECDSA of ECDSA_CVC.Public.t | `UNKNOWN ]
 
-  val decode : Cstruct.t -> t
+  val decode : Cstruct.t -> (t, string) Result.result
 end
 
 module X509 :
