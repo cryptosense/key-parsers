@@ -4,6 +4,7 @@ install: wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/ma
 script: bash -ex .travis-opam.sh
 env:
     - OCAML_VERSION=4.02 PACKAGE=key-parsers
-    - OCAML_VERSION=latest PACKAGE=key-parsers
+    - OCAML_VERSION=4.03 PACKAGE=key-parsers
+    - OCAML_VERSION=4.04 PACKAGE=key-parsers
 os:
     - linux
