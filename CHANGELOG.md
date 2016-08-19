@@ -3,6 +3,7 @@
 - Explicitly define ocaml version
 - Widen dependencies version ranges
 - add `ppx_deriving` annotations for `ord` and `yojson` to most of the exposed types in `Asn1` and `Ltpa`
+- add support for parsing CVC keys
 
 ## v0.4.0
 
