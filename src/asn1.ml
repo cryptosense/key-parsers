@@ -870,13 +870,13 @@ module CVC = struct
         let x = List.find (function `Oid x -> true | _ -> false) symbols in
         match x with
           | `Oid x ->
-              `Oid (Some x)
-          | _ -> `Oid None
-      with Not_found -> `Oid None
+              Some x
+          | _ -> None
+      with Not_found -> None
     in
     let open Result in
     match oid with
-      | `Oid (Some RSA) ->
+      | Some RSA ->
           RSA_CVC.Public.(
             match symbols with
               | [ `Oid _
@@ -886,7 +886,7 @@ module CVC = struct
                   Ok (`RSA {n; e})
               | _ ->
                   Error "Parse error: some elements are missing or are not correctly sorted")
-      | `Oid (Some ECDSA) ->
+      | Some ECDSA ->
           ECDSA_CVC.Public.(
             match symbols with
               | [ `Oid _
@@ -910,9 +910,9 @@ module CVC = struct
                       })
               | _ ->
                   Error "Parse error: some elements are missing or are not correctly sorted")
-      | `Oid (Some (Unknown oid)) ->
+      | Some (Unknown oid) ->
           Error (Printf.sprintf "unknown OID \"%s\"." (Asn.OID.to_string oid))
-      | `Oid None ->
+      | None ->
           Error "invalid CVC key: OID not found"
 
 end
