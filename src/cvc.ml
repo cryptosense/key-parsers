@@ -229,16 +229,12 @@ let decode bytes =
     | [] ->
         []
     | `Type (t, _) :: tl ->
-        let () = Printf.printf "`Type (0x%x, _) :: tl found\n" t in
         parse tl
     | `Length _ :: tl ->
-        let () = Printf.printf "`Length _ :: tl found\n" in
         parse tl
     | `Bytes _ :: tl ->
-        let () = Printf.printf "`Bytes _ :: tl found\n" in
         parse tl
     | `Value _ :: tl ->
-        let () = Printf.printf "`Value _ :: tl found\n" in
         parse tl
     | _ ->
         raise (Failure "unaccounted for case")
