@@ -80,19 +80,8 @@ type parser_state =
   | Value of int
 
 let cvc_object_types =
-  [ 0x7F21, (`CV_CERTIFICATE, true)
-  ; 0x7F4E, (`CERTIFICATE_BODY, true)
-  ; 0x5F29, (`PROFILE_IDENTIFIER, false)
-  ; 0x7F49, (`PUBLIC_KEY, true)
-  ; 0x5F20, (`HOLDER_REFERENCE, false)
-  ; 0x7F4C, (`HOLDER_AUTH_TEMPLATE, true)
-  ; 0x5F25, (`EFFECTIVE_DATE, false)
-  ; 0x5F24, (`EXPIRATION_DATE, false)
-  ; 0x5F37, (`SIGNATURE, false)
+  [ 0x7F49, (`PUBLIC_KEY, true)
   ; 0x06, (`OID, false)
-  ; 0x42, (`CA_REFERENCE, false)
-  ; 0x67, (`REQ_AUTHENTICATION, true)
-  ; 0x53, (`ROLE_AND_ACCESS_RIGHTS, false)
   ; 0x81, (`MODULUS, false)
   ; 0x82, (`EXPONENT, false)
   ; 0x82, (`COEFFICIENT_A, false)
