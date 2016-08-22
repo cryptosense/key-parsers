@@ -104,18 +104,12 @@ let cvc_object_types =
   ]
 
 let find_cvc_object_type tag =
-  let code =
-    Cstruct.get_char tag 0
-    |> Char.code
-  in
+  let code = Cstruct.get_uint8 tag 0 in
   try code, List.assoc code cvc_object_types
   with Not_found ->
     let code =
       let msb = code * 0x100 in
-      let lsb =
-        Cstruct.get_char tag 1
-        |> Char.code
-      in
+      let lsb = Cstruct.get_uint8 tag 1 in
       msb + lsb
     in
     code, List.assoc code cvc_object_types
@@ -142,7 +136,8 @@ let grammar =
 
 let decode_oid str =
   let t, left = Asn.(decode_exn (codec ber grammar) str) in
-  t
+  if Cstruct.len left = 0 then t
+  else Asn.parse_error "CVC: OID with leftover"
 
 let decode bytes =
   let buffer = Cstruct.create 4_096 in
@@ -167,7 +162,7 @@ let decode bytes =
               (tokenize[@tailcall]) ~acc bytes i lim (Some cvc_type) Length
         end
     | Length ->
-        let code = Char.code (Cstruct.get_char bytes i) in
+        let code = Cstruct.get_uint8 bytes i in
         if code < 0x80
         then begin
           let i = i + 1 in
@@ -176,15 +171,11 @@ let decode bytes =
         else
           begin match code with
             | 0x81 ->
-                let code = Char.code (Cstruct.get_char bytes (i + 1)) in
+                let code = Cstruct.get_uint8 bytes (i + 1) in
                 let i = i + 2 in
                 (tokenize[@tailcall]) ~acc:((`Length code) :: acc) bytes i lim state (Value code)
             | 0x82 ->
-                let code =
-                  let msb = Char.code (Cstruct.get_char bytes (i + 1)) * 0x100 in
-                  let lsb = Char.code (Cstruct.get_char bytes (i + 2)) in
-                  msb + lsb
-                in
+                let code = Cstruct.BE.get_uint16 bytes (i + 1) in
                 let i = i + 3 in
                 (tokenize[@tailcall]) ~acc:((`Length code) :: acc) bytes i lim state (Value code)
             | _ ->
