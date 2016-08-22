@@ -877,52 +877,41 @@ module CVC = struct
     let open Result in
     match oid with
       | `Oid (Some RSA) ->
-          Ok (
-            `RSA
-              RSA_CVC.Public.(
-                let n =
-                  List.fold_left (fun acc x -> (match x with `Modulus x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                let e =
-                  List.fold_left (fun acc x -> (match x with `Exponent x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                {n; e}))
+          RSA_CVC.Public.(
+            match symbols with
+              | [ `Oid _
+                ; `Modulus n
+                ; `Exponent e
+                ] ->
+                  Ok (`RSA {n; e})
+              | _ ->
+                  Error "Parse error: some elements are missing or are not correctly sorted")
       | `Oid (Some ECDSA) ->
-          Ok
-            (`ECDSA
-              ECDSA_CVC.Public.(
-                let modulus =
-                  List.fold_left (fun acc x -> (match x with `Modulus x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                let coefficient_a =
-                  List.fold_left (fun acc x -> (match x with `Coefficient_a x | `Exponent x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                let coefficient_b =
-                  List.fold_left (fun acc x -> (match x with `Coefficient_b x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                let base_point_g =
-                  List.fold_left (fun acc x -> (match x with `Base_point_g x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                let base_point_r_order =
-                  List.fold_left (fun acc x -> (match x with `Base_point_r_order x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                let public_point_y =
-                  List.fold_left (fun acc x -> (match x with `Public_point_y x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                let cofactor_f =
-                  List.fold_left (fun acc x -> (match x with `Cofactor_f x -> [x] | _ -> []) @ acc) [] symbols
-                  |> List.hd
-                in
-                { modulus; coefficient_a; coefficient_b; base_point_g; base_point_r_order; public_point_y; cofactor_f }))
-      | `Oid (Some (Unknown oid)) -> Error (Printf.sprintf "unknown OID \"%s\"." (Asn.OID.to_string oid))
+          ECDSA_CVC.Public.(
+            match symbols with
+              | [ `Oid _
+                ; `Modulus modulus
+                ; `Exponent (* `Coefficient_a *) coefficient_a
+                ; `Coefficient_b coefficient_b
+                ; `Base_point_g base_point_g
+                ; `Base_point_r_order base_point_r_order
+                ; `Public_point_y public_point_y
+                ; `Cofactor_f cofactor_f
+                ] ->
+                  Ok (
+                    `ECDSA
+                      { modulus
+                      ; coefficient_a
+                      ; coefficient_b
+                      ; base_point_g
+                      ; base_point_r_order
+                      ; public_point_y
+                      ; cofactor_f
+                      })
+              | _ ->
+                  Error "Parse error: some elements are missing or are not correctly sorted")
+      | `Oid (Some (Unknown oid)) ->
+          Error (Printf.sprintf "unknown OID \"%s\"." (Asn.OID.to_string oid))
       | `Oid None ->
           Error "invalid CVC key: OID not found"
 
