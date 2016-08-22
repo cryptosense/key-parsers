@@ -867,12 +867,16 @@ module CVC = struct
     let symbols = parse tokens in
     let oid =
       try
-        List.find (function `Oid x -> true | _ -> false) symbols
-      with Not_found -> `Oid (Unknown (Asn.OID.of_string "0.0.0.0.0.0.0.0.0.0"))
+        let x = List.find (function `Oid x -> true | _ -> false) symbols in
+        match x with
+          | `Oid x ->
+              `Oid (Some x)
+          | _ -> `Oid None
+      with Not_found -> `Oid None
     in
     let open Result in
     match oid with
-      | `Oid RSA ->
+      | `Oid (Some RSA) ->
           Ok (
             `RSA
               RSA_CVC.Public.(
@@ -885,7 +889,7 @@ module CVC = struct
                   |> List.hd
                 in
                 {n; e}))
-      | `Oid ECDSA ->
+      | `Oid (Some ECDSA) ->
           Ok
             (`ECDSA
               ECDSA_CVC.Public.(
@@ -918,9 +922,9 @@ module CVC = struct
                   |> List.hd
                 in
                 { modulus; coefficient_a; coefficient_b; base_point_g; base_point_r_order; public_point_y; cofactor_f }))
-      | `Oid (Unknown oid) -> Error (Printf.sprintf "unknown OID \"%s\"." (Asn.OID.to_string oid))
-      | _ ->
-          Error "This should be impossible, if you're seeing this message please report."
+      | `Oid (Some (Unknown oid)) -> Error (Printf.sprintf "unknown OID \"%s\"." (Asn.OID.to_string oid))
+      | `Oid None ->
+          Error "invalid CVC key: OID not found"
 
 end
 
