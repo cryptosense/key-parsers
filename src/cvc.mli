@@ -6,7 +6,7 @@ sig
       { n: Z.t
       ; e: Z.t
       }
-    [@@deriving ord,yojson]
+    [@@deriving ord,yojson,eq,show]
   end
 end
 
@@ -23,7 +23,7 @@ sig
       ; public_point_y : Z.t
       ; cofactor_f : Z.t
       }
-    [@@deriving ord,yojson]
+    [@@deriving ord,yojson,eq,show]
   end
 end
 

@@ -37,7 +37,8 @@ let rsa_suite =
 
 let ecdsa_suite =
   let open Key_parsers in
-  let open Cvc.ECDSA in
+  let open Cvc in
+  let open ECDSA in
   let expected_public =
     (* parameters from secp256r1, public_point_y is an ascending byte sequence *)
     let modulus =
@@ -77,20 +78,12 @@ let ecdsa_suite =
     ; cofactor_f
     }
   in
-  let cmp = Z.equal in
-  let printer = Z.to_string in
   let test_pub ~decode (expected : Public.t) cvc ctxt =
     let real = decode cvc in
-    let open Public in
     Test_util.assert_ok real @@ function
       | `ECDSA real ->
-          assert_equal ~ctxt ~cmp ~printer ~msg:"modulus" expected.modulus real.modulus;
-          assert_equal ~ctxt ~cmp ~printer ~msg:"coefficient_a" expected.coefficient_a real.coefficient_a;
-          assert_equal ~ctxt ~cmp ~printer ~msg:"coefficient_b" expected.coefficient_b real.coefficient_b;
-          assert_equal ~ctxt ~cmp ~printer ~msg:"base_point_g" expected.base_point_g real.base_point_g;
-          assert_equal ~ctxt ~cmp ~printer ~msg:"base_point_r_order" expected.base_point_r_order real.base_point_r_order;
-          assert_equal ~ctxt ~cmp ~printer ~msg:"public_point_y" expected.public_point_y real.public_point_y;
-          assert_equal ~ctxt ~cmp ~printer ~msg:"cofactor_f" expected.cofactor_f real.cofactor_f
+          let open Public in
+          assert_equal ~ctxt ~printer:(show) ~cmp:(equal) expected real
       | `RSA _
       | `UNKNOWN ->
           assert false
