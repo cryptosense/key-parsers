@@ -2,16 +2,16 @@ open OUnit2
 
 let rsa_suite =
   let open Key_parsers in
-  let open Asn1.RSA_CVC in
+  let open Cvc.RSA in
   let expected_public =
     let n =
       Z.of_string
-        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
-        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
-        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
-        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122\
+         232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445\
+         464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768\
+         696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80"
     in
-    let e = Z.of_string "0x010001" in
+    let e = Z.of_string "0x010203" in
     Public.{n; e}
   in
   let cmp = Z.equal in
@@ -25,11 +25,11 @@ let rsa_suite =
           assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
       | `ECDSA _
       | `UNKNOWN ->
-          assert_failure ""
+          assert false
   in
   let cvc_suite =
     let cvc = Cstruct.of_string @@ [%blob "../tests/keys/rsa_cvc_dummy.key"] in
-    [ "Public" >:: test_pub ~decode:Asn1.CVC.decode expected_public cvc
+    [ "Public" >:: test_pub ~decode:Cvc.decode expected_public cvc
     ]
   in
   [ "CVC" >::: cvc_suite
@@ -37,33 +37,34 @@ let rsa_suite =
 
 let ecdsa_suite =
   let open Key_parsers in
-  let open Asn1.ECDSA_CVC in
+  let open Cvc.ECDSA in
   let expected_public =
+    (* parameters from secp256r1, public_point_y is an ascending byte sequence *)
     let modulus =
       Z.of_string
-        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        "0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc"
     in
     let coefficient_a =
       Z.of_string
-        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        "0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc"
     in
     let coefficient_b =
       Z.of_string
-        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        "0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b"
     in
     let base_point_g =
       Z.of_string
-        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
-        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        "0x046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964f\
+         e342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
     in
     let base_point_r_order =
       Z.of_string
-        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551"
     in
     let public_point_y =
       Z.of_string
-        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\
-        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+        "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122\
+         232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4041"
     in
     let cofactor_f = Z.of_string "1" in
     let open Public in
@@ -92,11 +93,11 @@ let ecdsa_suite =
           assert_equal ~ctxt ~cmp ~printer ~msg:"cofactor_f" expected.cofactor_f real.cofactor_f
       | `RSA _
       | `UNKNOWN ->
-          assert_failure "Wrong kind of key."
+          assert false
   in
   let cvc_suite =
     let cvc = Cstruct.of_string @@ [%blob "../tests/keys/ecdsa_cvc_dummy.key"] in
-    [ "Public" >:: test_pub ~decode:Asn1.CVC.decode expected_public cvc
+    [ "Public" >:: test_pub ~decode:Cvc.decode expected_public cvc
     ]
   in
   [ "CVC" >::: cvc_suite
