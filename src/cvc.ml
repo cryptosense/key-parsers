@@ -290,6 +290,7 @@ struct
     [@@deriving ord,yojson,eq,show]
 
     let decode bytes =
+      let open Result in
       match decode bytes with
         | Ok (`RSA (n, e)) ->
             Ok {n; e}
@@ -316,6 +317,7 @@ struct
       [@@deriving ord,yojson,eq,show]
 
     let decode bytes =
+      let open Result in
       match decode bytes with
         | Ok(
             `ECDSA(
