@@ -217,16 +217,11 @@ let decode bytes =
         `Cofactor_f (atoz_bigendian bytes) :: parse tl
     | [] ->
         []
-    | `Type (t, _) :: tl ->
-        parse tl
-    | `Length _ :: tl ->
-        parse tl
-    | `Bytes _ :: tl ->
-        parse tl
+    | `Type (_, _) :: tl
+    | `Length _ :: tl
+    | `Bytes _ :: tl
     | `Value _ :: tl ->
         parse tl
-    | _ ->
-        raise (Failure "unaccounted for case")
   in
   let symbols = parse tokens in
   let oid =
