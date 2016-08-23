@@ -7,6 +7,8 @@ sig
       ; e: Z.t
       }
     [@@deriving ord,yojson,eq,show]
+    
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 end
 
@@ -24,10 +26,7 @@ sig
       ; cofactor_f : Z.t
       }
     [@@deriving ord,yojson,eq,show]
+
+    val decode : Cstruct.t -> (t, string) Result.result
   end
 end
-
-type t =
-  [ `RSA of RSA.Public.t | `ECDSA of ECDSA.Public.t | `UNKNOWN ]
-
-val decode : Cstruct.t -> (t, string) Result.result

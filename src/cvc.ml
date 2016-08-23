@@ -1,3 +1,36 @@
+(*module RSA :
+sig
+  module Public :
+  sig
+    type t =
+      { n: Z.t
+      ; e: Z.t
+      }
+      [@@deriving ord,yojson,eq,show]
+
+    val decode : Cstruct.t -> (t, string) Result.result
+  end
+end
+
+module ECDSA :
+sig
+  module Public :
+  sig
+    type t =
+      { modulus : Z.t
+      ; coefficient_a : Z.t
+      ; coefficient_b : Z.t
+      ; base_point_g : Z.t
+      ; base_point_r_order : Z.t
+      ; public_point_y : Z.t
+      ; cofactor_f : Z.t
+      }
+      [@@deriving ord,yojson,eq,show]
+
+    val decode : Cstruct.t -> (t, string) Result.result
+  end
+end*)
+
 let try_with_asn f = try Result.Ok (f ()) with Asn.Parse_error s -> Result.Error s
 let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.parse_error s
 
@@ -33,40 +66,12 @@ module Z = struct
   let to_yojson z =
     `String (Z.to_string z)
 end
-module RSA =
-struct
-  module Public =
-  struct
-    type t = {
-      n: Z.t;
-      e: Z.t;
-    }
-    [@@deriving ord,yojson,eq,show]
-  end
-end
-
-module ECDSA =
-struct
-  module Public =
-  struct
-    type t =
-      { modulus : Z.t
-      ; coefficient_a : Z.t
-      ; coefficient_b : Z.t
-      ; base_point_g : Z.t
-      ; base_point_r_order : Z.t
-      ; public_point_y : Z.t
-      ; cofactor_f : Z.t
-      }
-      [@@deriving ord,yojson,eq,show]
-  end
-end
 
 let rsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.1.4"
 let ecdsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.2.3"
 
 type t =
-  [ `RSA of RSA.Public.t | `ECDSA of ECDSA.Public.t | `UNKNOWN ]
+  [ `RSA of Z.t * Z.t | `ECDSA of Z.t * Z.t * Z.t * Z.t * Z.t * Z.t * Z.t  | `UNKNOWN ]
 
 type algo_typ =
   | RSA
@@ -236,18 +241,17 @@ let decode bytes =
   let open Result in
   match oid with
     | Some RSA ->
-        RSA.Public.(
-          match symbols with
-            | [ `Oid _
-              ; `Modulus n
-              ; `Exponent e
-              ] ->
-                Ok (`RSA {n; e})
-            | _ ->
-                Error "Parse error: some elements are missing or are not correctly sorted")
+        begin match symbols with
+          | [ `Oid _
+            ; `Modulus n
+            ; `Exponent e
+            ] ->
+              Ok (`RSA (n, e))
+          | _ ->
+              Error "Parse error: some elements are missing or are not correctly sorted"
+        end
     | Some ECDSA ->
-        ECDSA.Public.(
-          match symbols with
+          begin match symbols with
             | [ `Oid _
               ; `Modulus modulus
               ; `Exponent (* `Coefficient_a *) coefficient_a
@@ -259,17 +263,82 @@ let decode bytes =
               ] ->
                 Ok (
                   `ECDSA
-                    { modulus
-                    ; coefficient_a
-                    ; coefficient_b
-                    ; base_point_g
-                    ; base_point_r_order
-                    ; public_point_y
-                    ; cofactor_f
-                    })
+                    ( modulus
+                    , coefficient_a
+                    , coefficient_b
+                    , base_point_g
+                    , base_point_r_order
+                    , public_point_y
+                    , cofactor_f
+                    ))
             | _ ->
-                Error "Parse error: some elements are missing or are not correctly sorted")
+                Error "Parse error: some elements are missing or are not correctly sorted"
+          end
     | Some (Unknown oid) ->
         Error (Printf.sprintf "unknown OID \"%s\"." (Asn.OID.to_string oid))
     | None ->
         Error "invalid CVC key: OID not found"
+
+module RSA =
+struct
+  module Public =
+  struct
+    type t = {
+      n: Z.t;
+      e: Z.t;
+    }
+    [@@deriving ord,yojson,eq,show]
+
+    let decode bytes =
+      match decode bytes with
+        | Ok (`RSA (n, e)) ->
+            Ok {n; e}
+        | Ok (`ECDSA _)
+        | Ok (`RSA _)
+        | Ok `UNKNOWN ->
+            Error "CVC: Algorithm OID and parameters do not match."
+  end
+end
+
+module ECDSA =
+struct
+  module Public =
+  struct
+    type t =
+      { modulus : Z.t
+      ; coefficient_a : Z.t
+      ; coefficient_b : Z.t
+      ; base_point_g : Z.t
+      ; base_point_r_order : Z.t
+      ; public_point_y : Z.t
+      ; cofactor_f : Z.t
+      }
+      [@@deriving ord,yojson,eq,show]
+
+    let decode bytes =
+      match decode bytes with
+        | Ok(
+            `ECDSA(
+              modulus
+              , coefficient_a
+              , coefficient_b
+              , base_point_g
+              , base_point_r_order
+              , public_point_y
+              , cofactor_f)) ->
+            Ok
+              { modulus
+              ; coefficient_a
+              ; coefficient_b
+              ; base_point_g
+              ; base_point_r_order
+              ; public_point_y
+              ; cofactor_f
+              }
+        | Ok (`RSA _)
+        | Ok (`ECDSA _)
+        | Ok `UNKNOWN ->
+            Error "CVC: Algorithm OID and parameters do not match."
+  end
+end
+

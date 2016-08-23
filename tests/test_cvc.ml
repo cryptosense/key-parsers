@@ -19,17 +19,13 @@ let rsa_suite =
   let test_pub ~decode (expected : Public.t) cvc ctxt =
     let real = decode cvc in
     let open Public in
-    Test_util.assert_ok real @@ function
-      | `RSA real ->
-          assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
-          assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
-      | `ECDSA _
-      | `UNKNOWN ->
-          assert false
+    Test_util.assert_ok real @@ fun real ->
+      assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
+      assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
   in
   let cvc_suite =
     let cvc = Cstruct.of_string @@ [%blob "../tests/keys/rsa_cvc_dummy.key"] in
-    [ "Public" >:: test_pub ~decode:Cvc.decode expected_public cvc
+    [ "Public" >:: test_pub ~decode:Cvc.RSA.Public.decode expected_public cvc
     ]
   in
   [ "CVC" >::: cvc_suite
@@ -80,17 +76,13 @@ let ecdsa_suite =
   in
   let test_pub ~decode (expected : Public.t) cvc ctxt =
     let real = decode cvc in
-    Test_util.assert_ok real @@ function
-      | `ECDSA real ->
-          let open Public in
-          assert_equal ~ctxt ~printer:(show) ~cmp:(equal) expected real
-      | `RSA _
-      | `UNKNOWN ->
-          assert false
+    Test_util.assert_ok real @@ fun real ->
+      let open Public in
+      assert_equal ~ctxt ~printer:(show) ~cmp:(equal) expected real
   in
   let cvc_suite =
     let cvc = Cstruct.of_string @@ [%blob "../tests/keys/ecdsa_cvc_dummy.key"] in
-    [ "Public" >:: test_pub ~decode:Cvc.decode expected_public cvc
+    [ "Public" >:: test_pub ~decode:Cvc.ECDSA.Public.decode expected_public cvc
     ]
   in
   [ "CVC" >::: cvc_suite
