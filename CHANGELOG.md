@@ -1,5 +1,7 @@
 ## unreleased
 
+- Add `ppx_deriving.runtime` to `META`
+
 ## v0.5.0
 
 *2016-08-10*
