@@ -1,36 +1,3 @@
-(*module RSA :
-sig
-  module Public :
-  sig
-    type t =
-      { n: Z.t
-      ; e: Z.t
-      }
-      [@@deriving ord,yojson,eq,show]
-
-    val decode : Cstruct.t -> (t, string) Result.result
-  end
-end
-
-module ECDSA :
-sig
-  module Public :
-  sig
-    type t =
-      { modulus : Z.t
-      ; coefficient_a : Z.t
-      ; coefficient_b : Z.t
-      ; base_point_g : Z.t
-      ; base_point_r_order : Z.t
-      ; public_point_y : Z.t
-      ; cofactor_f : Z.t
-      }
-      [@@deriving ord,yojson,eq,show]
-
-    val decode : Cstruct.t -> (t, string) Result.result
-  end
-end*)
-
 let try_with_asn f = try Result.Ok (f ()) with Asn.Parse_error s -> Result.Error s
 let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.parse_error s
 
@@ -295,9 +262,10 @@ struct
         | Ok (`RSA (n, e)) ->
             Ok {n; e}
         | Ok (`ECDSA _)
-        | Ok (`RSA _)
         | Ok `UNKNOWN ->
             Error "CVC: Algorithm OID and parameters do not match."
+        | Error _ as err -> (* aliasing to avoid unnecessary allocation *)
+            err
   end
 end
 
@@ -338,9 +306,10 @@ struct
               ; cofactor_f
               }
         | Ok (`RSA _)
-        | Ok (`ECDSA _)
         | Ok `UNKNOWN ->
             Error "CVC: Algorithm OID and parameters do not match."
+        | Error _ as err -> (* aliasing to avoid unnecessary allocation *)
+            err
   end
 end
 
