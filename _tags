@@ -10,7 +10,10 @@ true: debug
 <src/*.ml>: for-pack(Key_parsers)
 <src/asn1.*>: package(ppx_deriving.std), package(ppx_deriving_yojson)
 <src/ltpa.*>: package(ppx_deriving.ord), package(ppx_deriving_yojson)
+<src/cvc.*>: package(ppx_deriving.ord), package(ppx_deriving_yojson), package(ppx_deriving.eq), package(ppx_deriving.show)
 
 <tests/*>: package(oUnit)
 <tests/*>: package(hex)
+<tests/*>: package(ppx_deriving.eq), package(ppx_deriving.show)
 <tests/test_asn1.ml>: package(ppx_blob)
+<tests/test_cvc.ml>: package(ppx_blob)
