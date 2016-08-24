@@ -264,7 +264,7 @@ struct
         | Ok (`ECDSA _)
         | Ok `UNKNOWN ->
             Error "CVC: Algorithm OID and parameters do not match."
-        | Error _ as err -> (* aliasing to avoid unnecessary allocation *)
+        | Error _ as err ->
             err
   end
 end
@@ -308,7 +308,7 @@ struct
         | Ok (`RSA _)
         | Ok `UNKNOWN ->
             Error "CVC: Algorithm OID and parameters do not match."
-        | Error _ as err -> (* aliasing to avoid unnecessary allocation *)
+        | Error _ as err ->
             err
   end
 end
