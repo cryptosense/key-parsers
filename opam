@@ -5,10 +5,13 @@ homepage: "https://github.com/cryptosense/key-parsers"
 bug-reports: "https://github.com/cryptosense/key-parsers/issues"
 license: "BSD-2"
 dev-repo: "https://github.com/cryptosense/key-parsers.git"
-build: [make]
-build-test: [make "check"]
-install: [make "install"]
-remove: ["ocamlfind" "remove" "key-parsers"]
+build: [
+  [ "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" ]
+]
+build-test: [
+  [ "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" "--tests" "true" ]
+  [ "ocaml" "pkg/pkg.ml" "test" ]
+]
 depends: [
   "ocamlfind" {build}
   "ppx_deriving" {>= "4.0" & < "5.0"}
@@ -19,5 +22,6 @@ depends: [
   "asn1-combinators" {>= "0.1.2"}
   "zarith" {>= "1.4.1"}
   "result" {>= "1.2"}
+  "topkg" {build}
 ]
 available: [ocaml-version >= "4.02.0"]

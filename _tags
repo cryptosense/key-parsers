@@ -7,10 +7,9 @@ true: debug
 
 "src": include
 
-<src/*.ml>: for-pack(Key_parsers)
-<src/asn1.*>: package(ppx_deriving_yojson)
-<src/cvc.*>: package(ppx_deriving_yojson)
-<src/ltpa.*>: package(ppx_deriving_yojson)
+<src/kp_asn1.*>: package(ppx_deriving_yojson)
+<src/kp_cvc.*>: package(ppx_deriving_yojson)
+<src/kp_ltpa.*>: package(ppx_deriving_yojson)
 
 <tests/*>: package(oUnit)
 <tests/*>: package(hex)

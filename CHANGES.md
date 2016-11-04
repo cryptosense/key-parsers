@@ -1,5 +1,6 @@
 ## unreleased
 
+- Build using `topkg`
 - Add `ppx_deriving.runtime` to `META`
 - Add support for parsing CVC keys
 
