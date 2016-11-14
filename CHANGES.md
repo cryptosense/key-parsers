@@ -1,4 +1,6 @@
-## unreleased
+## v0.6.0
+
+*2016-11-14*
 
 - Build using `topkg`
 - Add `ppx_deriving.runtime` to `META`
