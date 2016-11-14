@@ -7,7 +7,7 @@ sig
       ; e: Z.t
       }
     [@@deriving ord,yojson,eq,show]
-    
+
     val decode : Cstruct.t -> (t, string) Result.result
   end
 end
