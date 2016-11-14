@@ -12,7 +12,7 @@ sig
   end
 end
 
-module ECDSA :
+module EC :
 sig
   module Public :
   sig

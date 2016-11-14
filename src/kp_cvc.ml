@@ -269,7 +269,7 @@ struct
   end
 end
 
-module ECDSA =
+module EC =
 struct
   module Public =
   struct
@@ -312,4 +312,3 @@ struct
             err
   end
 end
-
