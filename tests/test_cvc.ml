@@ -23,18 +23,14 @@ let rsa_suite =
       assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
       assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
   in
-  let cvc_suite =
-    let cvc = Cstruct.of_string @@ [%blob "../tests/keys/rsa_cvc_dummy.key"] in
-    [ "Public" >:: test_pub ~decode:Cvc.RSA.Public.decode expected_public cvc
-    ]
-  in
-  [ "CVC" >::: cvc_suite
+  let cvc = Cstruct.of_string @@ [%blob "../tests/keys/rsa_cvc_dummy.key"] in
+  [ "Public" >:: test_pub ~decode:Cvc.RSA.Public.decode expected_public cvc
   ]
 
-let ecdsa_suite =
+let ec_suite =
   let open Key_parsers in
   let open Cvc in
-  let open ECDSA in
+  let open EC in
   let expected_public =
     (* parameters from secp256r1, public_point_y is an ascending byte sequence *)
     let modulus =
@@ -80,16 +76,12 @@ let ecdsa_suite =
       let open Public in
       assert_equal ~ctxt ~printer:(show) ~cmp:(equal) expected real
   in
-  let cvc_suite =
-    let cvc = Cstruct.of_string @@ [%blob "../tests/keys/ecdsa_cvc_dummy.key"] in
-    [ "Public" >:: test_pub ~decode:Cvc.ECDSA.Public.decode expected_public cvc
-    ]
-  in
-  [ "CVC" >::: cvc_suite
+  let cvc = Cstruct.of_string @@ [%blob "../tests/keys/ecdsa_cvc_dummy.key"] in
+  [ "Public" >:: test_pub ~decode:Cvc.EC.Public.decode expected_public cvc
   ]
 
 let suite =
   [ "RSA" >::: rsa_suite
-  ; "ECDSA" >::: ecdsa_suite
+  ; "EC" >::: ec_suite
   ]
 
