@@ -3,8 +3,8 @@ sudo: required
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-travisci-skeleton/master/.travis-opam.sh
 script: bash -ex .travis-opam.sh
 env:
-    - OCAML_VERSION=4.02 PACKAGE=key-parsers
-    - OCAML_VERSION=4.03 PACKAGE=key-parsers
-    - OCAML_VERSION=4.04 PACKAGE=key-parsers
+    - OCAML_VERSION=4.02 PACKAGE=key-parsers REVDEPS="pkcs11"
+    - OCAML_VERSION=4.03 PACKAGE=key-parsers REVDEPS="pkcs11"
+    - OCAML_VERSION=4.04 PACKAGE=key-parsers REVDEPS="pkcs11"
 os:
     - linux
