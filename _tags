@@ -10,6 +10,7 @@ true: debug
 <src/kp_asn1.*>: package(ppx_deriving_yojson)
 <src/kp_cvc.*>: package(ppx_deriving_yojson)
 <src/kp_ltpa.*>: package(ppx_deriving_yojson)
+<src/key_parsers.mli>: package(ppx_deriving_yojson)
 
 <tests/*>: package(oUnit)
 <tests/*>: package(hex)
