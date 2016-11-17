@@ -34,15 +34,36 @@ module Z = struct
     `String (Z.to_string z)
 end
 
-let rsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.1.4"
-let ecdsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.2.3"
+let base_rsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.1"
+let base_ecdsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.2"
+
+let rsa_oids =
+  let open Asn.OID in
+  [ base_rsa_oid
+  ; base_rsa_oid <| 1
+  ; base_rsa_oid <| 2
+  ; base_rsa_oid <| 3
+  ; base_rsa_oid <| 4
+  ; base_rsa_oid <| 5
+  ; base_rsa_oid <| 6
+  ]
+
+let ecdsa_oids =
+  let open Asn.OID in
+  [ base_ecdsa_oid
+  ; base_ecdsa_oid <| 1
+  ; base_ecdsa_oid <| 2
+  ; base_ecdsa_oid <| 3
+  ; base_ecdsa_oid <| 4
+  ; base_ecdsa_oid <| 5
+  ]
 
 type t =
   [ `RSA of Z.t * Z.t | `ECDSA of Z.t * Z.t * Z.t * Z.t * Z.t * Z.t * Z.t  | `UNKNOWN ]
 
 type algo_typ =
-  | RSA
-  | ECDSA
+  | RSA of Asn.OID.t
+  | ECDSA of Asn.OID.t
   | Unknown of Asn.OID.t
 
 type parser_state =
@@ -86,12 +107,12 @@ let atoz_bigendian s =
 let grammar =
   let open Asn in
   let f = function
-    | oid when oid = rsa_oid -> RSA
-    | oid when oid = ecdsa_oid -> ECDSA
+    | oid when List.mem oid rsa_oids -> RSA oid
+    | oid when List.mem oid ecdsa_oids -> ECDSA oid
     | oid -> Unknown oid in
   let g = function
-    | RSA -> rsa_oid
-    | ECDSA -> ecdsa_oid
+    | RSA oid -> oid
+    | ECDSA oid -> oid
     | Unknown oid -> oid in
   map f g oid
 
@@ -207,7 +228,7 @@ let decode bytes =
   in
   let open Result in
   match oid with
-    | Some RSA ->
+    | Some (RSA _) ->
         begin match symbols with
           | [ `Oid _
             ; `Modulus n
@@ -217,7 +238,7 @@ let decode bytes =
           | _ ->
               Error "Parse error: some elements are missing or are not correctly sorted"
         end
-    | Some ECDSA ->
+    | Some (ECDSA _) ->
           begin match symbols with
             | [ `Oid _
               ; `Modulus modulus
