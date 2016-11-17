@@ -1,3 +1,7 @@
+## unreleased
+
+- Accept a range of rsa and ecdsa oids for CVC keys
+
 ## v0.6.1
 
 *2016-11-15*
