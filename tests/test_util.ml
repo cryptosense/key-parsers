@@ -11,3 +11,5 @@ let equal_options ~(equal : 'a -> 'a -> bool) (a : 'a option) (b : 'a option) =
         equal x y
     | None, None -> true
     | _, _ -> false
+
+let cstruct_of_hex str = `Hex (String.lowercase str) |> Hex.to_cstruct
