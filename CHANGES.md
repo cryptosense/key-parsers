@@ -1,4 +1,8 @@
-## unreleased
+## 0.7.0
+
+*2016-11-28*
+
+(This release contains breaking changes)
 
 - Fixes CVC EC keys representation (Breaking change)
 - Accept a range of rsa and ecdsa oids for CVC keys
