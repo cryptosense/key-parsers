@@ -34,6 +34,24 @@ module Z = struct
     `String (Z.to_string z)
 end
 
+module Cstruct = struct
+  include Cstruct
+
+  let to_hex_string cs =
+    let buf = Buffer.create 0 in
+    hexdump_to_buffer buf cs;
+    Buffer.contents buf
+
+  let pp = pp_of_to_string to_hex_string
+
+  let to_yojson cs =
+    `String (to_string cs)
+
+  let of_yojson = function
+    | `String s -> Result.Ok (of_string s)
+    | _ -> Result.Error "Cannot convert this json value to Cstruct.t"
+end
+
 let base_rsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.1"
 let base_ecdsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.2"
 
@@ -196,16 +214,16 @@ let decode bytes =
         `Oid (decode_oid bytes) :: parse tl
     | `Type (_, (`MODULUS, _)) :: `Length _ :: `Bytes bytes :: tl ->
         `Modulus (atoz_bigendian bytes) :: parse tl
-    | `Type (0x82, ((*`EXPONENT*) _ , _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Exponent (atoz_bigendian bytes) :: parse tl
+    | `Type (0x82, ((*`EXPONENT or COEFFICIENT_A *) _ , _)) :: `Length _ :: `Bytes bytes :: tl ->
+        `Exponent bytes :: parse tl
     | `Type (_, (`COEFFICIENT_B, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Coefficient_b (atoz_bigendian bytes) :: parse tl
+        `Coefficient_b bytes :: parse tl
     | `Type (_, (`BASE_POINT_G, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Base_point_g (atoz_bigendian bytes) :: parse tl
+        `Base_point_g bytes :: parse tl
     | `Type (_, (`BASE_POINT_R_ORDER, _)) :: `Length _ :: `Bytes bytes :: tl ->
         `Base_point_r_order (atoz_bigendian bytes) :: parse tl
     | `Type (_, (`PUBLIC_POINT_Y, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Public_point_y (atoz_bigendian bytes) :: parse tl
+        `Public_point_y  bytes :: parse tl
     | `Type (_, (`COFACTOR_F, _)) :: `Length _ :: `Bytes bytes :: tl ->
         `Cofactor_f (atoz_bigendian bytes) :: parse tl
     | [] ->
@@ -234,7 +252,7 @@ let decode bytes =
             ; `Modulus n
             ; `Exponent e
             ] ->
-              Ok (`RSA (n, e))
+              Ok (`RSA (n, (atoz_bigendian e)))
           | _ ->
               Error "Parse error: some elements are missing or are not correctly sorted"
         end
@@ -296,11 +314,11 @@ struct
   struct
     type t =
       { modulus : Z.t
-      ; coefficient_a : Z.t
-      ; coefficient_b : Z.t
-      ; base_point_g : Z.t
+      ; coefficient_a : Cstruct.t
+      ; coefficient_b : Cstruct.t
+      ; base_point_g : Cstruct.t
       ; base_point_r_order : Z.t
-      ; public_point_y : Z.t
+      ; public_point_y : Cstruct.t
       ; cofactor_f : Z.t
       }
       [@@deriving ord,yojson,eq,show]

@@ -1,5 +1,6 @@
 ## unreleased
 
+- Fixes CVC EC keys representation (Breaking change)
 - Accept a range of rsa and ecdsa oids for CVC keys
 
 ## v0.6.1

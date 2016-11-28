@@ -149,7 +149,6 @@ let dsa_suite =
 
 let ec_suite =
   let open Key_parsers.Asn1.EC in
-  let cstruct_of_hex str = `Hex (String.lowercase str) |> Hex.to_cstruct in
   let p256v1_oid = Asn.OID.of_string "1.2.840.10045.3.1.7" in
   let exp_named_params = Params.Named p256v1_oid in
   let test_params expected real ctxt =
@@ -168,21 +167,21 @@ let ec_suite =
       in
       let curve =
         let a =
-          cstruct_of_hex
+          Test_util.cstruct_of_hex
             "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC"
         in
         let b =
-          cstruct_of_hex
+          Test_util.cstruct_of_hex
             "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B"
         in
         let seed =
-          Some (cstruct_of_hex
+          Some (Test_util.cstruct_of_hex
                   "C49D360886E704936A6678E1139D26B7819F7E90")
         in
         Specified_domain.{ a; b; seed }
       in
       let base =
-        cstruct_of_hex
+        Test_util.cstruct_of_hex
           "046B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C2964F\
            E342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5"
       in
@@ -200,13 +199,13 @@ let ec_suite =
         Field.(C_two { m; basis })
       in
       let curve =
-        let a = cstruct_of_hex "3088250CA6E7C7FE649CE85820F7" in
-        let b = cstruct_of_hex "E8BEE4D3E2260744188BE0E9C723" in
-        let seed = Some (cstruct_of_hex "10E723AB14D696E6768756151756FEBF8FCB49A9") in
+        let a = Test_util.cstruct_of_hex "3088250CA6E7C7FE649CE85820F7" in
+        let b = Test_util.cstruct_of_hex "E8BEE4D3E2260744188BE0E9C723" in
+        let seed = Some (Test_util.cstruct_of_hex "10E723AB14D696E6768756151756FEBF8FCB49A9") in
         Specified_domain.{ a; b; seed }
       in
       let base =
-        cstruct_of_hex
+        Test_util.cstruct_of_hex
           "04009D73616F35F4AB1407D73562C10F00A52830277958EE84D1315ED31886"
       in
       let order = Z.of_string "0x0100000000000000D9CCEC8A39E56F" in
@@ -228,7 +227,7 @@ let ec_suite =
     ]
   in
   let h =
-    cstruct_of_hex
+    Test_util.cstruct_of_hex
       "04DB81688B7871A0762ADCDC6109F37C45AA689BDB300E3036614C8FE21E7AB1C1E8\
        A133D358F0ED65B478D97064535ECE5BC2809A2BC974D25639DEFE5D38EE89"
   in
@@ -236,7 +235,7 @@ let ec_suite =
   let exp_private =
     let params = None in
     let k =
-      cstruct_of_hex
+      Test_util.cstruct_of_hex
         "3F05F839F41567FF8A2D2ACA64BA92AEC698B43C52D4CF0D2264F4615F07FB86"
     in
     let public_key = Some h in

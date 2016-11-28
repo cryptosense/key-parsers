@@ -367,11 +367,11 @@ module Cvc : sig
     sig
       type t =
         { modulus : Z.t
-        ; coefficient_a : Z.t
-        ; coefficient_b : Z.t
-        ; base_point_g : Z.t
+        ; coefficient_a : Cstruct.t
+        ; coefficient_b : Cstruct.t
+        ; base_point_g : Cstruct.t
         ; base_point_r_order : Z.t
-        ; public_point_y : Z.t
+        ; public_point_y : Cstruct.t
         ; cofactor_f : Z.t
         }
       [@@deriving ord,yojson,eq,show]

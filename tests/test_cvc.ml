@@ -32,22 +32,22 @@ let ec_suite =
   let open Cvc in
   let open EC in
   let expected_public =
-    (* parameters from secp256r1, public_point_y is an ascending byte sequence *)
+    (* parameters from secp256r1, public_point_y generated using openssl ecparam and pkey *)
     let modulus =
       Z.of_string
         "0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc"
     in
     let coefficient_a =
-      Z.of_string
-        "0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc"
+      Test_util.cstruct_of_hex
+        "ffffffff00000001000000000000000000000000fffffffffffffffffffffffc"
     in
     let coefficient_b =
-      Z.of_string
-        "0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b"
+      Test_util.cstruct_of_hex
+        "5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b"
     in
     let base_point_g =
-      Z.of_string
-        "0x046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964f\
+      Test_util.cstruct_of_hex
+        "046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964f\
          e342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"
     in
     let base_point_r_order =
@@ -55,9 +55,9 @@ let ec_suite =
         "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551"
     in
     let public_point_y =
-      Z.of_string
-        "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122\
-         232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f4041"
+      Test_util.cstruct_of_hex
+        "04E266926DF905285452A5BB4DFC70286D621BF8AF33FA8D2D2E4C5F86BF9DF3BA54CF\
+         49409095250A14A93B16D9B2F8B7D6E1C247CB939FE9F10924B54E0BA075"
     in
     let cofactor_f = Z.of_string "1" in
     let open Public in
