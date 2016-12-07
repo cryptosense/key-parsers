@@ -66,7 +66,7 @@ struct
       n: Z.t;
       e: Z.t;
     }
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -93,7 +93,7 @@ struct
       d: Z.t;
       t: Z.t;
     }
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let other_prime_grammar =
       let open Asn in
@@ -115,7 +115,7 @@ struct
       qinv: Z.t;
       other_primes: other_prime list;
     }
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -161,7 +161,7 @@ struct
       q: Z.t;
       g: Z.t;
     }
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -185,7 +185,7 @@ struct
   module Public =
   struct
     type t = Z.t
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar = Asn.integer
 
@@ -202,7 +202,7 @@ struct
   module Private =
   struct
     type t = Z.t
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar = Asn.integer
 
@@ -482,7 +482,7 @@ struct
       g: Z.t;
       l: Z.t option; (* privateValueLength *)
     }
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar =
       let open Asn in
@@ -506,7 +506,7 @@ struct
   module Public =
   struct
     type t = Z.t
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar = Asn.integer
 
@@ -523,7 +523,7 @@ struct
   module Private =
   struct
     type t = Z.t
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     let grammar = Asn.integer
 
@@ -629,7 +629,7 @@ struct
     | `EC of EC.Params.t * EC.Public.t
     | `DH of DH.Params.t * DH.Public.t
     ]
-  [@@deriving ord,yojson]
+  [@@deriving ord,show,yojson]
 
   let rsa_grammar =
     let open Asn in
@@ -718,7 +718,7 @@ struct
     | `EC of EC.Params.t * EC.Private.t
     | `DH of DH.Params.t * DH.Private.t
     ]
-  [@@deriving ord,yojson]
+  [@@deriving ord,show,yojson]
 
   let rsa_grammar =
     let open Asn in
