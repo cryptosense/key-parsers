@@ -1,3 +1,5 @@
+open Bin_prot.Std
+
 let try_with_asn f = try Result.Ok (f ()) with Asn.Parse_error s -> Result.Error s
 let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.parse_error s
 
@@ -19,6 +21,13 @@ module Asn = struct
 
     let to_yojson oid =
       `String (Asn.OID.to_string oid)
+
+    let bin_writer_t = Bin_prot.Type_class.cnv_writer to_string bin_writer_string
+    let bin_reader_t = Bin_prot.Type_class.cnv_reader of_string bin_reader_string
+    let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
+    let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
+    let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
+    let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
   end
 end
 
@@ -32,6 +41,13 @@ module Z = struct
 
   let to_yojson z =
     `String (Z.to_string z)
+
+  let bin_writer_t = Bin_prot.Type_class.cnv_writer to_bits bin_writer_string
+  let bin_reader_t = Bin_prot.Type_class.cnv_reader of_bits bin_reader_string
+  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
+  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
+  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
+  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
 end
 
 module Cstruct = struct
@@ -50,6 +66,13 @@ module Cstruct = struct
   let of_yojson = function
     | `String s -> Result.Ok (of_string s)
     | _ -> Result.Error "Cannot convert this json value to Cstruct.t"
+
+  let bin_writer_t = Bin_prot.Type_class.cnv_writer to_string bin_writer_string
+  let bin_reader_t = Bin_prot.Type_class.cnv_reader of_string bin_reader_string
+  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
+  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
+  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
+  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
 end
 
 let base_rsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.1"
@@ -293,7 +316,7 @@ struct
       n: Z.t;
       e: Z.t;
     }
-    [@@deriving ord,yojson,eq,show]
+    [@@deriving ord,yojson,eq,show,bin_io]
 
     let decode bytes =
       let open Result in
@@ -321,7 +344,7 @@ struct
       ; public_point_y : Cstruct.t
       ; cofactor_f : Z.t
       }
-      [@@deriving ord,yojson,eq,show]
+      [@@deriving ord,yojson,eq,show,bin_io]
 
     let decode bytes =
       let open Result in

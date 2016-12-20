@@ -2,9 +2,13 @@ B _build/src
 B _build/tests
 
 PKG asn1-combinators
-PKG zarith
-PKG result
-PKG oUnit
-PKG ppx_blob
+PKG bin_prot
 PKG hex
+PKG oUnit
+PKG ppx_bin_prot
+PKG ppx_blob
+PKG ppx_deriving.std
+PKG ppx_deriving_yojson
+PKG result
 PKG topkg
+PKG zarith

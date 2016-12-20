@@ -1,3 +1,5 @@
+open Bin_prot.Std
+
 let pp_of_to_string to_string fmt x =
   Format.pp_print_string fmt (to_string x)
 
@@ -11,6 +13,13 @@ module Z = struct
 
   let to_yojson z =
     `String (Z.to_string z)
+
+  let bin_writer_t = Bin_prot.Type_class.cnv_writer to_bits bin_writer_string
+  let bin_reader_t = Bin_prot.Type_class.cnv_reader of_bits bin_reader_string
+  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
+  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
+  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
+  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
 end
 
 (** Read a big-endian arbitrary length number *)
@@ -35,7 +44,7 @@ module RSA = struct
       p: Z.t;
       q: Z.t;
     }
-    [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson,bin_io]
 
     let decode cs =
       try
@@ -58,7 +67,7 @@ module RSA = struct
       e: Z.t;
       n: Z.t;
     }
-    [@@deriving ord,show,yojson]
+    [@@deriving ord,show,yojson,bin_io]
 
     let decode cs =
       try
