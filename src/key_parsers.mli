@@ -13,7 +13,7 @@ module Asn1 : sig
         n: Z.t;
         e: Z.t;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val grammar : t Asn.t
 
@@ -28,7 +28,7 @@ module Asn1 : sig
         d: Z.t;
         t: Z.t;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       type t = {
         n: Z.t;
@@ -41,7 +41,7 @@ module Asn1 : sig
         qinv: Z.t;
         other_primes: other_prime list;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val other_prime_grammar : other_prime Asn.t
       val grammar : t Asn.t
@@ -60,7 +60,7 @@ module Asn1 : sig
         q: Z.t;
         g: Z.t;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val grammar : t Asn.t
 
@@ -71,7 +71,7 @@ module Asn1 : sig
     module Public :
     sig
       type t = Z.t
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val grammar : t Asn.t
 
@@ -82,7 +82,7 @@ module Asn1 : sig
     module Private :
     sig
       type t = Z.t
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val grammar : t Asn.t
 
@@ -104,7 +104,7 @@ module Asn1 : sig
         | GN
         | TP of Z.t
         | PP of Z.t * Z.t * Z.t
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val basis_grammar : basis Asn.t
 
@@ -112,14 +112,14 @@ module Asn1 : sig
         m: Z.t;
         basis: basis;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val ctwo_params_grammar : characteristic_two_params Asn.t
 
       type t =
         | Prime of Z.t
         | C_two of characteristic_two_params
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val grammar : t Asn.t
     end
@@ -134,7 +134,7 @@ module Asn1 : sig
         b: field_element;
         seed: Cstruct.t option;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val curve_grammar : curve Asn.t
 
@@ -200,7 +200,7 @@ module Asn1 : sig
         g: Z.t;
         l: Z.t option;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val grammar : t Asn.t
 
@@ -211,7 +211,7 @@ module Asn1 : sig
     module Public :
     sig
       type t = Z.t
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val grammar : t Asn.t
 
@@ -222,7 +222,7 @@ module Asn1 : sig
     module Private :
     sig
       type t = Z.t
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val grammar : t Asn.t
 
@@ -247,7 +247,7 @@ module Asn1 : sig
       | `EC of EC.Params.t * EC.Public.t
       | `DH of DH.Params.t * DH.Public.t
       ]
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     val rsa_grammar : RSA.Public.t Asn.t
     val dsa_grammar : (DSA.Params.t * DSA.Public.t) Asn.t
@@ -274,7 +274,7 @@ module Asn1 : sig
       | `EC of EC.Params.t * EC.Private.t
       | `DH of DH.Params.t * DH.Private.t
       ]
-    [@@deriving ord,yojson]
+    [@@deriving ord,show,yojson]
 
     val rsa_grammar : RSA.Private.t Asn.t
     val dsa_grammar : (DSA.Params.t * DSA.Private.t) Asn.t
@@ -321,7 +321,7 @@ module Ltpa : sig
         p: Z.t;
         q: Z.t;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val decode : Cstruct.t -> (t, string) Result.result
     end
@@ -339,7 +339,7 @@ module Ltpa : sig
         e: Z.t;
         n: Z.t;
       }
-      [@@deriving ord,yojson]
+      [@@deriving ord,show,yojson]
 
       val decode : Cstruct.t -> (t, string) Result.result
     end
