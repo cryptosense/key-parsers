@@ -13,7 +13,7 @@ module Asn1 : sig
         n: Z.t;
         e: Z.t;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -28,7 +28,7 @@ module Asn1 : sig
         d: Z.t;
         t: Z.t;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       type t = {
         n: Z.t;
@@ -41,7 +41,7 @@ module Asn1 : sig
         qinv: Z.t;
         other_primes: other_prime list;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val other_prime_grammar : other_prime Asn.t
       val grammar : t Asn.t
@@ -60,7 +60,7 @@ module Asn1 : sig
         q: Z.t;
         g: Z.t;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -71,7 +71,7 @@ module Asn1 : sig
     module Public :
     sig
       type t = Z.t
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -82,7 +82,7 @@ module Asn1 : sig
     module Private :
     sig
       type t = Z.t
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -94,7 +94,7 @@ module Asn1 : sig
   module EC :
   sig
     type point = Cstruct.t
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     val point_grammar : point Asn.t
 
@@ -104,7 +104,7 @@ module Asn1 : sig
         | GN
         | TP of Z.t
         | PP of Z.t * Z.t * Z.t
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val basis_grammar : basis Asn.t
 
@@ -112,14 +112,14 @@ module Asn1 : sig
         m: Z.t;
         basis: basis;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val ctwo_params_grammar : characteristic_two_params Asn.t
 
       type t =
         | Prime of Z.t
         | C_two of characteristic_two_params
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
     end
@@ -134,7 +134,7 @@ module Asn1 : sig
         b: field_element;
         seed: Cstruct.t option;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val curve_grammar : curve Asn.t
 
@@ -145,7 +145,7 @@ module Asn1 : sig
         order: Z.t;
         cofactor: Z.t option;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
     end
@@ -156,7 +156,7 @@ module Asn1 : sig
         | Named of Asn.OID.t
         | Implicit
         | Specified of Specified_domain.t
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -167,7 +167,7 @@ module Asn1 : sig
     module Public :
     sig
       type t = point
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -182,7 +182,7 @@ module Asn1 : sig
         params: Params.t option;
         public_key: Public.t option;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -200,7 +200,7 @@ module Asn1 : sig
         g: Z.t;
         l: Z.t option;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -211,7 +211,7 @@ module Asn1 : sig
     module Public :
     sig
       type t = Z.t
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -222,7 +222,7 @@ module Asn1 : sig
     module Private :
     sig
       type t = Z.t
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val grammar : t Asn.t
 
@@ -247,7 +247,7 @@ module Asn1 : sig
       | `EC of EC.Params.t * EC.Public.t
       | `DH of DH.Params.t * DH.Public.t
       ]
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     val rsa_grammar : RSA.Public.t Asn.t
     val dsa_grammar : (DSA.Params.t * DSA.Public.t) Asn.t
@@ -274,7 +274,7 @@ module Asn1 : sig
       | `EC of EC.Params.t * EC.Private.t
       | `DH of DH.Params.t * DH.Private.t
       ]
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     val rsa_grammar : RSA.Private.t Asn.t
     val dsa_grammar : (DSA.Params.t * DSA.Private.t) Asn.t
@@ -321,7 +321,7 @@ module Ltpa : sig
         p: Z.t;
         q: Z.t;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val decode : Cstruct.t -> (t, string) Result.result
     end
@@ -339,7 +339,7 @@ module Ltpa : sig
         e: Z.t;
         n: Z.t;
       }
-      [@@deriving ord,show,yojson,bin_io]
+      [@@deriving ord,eq,show,yojson,bin_io]
 
       val decode : Cstruct.t -> (t, string) Result.result
     end
@@ -355,7 +355,7 @@ module Cvc : sig
         { n: Z.t
         ; e: Z.t
         }
-      [@@deriving ord,yojson,eq,show,bin_io]
+      [@@deriving ord,eq,yojson,eq,show,bin_io]
 
       val decode : Cstruct.t -> (t, string) Result.result
     end
@@ -374,7 +374,7 @@ module Cvc : sig
         ; public_point_y : Cstruct.t
         ; cofactor_f : Z.t
         }
-      [@@deriving ord,yojson,eq,show,bin_io]
+      [@@deriving ord,eq,yojson,eq,show,bin_io]
 
       val decode : Cstruct.t -> (t, string) Result.result
     end

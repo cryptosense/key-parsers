@@ -14,6 +14,7 @@ module Asn = struct
     let pp = pp_of_to_string to_string
     let compare a b =
       String.compare (to_string a) (to_string b)
+    let equal a b = compare a b = 0
 
     let of_yojson = function
       | `String s -> Result.Ok (Asn.OID.of_string s)
@@ -89,7 +90,7 @@ struct
       n: Z.t;
       e: Z.t;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar =
       let open Asn in
@@ -116,7 +117,7 @@ struct
       d: Z.t;
       t: Z.t;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let other_prime_grammar =
       let open Asn in
@@ -138,7 +139,7 @@ struct
       qinv: Z.t;
       other_primes: other_prime list;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar =
       let open Asn in
@@ -184,7 +185,7 @@ struct
       q: Z.t;
       g: Z.t;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar =
       let open Asn in
@@ -208,7 +209,7 @@ struct
   module Public =
   struct
     type t = Z.t
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.integer
 
@@ -225,7 +226,7 @@ struct
   module Private =
   struct
     type t = Z.t
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.integer
 
@@ -243,7 +244,7 @@ end
 module EC =
 struct
   type point = Cstruct.t
-  [@@deriving ord,show,yojson,bin_io]
+  [@@deriving ord,eq,show,yojson,bin_io]
 
   let point_grammar = Asn.octet_string
 
@@ -274,7 +275,7 @@ struct
       | GN
       | TP of Z.t
       | PP of Z.t * Z.t * Z.t
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let basis_grammar =
       let open Asn in
@@ -298,7 +299,7 @@ struct
       m: Z.t;
       basis: basis;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let ctwo_params_grammar =
       let open Asn in
@@ -351,7 +352,7 @@ struct
     type t =
       | Prime of Z.t
       | C_two of characteristic_two_params
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar =
       let open Asn in
@@ -370,7 +371,7 @@ struct
   module Specified_domain =
   struct
     type field_element = Cstruct.t
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let field_element_grammar = Asn.octet_string
 
@@ -379,7 +380,7 @@ struct
       b: field_element;
       seed: Cstruct.t option;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let curve_grammar =
       let open Asn in
@@ -398,7 +399,7 @@ struct
       order: Z.t;
       cofactor: Z.t option;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar =
       let open Asn in
@@ -422,7 +423,7 @@ struct
       | Named of Asn.OID.t
       | Implicit
       | Specified of Specified_domain.t
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar =
       let open Asn in
@@ -451,7 +452,7 @@ struct
   module Public =
   struct
     type t = point
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = point_grammar
 
@@ -471,7 +472,7 @@ struct
       params: Params.t option;
       public_key: Public.t option;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar =
       let open Asn in
@@ -505,7 +506,7 @@ struct
       g: Z.t;
       l: Z.t option; (* privateValueLength *)
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar =
       let open Asn in
@@ -529,7 +530,7 @@ struct
   module Public =
   struct
     type t = Z.t
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.integer
 
@@ -546,7 +547,7 @@ struct
   module Private =
   struct
     type t = Z.t
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.integer
 
@@ -652,7 +653,7 @@ struct
     | `EC of EC.Params.t * EC.Public.t
     | `DH of DH.Params.t * DH.Public.t
     ]
-  [@@deriving ord,show,yojson,bin_io]
+  [@@deriving ord,eq,show,yojson,bin_io]
 
   let rsa_grammar =
     let open Asn in
@@ -741,7 +742,7 @@ struct
     | `EC of EC.Params.t * EC.Private.t
     | `DH of DH.Params.t * DH.Private.t
     ]
-  [@@deriving ord,show,yojson,bin_io]
+  [@@deriving ord,eq,show,yojson,bin_io]
 
   let rsa_grammar =
     let open Asn in

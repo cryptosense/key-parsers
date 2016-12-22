@@ -14,6 +14,7 @@ module Asn = struct
     let pp = pp_of_to_string to_string
     let compare a b =
       String.compare (to_string a) (to_string b)
+    let equal a b = compare a b = 0
 
     let of_yojson = function
       | `String s -> Result.Ok (Asn.OID.of_string s)
@@ -316,7 +317,7 @@ struct
       n: Z.t;
       e: Z.t;
     }
-    [@@deriving ord,yojson,eq,show,bin_io]
+    [@@deriving ord,eq,yojson,eq,show,bin_io]
 
     let decode bytes =
       let open Result in
@@ -344,7 +345,7 @@ struct
       ; public_point_y : Cstruct.t
       ; cofactor_f : Z.t
       }
-      [@@deriving ord,yojson,eq,show,bin_io]
+      [@@deriving ord,eq,yojson,eq,show,bin_io]
 
     let decode bytes =
       let open Result in

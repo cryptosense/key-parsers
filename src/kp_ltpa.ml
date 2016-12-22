@@ -44,7 +44,7 @@ module RSA = struct
       p: Z.t;
       q: Z.t;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let decode cs =
       try
@@ -67,7 +67,7 @@ module RSA = struct
       e: Z.t;
       n: Z.t;
     }
-    [@@deriving ord,show,yojson,bin_io]
+    [@@deriving ord,eq,show,yojson,bin_io]
 
     let decode cs =
       try
