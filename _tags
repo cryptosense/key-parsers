@@ -1,5 +1,6 @@
 true: package(asn1-combinators), package(zarith)
 true: package(result)
+true: package(bin_prot)
 true: package(ppx_deriving), package(ppx_deriving.std), package(ppx_deriving_yojson.runtime)
 true: safe_string
 true: bin_annot
@@ -7,10 +8,10 @@ true: debug
 
 "src": include
 
-<src/kp_asn1.*>: package(ppx_deriving_yojson)
-<src/kp_cvc.*>: package(ppx_deriving_yojson)
-<src/kp_ltpa.*>: package(ppx_deriving_yojson)
-<src/key_parsers.mli>: package(ppx_deriving_yojson)
+<src/kp_asn1.*>: package(ppx_deriving_yojson), package(ppx_bin_prot)
+<src/kp_cvc.*>: package(ppx_deriving_yojson), package(ppx_bin_prot)
+<src/kp_ltpa.*>: package(ppx_deriving_yojson), package(ppx_bin_prot)
+<src/key_parsers.mli>: package(ppx_deriving_yojson), package(ppx_bin_prot)
 
 <tests/*>: package(oUnit)
 <tests/*>: package(hex)

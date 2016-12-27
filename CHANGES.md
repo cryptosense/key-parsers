@@ -1,3 +1,8 @@
+## unreleased
+
+- Add an `equal` function for all exposed types
+- Add `bin_prot` serializer and deserializer for all exposed types
+
 ## 0.7.0
 
 *2016-11-28*
