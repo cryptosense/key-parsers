@@ -1,4 +1,5 @@
 open OUnit2
+open Test_helpers
 
 let rsa_suite =
   let open Key_parsers in
@@ -23,7 +24,7 @@ let rsa_suite =
       assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
       assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
   in
-  let cvc = Cstruct.of_string @@ [%blob "../tests/keys/rsa_cvc_dummy.key"] in
+  let cvc = fixture "rsa_cvc_dummy.key" in
   [ "Public" >:: test_pub ~decode:Cvc.RSA.Public.decode expected_public cvc
   ]
 
@@ -76,7 +77,7 @@ let ec_suite =
       let open Public in
       assert_equal ~ctxt ~printer:(show) ~cmp:(equal) expected real
   in
-  let cvc = Cstruct.of_string @@ [%blob "../tests/keys/ecdsa_cvc_dummy.key"] in
+  let cvc = fixture "ecdsa_cvc_dummy.key" in
   [ "Public" >:: test_pub ~decode:Cvc.EC.Public.decode expected_public cvc
   ]
 

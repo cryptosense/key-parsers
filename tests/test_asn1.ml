@@ -1,4 +1,5 @@
 open OUnit2
+open Test_helpers
 
 let rsa_suite =
   let open Key_parsers.Asn1.RSA in
@@ -60,19 +61,19 @@ let rsa_suite =
     assert_equal ~ctxt ~cmp ~printer ~msg:"qinv" expected.qinv real.qinv
   in
   let pkcs1_suite =
-    let private_der = Cstruct.of_string @@ [%blob "../tests/keys/rsa_pkcs1.der"] in
-    let public_der = Cstruct.of_string @@ [%blob "../tests/keys/rsa_pkcs1_pub.der"] in
+    let private_der = fixture "rsa_pkcs1.der" in
+    let public_der = fixture "rsa_pkcs1_pub.der" in
     [ "Private" >:: test_priv ~decode:Private.decode expected_private private_der
     ; "Public" >:: test_pub ~decode:Public.decode expected_public public_der
     ]
   in
   let x509_suite =
-    let der = Cstruct.of_string @@ [%blob "../tests/keys/rsa_x509.der"] in
+    let der = fixture "rsa_x509.der" in
     [ "Public" >:: test_pub ~decode:Key_parsers.Asn1.X509.decode_rsa expected_public der
     ]
   in
   let pkcs8_suite =
-    let der = Cstruct.of_string @@ [%blob "../tests/keys/rsa_pkcs8.der"] in
+    let der = fixture "rsa_pkcs8.der" in
     [ "Private" >:: test_priv ~decode:Key_parsers.Asn1.PKCS8.decode_rsa expected_private der
     ]
   in
@@ -133,13 +134,13 @@ let dsa_suite =
   in
   let x509_suite =
     let typ = `Public in
-    let der = Cstruct.of_string @@ [%blob "../tests/keys/dsa_x509.der"] in
+    let der = fixture "dsa_x509.der" in
     [ "Public" >:: test ~typ ~decode:Key_parsers.Asn1.X509.decode_dsa expected_public der
     ]
   in
   let pkcs8_suite =
     let typ = `Private in
-    let der = Cstruct.of_string @@ [%blob "../tests/keys/dsa_pkcs8.der"] in
+    let der = fixture "dsa_pkcs8.der" in
     [ "Private" >:: test ~typ ~decode:Key_parsers.Asn1.PKCS8.decode_dsa expected_private der
     ]
   in
@@ -216,9 +217,9 @@ let ec_suite =
       let real = Params.decode der in
       Test_util.assert_ok real @@ fun real -> test_params expected real ctxt
     in
-    let named_der = Cstruct.of_string @@ [%blob "../tests/keys/p256v1_named_param.der"] in
-    let prime_der = Cstruct.of_string @@ [%blob "../tests/keys/p256v1_explicit_param.der"] in
-    let bin_der = Cstruct.of_string @@ [%blob "../tests/keys/sect113r1_explicit_param.der"] in
+    let named_der = fixture "p256v1_named_param.der" in
+    let prime_der = fixture "p256v1_explicit_param.der" in
+    let bin_der = fixture "sect113r1_explicit_param.der" in
     [ "Named" >:: test_params exp_named_params named_der
     ; "Specifed" >:::
       [ "PrimeField" >:: test_params exp_specified_prime prime_der
@@ -250,7 +251,7 @@ let ec_suite =
       test_params expected_params real_params ctxt;
       assert_equal ~ctxt ~cmp ~printer ~msg:"H" expected_key real_key
     in
-    let der = Cstruct.of_string @@ [%blob "../tests/keys/p256v1_x509.der"] in
+    let der = fixture "p256v1_x509.der" in
     [ "Public" >:: test exp_public der
     ]
   in
@@ -263,7 +264,7 @@ let ec_suite =
       test_params expected_params real_params ctxt;
       assert_equal ~ctxt ~cmp ~printer ~msg:"privateKey" expected_key real_key
     in
-    let der = Cstruct.of_string @@ [%blob "../tests/keys/p256v1_pkcs8.der"] in
+    let der = fixture "p256v1_pkcs8.der" in
     [ "Private" >:: test exp_private der
     ]
   in
@@ -323,13 +324,13 @@ let dh_suite =
   in
   let x509_suite =
     let typ = `Public in
-    let der = Cstruct.of_string @@ [%blob "../tests/keys/dh_public.der"] in
+    let der = fixture "dh_public.der" in
     [ "Public" >:: test ~typ ~decode:Key_parsers.Asn1.X509.decode_dh expected_public der
     ]
   in
   let pkcs8_suite =
     let typ = `Private in
-    let der = Cstruct.of_string @@ [%blob "../tests/keys/dh_private.der"] in
+    let der = fixture "dh_private.der" in
     [ "Private" >:: test ~typ ~decode:Key_parsers.Asn1.PKCS8.decode_dh expected_private der
     ]
   in

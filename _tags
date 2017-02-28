@@ -16,5 +16,3 @@ true: debug
 <tests/*>: package(oUnit)
 <tests/*>: package(hex)
 <tests/*>: package(ppx_deriving.eq), package(ppx_deriving.show)
-<tests/test_asn1.ml>: package(ppx_blob)
-<tests/test_cvc.ml>: package(ppx_blob)
