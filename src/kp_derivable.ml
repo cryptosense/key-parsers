@@ -3,6 +3,11 @@ open Bin_prot.Std
 let pp_of_to_string to_string fmt x =
   Format.pp_print_string fmt (to_string x)
 
+module Bin_string = struct
+  type t = string
+  [@@deriving bin_io]
+end
+
 module Z = struct
   type t = Z.t
   [@@deriving eq,ord]
@@ -17,13 +22,13 @@ module Z = struct
   let to_yojson z =
     `String (Z.to_string z)
 
-  let bin_writer_t = Bin_prot.Type_class.cnv_writer Z.to_bits bin_writer_string
-  let bin_reader_t = Bin_prot.Type_class.cnv_reader Z.of_bits bin_reader_string
-  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
-  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
-  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
-  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
-  let bin_t = Bin_prot.Type_class.{ reader = bin_reader_t; writer =  bin_writer_t}
+  include Bin_prot.Utils.Make_binable
+      (struct
+        module Binable = Bin_string
+        type t = Z.t
+        let to_binable = Z.to_string
+        let of_binable = Z.of_string
+      end)
 end
 
 module Cstruct = struct
@@ -45,13 +50,13 @@ module Cstruct = struct
     | `String s -> Result.Ok (Cstruct.of_string s)
     | _ -> Result.Error "Cannot convert this json value to Cstruct.t"
 
-  let bin_writer_t = Bin_prot.Type_class.cnv_writer Cstruct.to_string bin_writer_string
-  let bin_reader_t = Bin_prot.Type_class.cnv_reader Cstruct.of_string bin_reader_string
-  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
-  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
-  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
-  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
-  let bin_t = Bin_prot.Type_class.{ reader = bin_reader_t; writer =  bin_writer_t}
+  include Bin_prot.Utils.Make_binable
+      (struct
+        module Binable = Bin_string
+        type t = Cstruct.t
+        let to_binable = Cstruct.to_string
+        let of_binable s = Cstruct.of_string s
+      end)
 end
 
 module Asn_OID = struct
@@ -69,11 +74,11 @@ module Asn_OID = struct
   let to_yojson oid =
     `String (Asn.OID.to_string oid)
 
-  let bin_writer_t = Bin_prot.Type_class.cnv_writer Asn.OID.to_string bin_writer_string
-  let bin_reader_t = Bin_prot.Type_class.cnv_reader Asn.OID.of_string bin_reader_string
-  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
-  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
-  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
-  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
-  let bin_t = Bin_prot.Type_class.{ reader = bin_reader_t; writer =  bin_writer_t}
+  include Bin_prot.Utils.Make_binable
+      (struct
+        module Binable = Bin_string
+        type t = Asn.OID.t
+        let to_binable = Asn.OID.to_string
+        let of_binable s = Asn.OID.of_string s
+      end)
 end
