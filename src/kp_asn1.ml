@@ -3,79 +3,6 @@ open Bin_prot.Std
 let try_with_asn f = try Result.Ok (f ()) with Asn.Parse_error s -> Result.Error s
 let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.parse_error s
 
-let pp_of_to_string to_string fmt x =
-  Format.pp_print_string fmt (to_string x)
-
-module Asn = struct
-  include (Asn : module type of Asn with module OID := Asn.OID and type 'a t = 'a Asn.t)
-
-  module OID = struct
-    include Asn.OID
-    let pp = pp_of_to_string to_string
-    let compare a b =
-      String.compare (to_string a) (to_string b)
-    let equal a b = compare a b = 0
-
-    let of_yojson = function
-      | `String s -> Result.Ok (Asn.OID.of_string s)
-      | _ -> Result.Error "Cannot convert this json value to Asn.OID.t"
-
-    let to_yojson oid =
-      `String (Asn.OID.to_string oid)
-
-    let bin_writer_t = Bin_prot.Type_class.cnv_writer to_string bin_writer_string
-    let bin_reader_t = Bin_prot.Type_class.cnv_reader of_string bin_reader_string
-    let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
-    let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
-    let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
-    let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
-  end
-end
-
-module Z = struct
-  include Z
-  let pp = pp_of_to_string to_string
-
-  let of_yojson = function
-    | `String s -> Result.Ok (Z.of_string s)
-    | _ -> Result.Error "Cannot convert this json value to Z.t"
-
-  let to_yojson z =
-    `String (Z.to_string z)
-
-  let bin_writer_t = Bin_prot.Type_class.cnv_writer to_bits bin_writer_string
-  let bin_reader_t = Bin_prot.Type_class.cnv_reader of_bits bin_reader_string
-  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
-  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
-  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
-  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
-end
-
-module Cstruct = struct
-  include Cstruct
-
-  let to_hex_string cs =
-    let buf = Buffer.create 0 in
-    hexdump_to_buffer buf cs;
-    Buffer.contents buf
-
-  let pp = pp_of_to_string to_hex_string
-
-  let to_yojson cs =
-    `String (to_string cs)
-
-  let of_yojson = function
-    | `String s -> Result.Ok (of_string s)
-    | _ -> Result.Error "Cannot convert this json value to Cstruct.t"
-
-  let bin_writer_t = Bin_prot.Type_class.cnv_writer to_string bin_writer_string
-  let bin_reader_t = Bin_prot.Type_class.cnv_reader of_string bin_reader_string
-  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
-  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
-  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
-  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
-end
-
 module RSA =
 struct
   module Params =
@@ -87,8 +14,8 @@ struct
   module Public =
   struct
     type t = {
-      n: Z.t;
-      e: Z.t;
+      n: Kp_derivable.Z.t;
+      e: Kp_derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -113,9 +40,9 @@ struct
   module Private =
   struct
     type other_prime = {
-      r: Z.t;
-      d: Z.t;
-      t: Z.t;
+      r: Kp_derivable.Z.t;
+      d: Kp_derivable.Z.t;
+      t: Kp_derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -129,14 +56,14 @@ struct
         (required ~label:"coefficient" integer)
 
     type t = {
-      n: Z.t;
-      e: Z.t;
-      d: Z.t;
-      p: Z.t;
-      q: Z.t;
-      dp: Z.t;
-      dq: Z.t;
-      qinv: Z.t;
+      n: Kp_derivable.Z.t;
+      e: Kp_derivable.Z.t;
+      d: Kp_derivable.Z.t;
+      p: Kp_derivable.Z.t;
+      q: Kp_derivable.Z.t;
+      dp: Kp_derivable.Z.t;
+      dq: Kp_derivable.Z.t;
+      qinv: Kp_derivable.Z.t;
       other_primes: other_prime list;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
@@ -181,9 +108,9 @@ struct
   module Params =
   struct
     type t = {
-      p: Z.t;
-      q: Z.t;
-      g: Z.t;
+      p: Kp_derivable.Z.t;
+      q: Kp_derivable.Z.t;
+      g: Kp_derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -208,7 +135,7 @@ struct
 
   module Public =
   struct
-    type t = Z.t
+    type t = Kp_derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.integer
@@ -225,7 +152,7 @@ struct
 
   module Private =
   struct
-    type t = Z.t
+    type t = Kp_derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.integer
@@ -243,7 +170,7 @@ end
 
 module EC =
 struct
-  type point = Cstruct.t
+  type point = Kp_derivable.Cstruct.t
   [@@deriving ord,eq,show,yojson,bin_io]
 
   let point_grammar = Asn.octet_string
@@ -273,8 +200,8 @@ struct
 
     type basis =
       | GN
-      | TP of Z.t
-      | PP of Z.t * Z.t * Z.t
+      | TP of Kp_derivable.Z.t
+      | PP of Kp_derivable.Z.t * Kp_derivable.Z.t * Kp_derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let basis_grammar =
@@ -296,7 +223,7 @@ struct
            (required ~label:"k3" integer))
 
     type characteristic_two_params = {
-      m: Z.t;
+      m: Kp_derivable.Z.t;
       basis: basis;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
@@ -350,7 +277,7 @@ struct
         ctwo_params_grammar
 
     type t =
-      | Prime of Z.t
+      | Prime of Kp_derivable.Z.t
       | C_two of characteristic_two_params
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -370,7 +297,7 @@ struct
 
   module Specified_domain =
   struct
-    type field_element = Cstruct.t
+    type field_element = Kp_derivable.Cstruct.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let field_element_grammar = Asn.octet_string
@@ -378,7 +305,7 @@ struct
     type curve = {
       a: field_element;
       b: field_element;
-      seed: Cstruct.t option;
+      seed: Kp_derivable.Cstruct.t option;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -396,8 +323,8 @@ struct
       field: Field.t;
       curve: curve;
       base: point;
-      order: Z.t;
-      cofactor: Z.t option;
+      order: Kp_derivable.Z.t;
+      cofactor: Kp_derivable.Z.t option;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -420,7 +347,7 @@ struct
   module Params =
   struct
     type t =
-      | Named of Asn.OID.t
+      | Named of Kp_derivable.Asn_OID.t
       | Implicit
       | Specified of Specified_domain.t
     [@@deriving ord,eq,show,yojson,bin_io]
@@ -468,7 +395,7 @@ struct
   module Private =
   struct
     type t = {
-      k: Cstruct.t;
+      k: Kp_derivable.Cstruct.t;
       params: Params.t option;
       public_key: Public.t option;
     }
@@ -502,9 +429,9 @@ struct
   module Params =
   struct
     type t = {
-      p: Z.t;
-      g: Z.t;
-      l: Z.t option; (* privateValueLength *)
+      p: Kp_derivable.Z.t;
+      g: Kp_derivable.Z.t;
+      l: Kp_derivable.Z.t option; (* privateValueLength *)
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -529,7 +456,7 @@ struct
 
   module Public =
   struct
-    type t = Z.t
+    type t = Kp_derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.integer
@@ -546,7 +473,7 @@ struct
 
   module Private =
   struct
-    type t = Z.t
+    type t = Kp_derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.integer
