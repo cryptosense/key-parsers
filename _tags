@@ -11,6 +11,7 @@ true: debug
 <src/kp_asn1.*>: package(ppx_deriving_yojson), package(ppx_bin_prot)
 <src/kp_cvc.*>: package(ppx_deriving_yojson), package(ppx_bin_prot)
 <src/kp_ltpa.*>: package(ppx_deriving_yojson), package(ppx_bin_prot)
+<src/kp_derivable.*>: package(ppx_deriving_yojson), package(ppx_bin_prot)
 <src/key_parsers.mli>: package(ppx_deriving_yojson), package(ppx_bin_prot)
 
 <tests/*>: package(oUnit)

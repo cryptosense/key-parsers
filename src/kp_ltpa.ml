@@ -1,27 +1,5 @@
 open Bin_prot.Std
 
-let pp_of_to_string to_string fmt x =
-  Format.pp_print_string fmt (to_string x)
-
-module Z = struct
-  include Z
-  let pp = pp_of_to_string to_string
-
-  let of_yojson = function
-    | `String s -> Result.Ok (Z.of_string s)
-    | _ -> Result.Error "Cannot convert this json value to Z.t"
-
-  let to_yojson z =
-    `String (Z.to_string z)
-
-  let bin_writer_t = Bin_prot.Type_class.cnv_writer to_bits bin_writer_string
-  let bin_reader_t = Bin_prot.Type_class.cnv_reader of_bits bin_reader_string
-  let bin_size_t = bin_writer_t.Bin_prot.Type_class.size
-  let bin_write_t = bin_writer_t.Bin_prot.Type_class.write
-  let bin_read_t = bin_reader_t.Bin_prot.Type_class.read
-  let __bin_read_t__ = bin_reader_t.Bin_prot.Type_class.vtag_read
-end
-
 (** Read a big-endian arbitrary length number *)
 let get_z_be cs off len =
   let r = ref Z.zero in
@@ -39,10 +17,10 @@ module RSA = struct
 
   module Private = struct
     type t = {
-      e: Z.t;
-      d: Z.t;
-      p: Z.t;
-      q: Z.t;
+      e: Kp_derivable.Z.t;
+      d: Kp_derivable.Z.t;
+      p: Kp_derivable.Z.t;
+      q: Kp_derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -64,8 +42,8 @@ module RSA = struct
 
   module Public = struct
     type t = {
-      e: Z.t;
-      n: Z.t;
+      e: Kp_derivable.Z.t;
+      n: Kp_derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
