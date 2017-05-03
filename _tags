@@ -1,7 +1,10 @@
-true: package(asn1-combinators), package(zarith)
-true: package(result)
+true: package(asn1-combinators)
 true: package(bin_prot)
+true: package(hex)
 true: package(ppx_deriving), package(ppx_deriving.std), package(ppx_deriving_yojson.runtime)
+true: package(result)
+true: package(str)
+true: package(zarith)
 true: safe_string
 true: bin_annot
 true: debug
@@ -15,5 +18,4 @@ true: debug
 <src/key_parsers.mli>: package(ppx_deriving_yojson), package(ppx_bin_prot)
 
 <tests/*>: package(oUnit)
-<tests/*>: package(hex)
 <tests/*>: package(ppx_deriving.eq), package(ppx_deriving.show)

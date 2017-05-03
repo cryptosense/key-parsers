@@ -35,20 +35,30 @@ module Cstruct = struct
   type t = Cstruct.t
   [@@deriving eq,ord]
 
+  let hex_regexp = Str.regexp "0x[0-9a-f]*"
+
+  let is_hex s =
+    Str.string_match hex_regexp s 0 && [%eq: string] (Str.matched_string s) s
+
   let to_hex_string cs =
-    let buf = Buffer.create 0 in
-    Cstruct.hexdump_to_buffer buf cs;
-    Buffer.contents buf
+    let `Hex hs = Hex.of_cstruct cs in
+    hs
 
   let show = to_hex_string
   let pp = pp_of_to_string show
 
   let to_yojson cs =
-    `String (Cstruct.to_string cs)
+    `String ("0x" ^ to_hex_string cs)
 
   let of_yojson = function
-    | `String s -> Result.Ok (Cstruct.of_string s)
-    | _ -> Result.Error "Cannot convert this json value to Cstruct.t"
+    | `String "" -> Result.Ok (Cstruct.of_string "")
+    | `String s ->
+        if is_hex s then
+          let hex_s = `Hex (String.sub s 2 (String.length s - 2)) in
+          Result.Ok (Hex.to_cstruct hex_s)
+        else
+          Result.Error "Key_parsers.Cstruct.of_yojson: expected hex encoded json string"
+    | _ -> Result.Error "Key_parsers.Cstruct.of_yojson: expected json string"
 
   include Bin_prot.Utils.Make_binable
       (struct

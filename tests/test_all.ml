@@ -5,6 +5,7 @@ let suite =
   [ "LTPA" >::: Test_ltpa.suite
   ; "ASN1" >::: Test_asn1.suite
   ; "CVC" >::: Test_cvc.suite
+  ; "Derivable" >::: Test_derivable.suite
   ]
 
 let _ = run_test_tt_main suite
