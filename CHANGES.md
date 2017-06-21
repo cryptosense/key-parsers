@@ -1,3 +1,9 @@
+## 0.9.0
+
+*2017-06-21*
+
+- encode Cstruct as 0x prefixed hex string (breaks json compatibility)
+
 ## 0.8.1
 
 *2017-05-03*
