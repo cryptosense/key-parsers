@@ -104,28 +104,28 @@ let decode bytes =
         begin match cvc_type with
           | tag, _ when tag <= 0xff ->
               let i = i + 1 in
-              (tokenize[@tailcall]) ~acc bytes i lim (Some cvc_type) Length
+              tokenize ~acc bytes i lim (Some cvc_type) Length
           | tag, _ ->
               let i = i + 2 in
-              (tokenize[@tailcall]) ~acc bytes i lim (Some cvc_type) Length
+              tokenize ~acc bytes i lim (Some cvc_type) Length
         end
     | Length ->
         let code = Cstruct.get_uint8 bytes i in
         if code < 0x80
         then begin
           let i = i + 1 in
-          (tokenize[@tailcall]) ~acc:((`Length code) :: acc) bytes i lim state (Value code)
+          tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
         end
         else
           begin match code with
             | 0x81 ->
                 let code = Cstruct.get_uint8 bytes (i + 1) in
                 let i = i + 2 in
-                (tokenize[@tailcall]) ~acc:((`Length code) :: acc) bytes i lim state (Value code)
+                tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
             | 0x82 ->
                 let code = Cstruct.BE.get_uint16 bytes (i + 1) in
                 let i = i + 3 in
-                (tokenize[@tailcall]) ~acc:((`Length code) :: acc) bytes i lim state (Value code)
+                tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
             | _ ->
                 raise (Failure "Invalid LENGTH field in TLV encoded CVC data")
           end
@@ -145,7 +145,7 @@ let decode bytes =
             in
             `Bytes bytes' :: acc
         in
-        (if length + i >= Cstruct.len bytes then List.rev acc else (tokenize[@tailcall]) ~acc bytes (i + length) lim None Init)
+        (if length + i >= Cstruct.len bytes then List.rev acc else tokenize ~acc bytes (i + length) lim None Init)
   in
   let tokens = tokenize ~acc:[] bytes 0 (Cstruct.len bytes) None Init in
   let rec parse = function
