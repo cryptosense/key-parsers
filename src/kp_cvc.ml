@@ -1,7 +1,7 @@
 open Bin_prot.Std
 
-let base_rsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.1"
-let base_ecdsa_oid = Asn.OID.of_string "0.4.0.127.0.7.2.2.2.2"
+let base_rsa_oid = Asn.OID.(base 0 4 <|| [0;127;0;7;2;2;2;1])
+let base_ecdsa_oid = Asn.OID.(base 0 4 <|| [0;127;0;7;2;2;2;2])
 
 let rsa_oids =
   let open Asn.OID in
@@ -71,7 +71,7 @@ let atoz_bigendian s =
   Z.of_bits @@ reverse @@ Cstruct.to_string s
 
 let grammar =
-  let open Asn in
+  let open Asn.S in
   let f = function
     | oid when List.mem oid rsa_oids -> RSA oid
     | oid when List.mem oid ecdsa_oids -> ECDSA oid
@@ -83,9 +83,10 @@ let grammar =
   map f g oid
 
 let decode_oid str =
-  let t, left = Asn.(decode_exn (codec ber grammar) str) in
-  if Cstruct.len left = 0 then t
-  else Asn.parse_error "CVC: OID with leftover"
+  match Asn.(decode (codec ber grammar) str) with
+    | Ok (t, left) when Cstruct.len left = 0 -> t
+    | Ok _ -> Asn.S.parse_error "CVC: OID with leftover"
+    | Error _ -> Asn.S.parse_error "Cannot parse CVC OID"
 
 let decode bytes =
   let buffer = Cstruct.create 4_096 in
@@ -229,7 +230,7 @@ let decode bytes =
                 Error "Parse error: some elements are missing or are not correctly sorted"
           end
     | Some (Unknown oid) ->
-        Error (Printf.sprintf "unknown OID \"%s\"." (Asn.OID.to_string oid))
+        Error (Printf.sprintf "unknown OID \"%s\"." (Kp_derivable.Asn_OID.show oid))
     | None ->
         Error "invalid CVC key: OID not found"
 

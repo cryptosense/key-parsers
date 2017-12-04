@@ -71,24 +71,30 @@ end
 
 module Asn_OID = struct
   type t = Asn.OID.t
-  let show = Asn.OID.to_string
-  let pp = pp_of_to_string show
-  let compare a b =
-    String.compare (show a) (show b)
-  let equal a b = compare a b = 0
+  [@@deriving eq,ord,show]
+
+  let of_string_exn s =
+    match Asn.OID.of_string s with
+      | Some oid -> oid
+      | None -> invalid_arg "Kp_derivable.Asn_OID.of_string_exn"
 
   let of_yojson = function
-    | `String s -> Result.Ok (Asn.OID.of_string s)
+    | `String s ->
+        begin
+        match Asn.OID.of_string s with
+          | Some oid -> Result.Ok oid
+          | None -> Result.Error "Kp_derivable.Asn_OID.of_yojson"
+      end
     | _ -> Result.Error "Cannot convert this json value to Asn.OID.t"
 
   let to_yojson oid =
-    `String (Asn.OID.to_string oid)
+    `String (show oid)
 
   include Bin_prot.Utils.Make_binable
       (struct
         module Binable = Bin_string
         type t = Asn.OID.t
-        let to_binable = Asn.OID.to_string
-        let of_binable s = Asn.OID.of_string s
+        let to_binable = show
+        let of_binable = of_string_exn
       end)
 end
