@@ -2,9 +2,14 @@ open Bin_prot.Std
 
 let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.S.parse_error "%s" s
 
-let decode_helper name codec x =
+let encode_helper grammar =
+  let open Asn in
+  encode (codec der grammar)
+
+let decode_helper name grammar x =
+  let open Asn in
   let eprintf fmt = Printf.ksprintf (fun s -> Result.Error s) fmt in
-  match Asn.decode codec x with
+  match decode (codec ber grammar) x with
     | Result.Ok (t, left) when Cstruct.len left = 0 -> Result.Ok t
     | Result.Ok _ -> eprintf "%s: non empty leftover" name
     | Result.Error (`Parse s) -> eprintf "%s: %s" name s
@@ -33,11 +38,9 @@ struct
         (required ~label:"modulus" integer)
         (required ~label:"publicExponent" integer)
 
-    let encode = Asn.(encode (codec der grammar))
+    let encode = encode_helper grammar
 
-    let decode key =
-      let open Asn in
-      decode_helper "PKCS1 RSA public key" (codec ber grammar) key
+    let decode = decode_helper "PKCS1 RSA public key" grammar
   end
 
   module Private =
@@ -95,11 +98,9 @@ struct
          @ (required ~label:"coefficient" integer)
            -@ (optional ~label:"otherPrimeInfo" (sequence_of other_prime_grammar))
 
-    let encode = Asn.(encode (codec der grammar))
+    let encode = encode_helper grammar
 
-    let decode key =
-      let open Asn in
-      decode_helper "PKCS1 RSA private key" (codec ber grammar) key
+    let decode = decode_helper "PKCS1 RSA private key" grammar
   end
 end
 
@@ -123,11 +124,9 @@ struct
         (required ~label:"q" integer)
         (required ~label:"g" integer)
 
-    let encode = Asn.(encode (codec der grammar))
+    let encode = encode_helper grammar
 
-    let decode key =
-      let open Asn in
-      decode_helper "DSA params" (codec ber grammar) key
+    let decode = decode_helper "DSA params" grammar
   end
 
   module Public =
@@ -137,11 +136,9 @@ struct
 
     let grammar = Asn.S.integer
 
-    let encode = Asn.(encode (codec der grammar))
+    let encode = encode_helper grammar
 
-    let decode key =
-      let open Asn in
-      decode_helper "DSA public key" (codec ber grammar) key
+    let decode = decode_helper "DSA public key" grammar
   end
 
   module Private =
@@ -151,11 +148,9 @@ struct
 
     let grammar = Asn.S.integer
 
-    let encode = Asn.(encode (codec der grammar))
+    let encode = encode_helper grammar
 
-    let decode key =
-      let open Asn in
-      decode_helper "DSA private key" (codec ber grammar) key
+    let decode = decode_helper "DSA private key" grammar
   end
 end
 
@@ -358,10 +353,9 @@ struct
         null
         Specified_domain.grammar
 
-    let encode = Asn.(encode (codec der grammar))
-    let decode params =
-      let open Asn in
-      decode_helper "EC parameters" (codec ber grammar) params
+    let encode = encode_helper grammar
+
+    let decode = decode_helper "EC parameters" grammar
   end
 
   module Public =
@@ -371,10 +365,9 @@ struct
 
     let grammar = point_grammar
 
-    let encode = Asn.(encode (codec der grammar))
-    let decode key =
-      let open Asn in
-      decode_helper "EC public key" (codec ber grammar) key
+    let encode = encode_helper grammar
+
+    let decode = decode_helper "EC public key" grammar
   end
 
   module Private =
@@ -399,10 +392,9 @@ struct
         (optional ~label:"ECParameters" @@ explicit 0 Params.grammar)
         (optional ~label:"publicKey" @@ explicit 1 bit_string_cs)
 
-    let encode = Asn.(encode (codec der grammar))
-    let decode key =
-      let open Asn in
-      decode_helper "EC private key" (codec ber grammar) key
+    let encode = encode_helper grammar
+
+    let decode = decode_helper "EC private key" grammar
   end
 end
 
@@ -426,11 +418,9 @@ struct
         (required ~label:"g" integer)
         (optional ~label:"l" integer)
 
-    let encode = Asn.(encode (codec der grammar))
+    let encode = encode_helper grammar
 
-    let decode key =
-      let open Asn in
-      decode_helper "DH params" (codec ber grammar) key
+    let decode = decode_helper "DH params" grammar
   end
 
   module Public =
@@ -440,11 +430,9 @@ struct
 
     let grammar = Asn.S.integer
 
-    let encode = Asn.(encode (codec der grammar))
+    let encode = encode_helper grammar
 
-    let decode key =
-      let open Asn in
-      decode_helper "DH public key" (codec ber grammar) key
+    let decode = decode_helper "DH public key" grammar
   end
 
   module Private =
@@ -454,11 +442,9 @@ struct
 
     let grammar = Asn.S.integer
 
-    let encode = Asn.(encode (codec der grammar))
+    let encode = encode_helper grammar
 
-    let decode key =
-      let open Asn in
-      decode_helper "DH private key" (codec ber grammar) key
+    let decode = decode_helper "DH private key" grammar
   end
 end
 
@@ -587,10 +573,10 @@ struct
       (required ~label:"algorithm" Algorithm_identifier.dh_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
 
-  let encode_rsa = Asn.(encode (codec der rsa_grammar))
-  let encode_dsa = Asn.(encode (codec der dsa_grammar))
-  let encode_ec = Asn.(encode (codec der ec_grammar))
-  let encode_dh = Asn.(encode (codec der dh_grammar))
+  let encode_rsa = encode_helper rsa_grammar
+  let encode_dsa = encode_helper dsa_grammar
+  let encode_ec = encode_helper ec_grammar
+  let encode_dh = encode_helper dh_grammar
 
   let encode = function
     | `RSA key -> encode_rsa key
@@ -598,21 +584,13 @@ struct
     | `EC key -> encode_ec key
     | `DH key -> encode_dh key
 
-  let decode_rsa key =
-    let open Asn in
-    decode_helper "X509 RSA key" (codec ber rsa_grammar) key
+  let decode_rsa = decode_helper "X509 RSA key" rsa_grammar
 
-  let decode_dsa key =
-    let open Asn in
-    decode_helper "X509 DSA key" (codec ber dsa_grammar) key
+  let decode_dsa = decode_helper "X509 DSA key" dsa_grammar
 
-  let decode_ec key =
-    let open Asn in
-    decode_helper "X509 EC key" (codec ber ec_grammar) key
+  let decode_ec = decode_helper "X509 EC key" ec_grammar
 
-  let decode_dh key =
-    let open Asn in
-    decode_helper "X509 DH key" (codec ber dh_grammar) key
+  let decode_dh = decode_helper "X509 DH key" dh_grammar
 
   let decode key : (t, string) Result.result =
     (map_result (fun x -> `RSA x) (decode_rsa key))
@@ -688,10 +666,10 @@ struct
       (required ~label:"privateKey" octet_string)
       (optional ~label:"attributes" @@ implicit 0 null)
 
-  let encode_rsa = Asn.(encode (codec der rsa_grammar))
-  let encode_dsa = Asn.(encode (codec der dsa_grammar))
-  let encode_ec = Asn.(encode (codec der ec_grammar))
-  let encode_dh = Asn.(encode (codec der dh_grammar))
+  let encode_rsa = encode_helper rsa_grammar
+  let encode_dsa = encode_helper dsa_grammar
+  let encode_ec = encode_helper ec_grammar
+  let encode_dh = encode_helper dh_grammar
 
   let encode = function
     | `RSA key -> encode_rsa key
@@ -699,21 +677,13 @@ struct
     | `EC key -> encode_ec key
     | `DH key -> encode_dh key
 
-  let decode_rsa key =
-    let open Asn in
-    decode_helper "PKCS8 RSA key" (codec ber rsa_grammar) key
+  let decode_rsa = decode_helper "PKCS8 RSA key" rsa_grammar
 
-  let decode_dsa key =
-    let open Asn in
-    decode_helper "PKCS8 DSA key" (codec ber dsa_grammar) key
+  let decode_dsa = decode_helper "PKCS8 DSA key" dsa_grammar
 
-  let decode_ec key =
-    let open Asn in
-    decode_helper "PKCS8 EC key" (codec ber ec_grammar) key
+  let decode_ec = decode_helper "PKCS8 EC key" ec_grammar
 
-  let decode_dh key =
-    let open Asn in
-    decode_helper "PKCS8 DH key" (codec ber dh_grammar) key
+  let decode_dh = decode_helper "PKCS8 DH key" dh_grammar
 
   let decode key : (t, string) Result.result =
     (map_result (fun x -> `RSA x) (decode_rsa key))
