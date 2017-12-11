@@ -150,7 +150,7 @@ let dsa_suite =
 
 let ec_suite =
   let open Key_parsers.Asn1.EC in
-  let p256v1_oid = Asn.OID.of_string "1.2.840.10045.3.1.7" in
+  let p256v1_oid = Asn.OID.(base 1 2 <|| [840;10045;3;1;7]) in
   let exp_named_params = Params.Named p256v1_oid in
   let test_params expected real ctxt =
     let printer = Params.show in
