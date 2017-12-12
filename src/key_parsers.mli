@@ -1,4 +1,8 @@
+(** Parsers for various key formats *)
+
 module Asn1 : sig
+  (** Parsers for RSA PKCS#1 and RSA, DSA, DH and EC PKCS#8 and X509 formats *)
+
   module RSA :
   sig
     module Params :
@@ -295,8 +299,9 @@ module Asn1 : sig
 end
 
 module Ltpa : sig
+  (** Lightweight Third Party Authentication - keys used in IBM Websphere & Lotus Notes*)
+
   module RSA : sig
-    (** Lightweight Third Party Authentication - keys used in IBM Websphere & Lotus Notes*)
 
     module Private : sig
       (**
@@ -347,6 +352,8 @@ module Ltpa : sig
 end
 
 module Cvc : sig
+  (** Parsers for RSA and EC Card Verifiable Certificate key formats *)
+
   module RSA :
   sig
     module Public :

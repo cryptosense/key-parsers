@@ -5,6 +5,7 @@ homepage: "https://github.com/cryptosense/key-parsers"
 bug-reports: "https://github.com/cryptosense/key-parsers/issues"
 license: "BSD-2"
 dev-repo: "https://github.com/cryptosense/key-parsers.git"
+doc: "https://cryptosense.github.io/key-parsers/doc"
 build: [
   [ "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" ]
 ]
