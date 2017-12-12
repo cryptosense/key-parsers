@@ -1,3 +1,11 @@
+## 0.9.2
+
+*2017-12-12*
+
+- Switch to `asn1-combinators >= 0.2.0`
+- Refactor `Kp_asn1`
+- Add documentation and README
+
 ## 0.9.1
 
 *2017-08-30*
