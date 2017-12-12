@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="next" href="Key_parsers.Ltpa.RSA.Public.html">
+<link rel="Up" href="Key_parsers.Ltpa.RSA.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Key_parsers" rel="Chapter" href="Key_parsers.html"><title>Key_parsers.Ltpa.RSA.Private</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="Key_parsers.Ltpa.RSA.html" title="Key_parsers.Ltpa.RSA">Up</a>
+&nbsp;<a class="post" href="Key_parsers.Ltpa.RSA.Public.html" title="Key_parsers.Ltpa.RSA.Public">Next</a>
+</div>
+<h1>Module <a href="type_Key_parsers.Ltpa.RSA.Private.html">Key_parsers.Ltpa.RSA.Private</a></h1>
+
+<pre><span id="MODULEPrivate"><span class="keyword">module</span> Private</span>: <code class="code"><span class="keyword">sig</span></code> <a href="Key_parsers.Ltpa.RSA.Private.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<p>The format for private keys is:</p>
+
+<ul>
+<li>4 bytes: size of d encoded in big endian</li>
+<li>d</li>
+<li>3 bytes: e (0x01 0x00 0x01)</li>
+<li>p</li>
+<li>q</li>
+</ul>
+<p>d, p and q are encoded with a leading 0x00. The size of p and q is
+         determined from that of d (|p| = |q| = |d|/2 + 1).</p>
+
+<p>The format is a bit ambiguous if e is not 0x010001, so an error will be
+         raised in that case.</p>
+
+<pre><code><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.e">e</span>&nbsp;: <code class="type">Z.t</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.d">d</span>&nbsp;: <code class="type">Z.t</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.p">p</span>&nbsp;: <code class="type">Z.t</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTt.q">q</span>&nbsp;: <code class="type">Z.t</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALcompare"><span class="keyword">val</span> compare</span> : <code class="type"><a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a> -><br>       <a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a> -> Ppx_deriving_runtime.int</code></pre>
+<pre><span id="VALequal"><span class="keyword">val</span> equal</span> : <code class="type"><a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a> -><br>       <a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a> -> Ppx_deriving_runtime.bool</code></pre>
+<pre><span id="VALpp"><span class="keyword">val</span> pp</span> : <code class="type">Format.formatter -><br>       <a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a> -> Ppx_deriving_runtime.unit</code></pre>
+<pre><span id="VALshow"><span class="keyword">val</span> show</span> : <code class="type"><a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a> -> Ppx_deriving_runtime.string</code></pre>
+<pre><span id="VALto_yojson"><span class="keyword">val</span> to_yojson</span> : <code class="type"><a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a> -> Yojson.Safe.json</code></pre>
+<pre><span id="VALof_yojson"><span class="keyword">val</span> of_yojson</span> : <code class="type">Yojson.Safe.json -><br>       <a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a> Ppx_deriving_yojson_runtime.error_or</code></pre>
+<pre><span class="keyword">include</span> ??</pre>
+
+<pre><span id="VALdecode"><span class="keyword">val</span> decode</span> : <code class="type">Cstruct.t -> (<a href="Key_parsers.Ltpa.RSA.Private.html#TYPEt">t</a>, string) Result.result</code></pre></body></html>
