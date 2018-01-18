@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cryptosense/key-parsers.svg?branch=master)](https://travis-ci.org/cryptosense/key-parsers)
+[![Build Status](https://travis-ci.org/cryptosense/key-parsers.svg?branch=master)](https://travis-ci.org/cryptosense/key-parsers) [![docs](https://img.shields.io/badge/doc-online-blue.svg)](https://cryptosense.github.io/key-parsers/doc/)
 
 # `Key-parsers`
 
