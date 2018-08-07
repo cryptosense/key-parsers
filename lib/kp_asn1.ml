@@ -10,9 +10,9 @@ let decode_helper name grammar x =
   let open Asn in
   let eprintf fmt = Printf.ksprintf (fun s -> Result.Error s) fmt in
   match decode (codec ber grammar) x with
-    | Result.Ok (t, left) when Cstruct.len left = 0 -> Result.Ok t
-    | Result.Ok _ -> eprintf "%s: non empty leftover" name
-    | Result.Error (`Parse s) -> eprintf "%s: %s" name s
+  | Result.Ok (t, left) when Cstruct.len left = 0 -> Result.Ok t
+  | Result.Ok _ -> eprintf "%s: non empty leftover" name
+  | Result.Error (`Parse s) -> eprintf "%s: %s" name s
 
 module RSA =
 struct
@@ -78,12 +78,12 @@ struct
       let open Asn.S in
       let f = function
         | (0, (n, (e, (d, (p, (q, (dp, (dq, (qinv, None))))))))) ->
-            { n; e; d; p; q; dp; dq; qinv; other_primes=[]; }
+          { n; e; d; p; q; dp; dq; qinv; other_primes=[]; }
         | (1, (n, (e, (d, (p, (q, (dp, (dq, (qinv, Some other_primes))))))))) ->
-            { n; e; d; p; q; dp; dq; qinv; other_primes; }
+          { n; e; d; p; q; dp; dq; qinv; other_primes; }
         | _ ->
-            parse_error
-              "PKCS#1: RSA private key version inconsistent with key data" in
+          parse_error
+            "PKCS#1: RSA private key version inconsistent with key data" in
       let g { n; e; d; p; q; dp; dq; qinv; other_primes } =
         (0, (n, (e, (d, (p, (q ,(dp ,(dq, (qinv, None))))))))) in
       map f g @@ sequence
@@ -223,9 +223,9 @@ struct
         | _ -> parse_error "EC: field basis type and parameters don't match" in
       let g { m; basis } =
         match basis with
-          | GN -> (m, GN_typ, GN)
-          | TP k -> (m, TP_typ, TP k)
-          | PP (k1, k2, k3) -> (m, PP_typ, PP (k1, k2, k3)) in
+        | GN -> (m, GN_typ, GN)
+        | TP k -> (m, TP_typ, TP k)
+        | PP (k1, k2, k3) -> (m, PP_typ, PP (k1, k2, k3)) in
       map f g @@ sequence3
         (required ~label:"m" integer)
         (required ~label:"basis" basis_type_grammar)

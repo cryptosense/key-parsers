@@ -21,8 +21,8 @@ let rsa_suite =
     let real = decode cvc in
     let open Public in
     Test_util.assert_ok real @@ fun real ->
-      assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
-      assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
+    assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
+    assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
   in
   let cvc = fixture "rsa_cvc_dummy.key" in
   [ "Public" >:: test_pub ~decode:Cvc.RSA.Public.decode expected_public cvc
@@ -74,8 +74,8 @@ let ec_suite =
   let test_pub ~decode (expected : Public.t) cvc ctxt =
     let real = decode cvc in
     Test_util.assert_ok real @@ fun real ->
-      let open Public in
-      assert_equal ~ctxt ~printer:(show) ~cmp:(equal) expected real
+    let open Public in
+    assert_equal ~ctxt ~printer:(show) ~cmp:(equal) expected real
   in
   let cvc = fixture "ecdsa_cvc_dummy.key" in
   [ "Public" >:: test_pub ~decode:Cvc.EC.Public.decode expected_public cvc

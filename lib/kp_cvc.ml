@@ -84,155 +84,155 @@ let grammar =
 
 let decode_oid str =
   match Asn.(decode (codec ber grammar) str) with
-    | Ok (t, left) when Cstruct.len left = 0 -> t
-    | Ok _ -> Asn.S.parse_error "CVC: OID with leftover"
-    | Error _ -> Asn.S.parse_error "Cannot parse CVC OID"
+  | Ok (t, left) when Cstruct.len left = 0 -> t
+  | Ok _ -> Asn.S.parse_error "CVC: OID with leftover"
+  | Error _ -> Asn.S.parse_error "Cannot parse CVC OID"
 
 let decode bytes =
   let buffer = Cstruct.create 4_096 in
   (* FSM to produce `Type ..., `Length ..., `Value ... tokens from a blob.
    * This tries to exploit tailcall recursion as much as possible in order to
    * avoid a stack explosion
-   *)
+  *)
   let rec tokenize ~acc bytes i lim state = function
     | Init ->
-        if i >= lim then List.rev acc
-        else tokenize ~acc bytes i lim None Type
+      if i >= lim then List.rev acc
+      else tokenize ~acc bytes i lim None Type
     | Type ->
-        Cstruct.blit bytes i buffer 0 2;
-        let cvc_type = find_cvc_object_type buffer in
-        let acc = `Type cvc_type :: acc in
-        begin match cvc_type with
-          | tag, _ when tag <= 0xff ->
-              let i = i + 1 in
-              tokenize ~acc bytes i lim (Some cvc_type) Length
-          | tag, _ ->
-              let i = i + 2 in
-              tokenize ~acc bytes i lim (Some cvc_type) Length
-        end
-    | Length ->
-        let code = Cstruct.get_uint8 bytes i in
-        if code < 0x80
-        then begin
+      Cstruct.blit bytes i buffer 0 2;
+      let cvc_type = find_cvc_object_type buffer in
+      let acc = `Type cvc_type :: acc in
+      begin match cvc_type with
+        | tag, _ when tag <= 0xff ->
           let i = i + 1 in
-          tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
+          tokenize ~acc bytes i lim (Some cvc_type) Length
+        | tag, _ ->
+          let i = i + 2 in
+          tokenize ~acc bytes i lim (Some cvc_type) Length
+      end
+    | Length ->
+      let code = Cstruct.get_uint8 bytes i in
+      if code < 0x80
+      then begin
+        let i = i + 1 in
+        tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
+      end
+      else
+        begin match code with
+          | 0x81 ->
+            let code = Cstruct.get_uint8 bytes (i + 1) in
+            let i = i + 2 in
+            tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
+          | 0x82 ->
+            let code = Cstruct.BE.get_uint16 bytes (i + 1) in
+            let i = i + 3 in
+            tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
+          | _ ->
+            raise (Failure "Invalid LENGTH field in TLV encoded CVC data")
         end
-        else
-          begin match code with
-            | 0x81 ->
-                let code = Cstruct.get_uint8 bytes (i + 1) in
-                let i = i + 2 in
-                tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
-            | 0x82 ->
-                let code = Cstruct.BE.get_uint16 bytes (i + 1) in
-                let i = i + 3 in
-                tokenize ~acc:((`Length code) :: acc) bytes i lim state (Value code)
-            | _ ->
-                raise (Failure "Invalid LENGTH field in TLV encoded CVC data")
-          end
     | Value length ->
-        let is_rec =
-          match state with
-            | None -> false
-            | Some (_, (_, x)) -> x
-        in
-        let acc =
-          if is_rec
-          then
-            `Value (tokenize ~acc:[] bytes i (i + length) None Init) :: acc
-          else
-            let bytes' =
-              Cstruct.sub bytes i length
-            in
-            `Bytes bytes' :: acc
-        in
-        (if length + i >= Cstruct.len bytes then List.rev acc else tokenize ~acc bytes (i + length) lim None Init)
+      let is_rec =
+        match state with
+        | None -> false
+        | Some (_, (_, x)) -> x
+      in
+      let acc =
+        if is_rec
+        then
+          `Value (tokenize ~acc:[] bytes i (i + length) None Init) :: acc
+        else
+          let bytes' =
+            Cstruct.sub bytes i length
+          in
+          `Bytes bytes' :: acc
+      in
+      (if length + i >= Cstruct.len bytes then List.rev acc else tokenize ~acc bytes (i + length) lim None Init)
   in
   let tokens = tokenize ~acc:[] bytes 0 (Cstruct.len bytes) None Init in
   let rec parse = function
     | `Type (_, (`PUBLIC_KEY, _)) :: `Length _ :: `Value ls :: _ ->
-        parse ls
+      parse ls
     | `Type (_, (`OID, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        let bytes =
-          let prefix =
-            Printf.sprintf "\006%c" (Char.chr (Cstruct.len bytes))
-            |> Cstruct.of_string
-          in
-          Cstruct.append prefix bytes
+      let bytes =
+        let prefix =
+          Printf.sprintf "\006%c" (Char.chr (Cstruct.len bytes))
+          |> Cstruct.of_string
         in
-        `Oid (decode_oid bytes) :: parse tl
+        Cstruct.append prefix bytes
+      in
+      `Oid (decode_oid bytes) :: parse tl
     | `Type (_, (`MODULUS, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Modulus (atoz_bigendian bytes) :: parse tl
+      `Modulus (atoz_bigendian bytes) :: parse tl
     | `Type (0x82, ((*`EXPONENT or COEFFICIENT_A *) _ , _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Exponent bytes :: parse tl
+      `Exponent bytes :: parse tl
     | `Type (_, (`COEFFICIENT_B, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Coefficient_b bytes :: parse tl
+      `Coefficient_b bytes :: parse tl
     | `Type (_, (`BASE_POINT_G, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Base_point_g bytes :: parse tl
+      `Base_point_g bytes :: parse tl
     | `Type (_, (`BASE_POINT_R_ORDER, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Base_point_r_order (atoz_bigendian bytes) :: parse tl
+      `Base_point_r_order (atoz_bigendian bytes) :: parse tl
     | `Type (_, (`PUBLIC_POINT_Y, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Public_point_y  bytes :: parse tl
+      `Public_point_y  bytes :: parse tl
     | `Type (_, (`COFACTOR_F, _)) :: `Length _ :: `Bytes bytes :: tl ->
-        `Cofactor_f (atoz_bigendian bytes) :: parse tl
+      `Cofactor_f (atoz_bigendian bytes) :: parse tl
     | [] ->
-        []
+      []
     | `Type (_, _) :: tl
     | `Length _ :: tl
     | `Bytes _ :: tl
     | `Value _ :: tl ->
-        parse tl
+      parse tl
   in
   let symbols = parse tokens in
   let oid =
     try
       let x = List.find (function `Oid x -> true | _ -> false) symbols in
       match x with
-        | `Oid x ->
-            Some x
-        | _ -> None
+      | `Oid x ->
+        Some x
+      | _ -> None
     with Not_found -> None
   in
   let open Result in
   match oid with
-    | Some (RSA _) ->
-        begin match symbols with
-          | [ `Oid _
-            ; `Modulus n
-            ; `Exponent e
-            ] ->
-              Ok (`RSA (n, (atoz_bigendian e)))
-          | _ ->
-              Error "Parse error: some elements are missing or are not correctly sorted"
-        end
-    | Some (ECDSA _) ->
-          begin match symbols with
-            | [ `Oid _
-              ; `Modulus modulus
-              ; `Exponent (* `Coefficient_a *) coefficient_a
-              ; `Coefficient_b coefficient_b
-              ; `Base_point_g base_point_g
-              ; `Base_point_r_order base_point_r_order
-              ; `Public_point_y public_point_y
-              ; `Cofactor_f cofactor_f
-              ] ->
-                Ok (
-                  `ECDSA
-                    ( modulus
-                    , coefficient_a
-                    , coefficient_b
-                    , base_point_g
-                    , base_point_r_order
-                    , public_point_y
-                    , cofactor_f
-                    ))
-            | _ ->
-                Error "Parse error: some elements are missing or are not correctly sorted"
-          end
-    | Some (Unknown oid) ->
-        Error (Printf.sprintf "unknown OID \"%s\"." (Kp_derivable.Asn_OID.show oid))
-    | None ->
-        Error "invalid CVC key: OID not found"
+  | Some (RSA _) ->
+    begin match symbols with
+      | [ `Oid _
+        ; `Modulus n
+        ; `Exponent e
+        ] ->
+        Ok (`RSA (n, (atoz_bigendian e)))
+      | _ ->
+        Error "Parse error: some elements are missing or are not correctly sorted"
+    end
+  | Some (ECDSA _) ->
+    begin match symbols with
+      | [ `Oid _
+        ; `Modulus modulus
+        ; `Exponent (* `Coefficient_a *) coefficient_a
+        ; `Coefficient_b coefficient_b
+        ; `Base_point_g base_point_g
+        ; `Base_point_r_order base_point_r_order
+        ; `Public_point_y public_point_y
+        ; `Cofactor_f cofactor_f
+        ] ->
+        Ok (
+          `ECDSA
+            ( modulus
+            , coefficient_a
+            , coefficient_b
+            , base_point_g
+            , base_point_r_order
+            , public_point_y
+            , cofactor_f
+            ))
+      | _ ->
+        Error "Parse error: some elements are missing or are not correctly sorted"
+    end
+  | Some (Unknown oid) ->
+    Error (Printf.sprintf "unknown OID \"%s\"." (Kp_derivable.Asn_OID.show oid))
+  | None ->
+    Error "invalid CVC key: OID not found"
 
 module RSA =
 struct
@@ -247,13 +247,13 @@ struct
     let decode bytes =
       let open Result in
       match decode bytes with
-        | Ok (`RSA (n, e)) ->
-            Ok {n; e}
-        | Ok (`ECDSA _)
-        | Ok `UNKNOWN ->
-            Error "CVC: Algorithm OID and parameters do not match."
-        | Error _ as err ->
-            err
+      | Ok (`RSA (n, e)) ->
+        Ok {n; e}
+      | Ok (`ECDSA _)
+      | Ok `UNKNOWN ->
+        Error "CVC: Algorithm OID and parameters do not match."
+      | Error _ as err ->
+        err
   end
 end
 
@@ -270,33 +270,33 @@ struct
       ; public_point_y : Kp_derivable.Cstruct.t
       ; cofactor_f : Kp_derivable.Z.t
       }
-      [@@deriving ord,eq,yojson,eq,show,bin_io]
+    [@@deriving ord,eq,yojson,eq,show,bin_io]
 
     let decode bytes =
       let open Result in
       match decode bytes with
-        | Ok(
-            `ECDSA(
-              modulus
-              , coefficient_a
-              , coefficient_b
-              , base_point_g
-              , base_point_r_order
-              , public_point_y
-              , cofactor_f)) ->
-            Ok
-              { modulus
-              ; coefficient_a
-              ; coefficient_b
-              ; base_point_g
-              ; base_point_r_order
-              ; public_point_y
-              ; cofactor_f
-              }
-        | Ok (`RSA _)
-        | Ok `UNKNOWN ->
-            Error "CVC: Algorithm OID and parameters do not match."
-        | Error _ as err ->
-            err
+      | Ok(
+          `ECDSA(
+            modulus
+          , coefficient_a
+          , coefficient_b
+          , base_point_g
+          , base_point_r_order
+          , public_point_y
+          , cofactor_f)) ->
+        Ok
+          { modulus
+          ; coefficient_a
+          ; coefficient_b
+          ; base_point_g
+          ; base_point_r_order
+          ; public_point_y
+          ; cofactor_f
+          }
+      | Ok (`RSA _)
+      | Ok `UNKNOWN ->
+        Error "CVC: Algorithm OID and parameters do not match."
+      | Error _ as err ->
+        err
   end
 end
