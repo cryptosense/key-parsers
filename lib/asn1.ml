@@ -25,8 +25,8 @@ struct
   module Public =
   struct
     type t = {
-      n: Kp_derivable.Z.t;
-      e: Kp_derivable.Z.t;
+      n: Derivable.Z.t;
+      e: Derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -46,9 +46,9 @@ struct
   module Private =
   struct
     type other_prime = {
-      r: Kp_derivable.Z.t;
-      d: Kp_derivable.Z.t;
-      t: Kp_derivable.Z.t;
+      r: Derivable.Z.t;
+      d: Derivable.Z.t;
+      t: Derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -62,14 +62,14 @@ struct
         (required ~label:"coefficient" integer)
 
     type t = {
-      n: Kp_derivable.Z.t;
-      e: Kp_derivable.Z.t;
-      d: Kp_derivable.Z.t;
-      p: Kp_derivable.Z.t;
-      q: Kp_derivable.Z.t;
-      dp: Kp_derivable.Z.t;
-      dq: Kp_derivable.Z.t;
-      qinv: Kp_derivable.Z.t;
+      n: Derivable.Z.t;
+      e: Derivable.Z.t;
+      d: Derivable.Z.t;
+      p: Derivable.Z.t;
+      q: Derivable.Z.t;
+      dp: Derivable.Z.t;
+      dq: Derivable.Z.t;
+      qinv: Derivable.Z.t;
       other_primes: other_prime list;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
@@ -109,9 +109,9 @@ struct
   module Params =
   struct
     type t = {
-      p: Kp_derivable.Z.t;
-      q: Kp_derivable.Z.t;
-      g: Kp_derivable.Z.t;
+      p: Derivable.Z.t;
+      q: Derivable.Z.t;
+      g: Derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -131,7 +131,7 @@ struct
 
   module Public =
   struct
-    type t = Kp_derivable.Z.t
+    type t = Derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.S.integer
@@ -143,7 +143,7 @@ struct
 
   module Private =
   struct
-    type t = Kp_derivable.Z.t
+    type t = Derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.S.integer
@@ -156,7 +156,7 @@ end
 
 module EC =
 struct
-  type point = Kp_derivable.Cstruct.t
+  type point = Derivable.Cstruct.t
   [@@deriving ord,eq,show,yojson,bin_io]
 
   let point_grammar = Asn.S.octet_string
@@ -186,8 +186,8 @@ struct
 
     type basis =
       | GN
-      | TP of Kp_derivable.Z.t
-      | PP of Kp_derivable.Z.t * Kp_derivable.Z.t * Kp_derivable.Z.t
+      | TP of Derivable.Z.t
+      | PP of Derivable.Z.t * Derivable.Z.t * Derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let basis_grammar =
@@ -209,7 +209,7 @@ struct
            (required ~label:"k3" integer))
 
     type characteristic_two_params = {
-      m: Kp_derivable.Z.t;
+      m: Derivable.Z.t;
       basis: basis;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
@@ -263,7 +263,7 @@ struct
         ctwo_params_grammar
 
     type t =
-      | Prime of Kp_derivable.Z.t
+      | Prime of Derivable.Z.t
       | C_two of characteristic_two_params
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -283,7 +283,7 @@ struct
 
   module Specified_domain =
   struct
-    type field_element = Kp_derivable.Cstruct.t
+    type field_element = Derivable.Cstruct.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let field_element_grammar = Asn.S.octet_string
@@ -291,7 +291,7 @@ struct
     type curve = {
       a: field_element;
       b: field_element;
-      seed: Kp_derivable.Cstruct.t option;
+      seed: Derivable.Cstruct.t option;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -309,8 +309,8 @@ struct
       field: Field.t;
       curve: curve;
       base: point;
-      order: Kp_derivable.Z.t;
-      cofactor: Kp_derivable.Z.t option;
+      order: Derivable.Z.t;
+      cofactor: Derivable.Z.t option;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -333,7 +333,7 @@ struct
   module Params =
   struct
     type t =
-      | Named of Kp_derivable.Asn_OID.t
+      | Named of Derivable.Asn_OID.t
       | Implicit
       | Specified of Specified_domain.t
     [@@deriving ord,eq,show,yojson,bin_io]
@@ -373,7 +373,7 @@ struct
   module Private =
   struct
     type t = {
-      k: Kp_derivable.Cstruct.t;
+      k: Derivable.Cstruct.t;
       params: Params.t option;
       public_key: Public.t option;
     }
@@ -403,9 +403,9 @@ struct
   module Params =
   struct
     type t = {
-      p: Kp_derivable.Z.t;
-      g: Kp_derivable.Z.t;
-      l: Kp_derivable.Z.t option; (* privateValueLength *)
+      p: Derivable.Z.t;
+      g: Derivable.Z.t;
+      l: Derivable.Z.t option; (* privateValueLength *)
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -425,7 +425,7 @@ struct
 
   module Public =
   struct
-    type t = Kp_derivable.Z.t
+    type t = Derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.S.integer
@@ -437,7 +437,7 @@ struct
 
   module Private =
   struct
-    type t = Kp_derivable.Z.t
+    type t = Derivable.Z.t
     [@@deriving ord,eq,show,yojson,bin_io]
 
     let grammar = Asn.S.integer

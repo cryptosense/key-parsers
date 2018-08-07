@@ -3,7 +3,7 @@ open OUnit2
 module Derivable_Cstruct = struct
   let to_yojson_suite =
     let test ~expected ~cstruct ctxt =
-      assert_equal ~ctxt expected (Kp_derivable.Cstruct.to_yojson cstruct)
+      assert_equal ~ctxt expected (Key_parsers.Derivable.Cstruct.to_yojson cstruct)
     in
     [ "Empty" >:: test ~expected:(`String "0x") ~cstruct:(Cstruct.of_string "")
     ; "Non empty" >:: test ~expected:(`String "0x616263") ~cstruct:(Cstruct.of_string "abc")
@@ -12,8 +12,8 @@ module Derivable_Cstruct = struct
   let of_yojson_suite =
     let test ~expected ~yojson ctxt =
       let cmp = [%eq: (Cstruct.t, string) Result.result] in
-      let printer = [%show: (Kp_derivable.Cstruct.t, string) Result.result] in
-      assert_equal ~ctxt ~cmp ~printer expected (Kp_derivable.Cstruct.of_yojson yojson)
+      let printer = [%show: (Key_parsers.Derivable.Cstruct.t, string) Result.result] in
+      assert_equal ~ctxt ~cmp ~printer expected (Key_parsers.Derivable.Cstruct.of_yojson yojson)
     in
     [ "Not a string" >::
       test

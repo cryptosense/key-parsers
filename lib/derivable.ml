@@ -76,14 +76,14 @@ module Asn_OID = struct
   let of_string_exn s =
     match Asn.OID.of_string s with
     | Some oid -> oid
-    | None -> invalid_arg "Kp_derivable.Asn_OID.of_string_exn"
+    | None -> invalid_arg "Key_parsers.Derivable.Asn_OID.of_string_exn"
 
   let of_yojson = function
     | `String s ->
       begin
         match Asn.OID.of_string s with
         | Some oid -> Result.Ok oid
-        | None -> Result.Error "Kp_derivable.Asn_OID.of_yojson"
+        | None -> Result.Error "Key_parsers.Derivable.Asn_OID.of_yojson"
       end
     | _ -> Result.Error "Cannot convert this json value to Asn.OID.t"
 
