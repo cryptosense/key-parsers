@@ -12,4 +12,4 @@ let equal_options ~(equal : 'a -> 'a -> bool) (a : 'a option) (b : 'a option) =
   | None, None -> true
   | _, _ -> false
 
-let cstruct_of_hex str = `Hex (String.lowercase str) |> Hex.to_cstruct
+let cstruct_of_hex str = `Hex (String.lowercase_ascii str) |> Hex.to_cstruct

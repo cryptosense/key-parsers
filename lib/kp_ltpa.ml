@@ -1,5 +1,3 @@
-open Bin_prot.Std
-
 (** Read a big-endian arbitrary length number *)
 let get_z_be cs off len =
   let r = ref Z.zero in

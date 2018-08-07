@@ -6,5 +6,5 @@ let read_cstruct path =
   Cstruct.of_string s
 
 let fixture name =
-  let path = Printf.sprintf "tests/keys/%s" name in
+  let path = Printf.sprintf "keys/%s" name in
   read_cstruct path

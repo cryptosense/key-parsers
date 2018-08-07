@@ -1,5 +1,3 @@
-open Bin_prot.Std
-
 let base_rsa_oid = Asn.OID.(base 0 4 <|| [0;127;0;7;2;2;2;1])
 let base_ecdsa_oid = Asn.OID.(base 0 4 <|| [0;127;0;7;2;2;2;2])
 
@@ -106,7 +104,7 @@ let decode bytes =
         | tag, _ when tag <= 0xff ->
           let i = i + 1 in
           tokenize ~acc bytes i lim (Some cvc_type) Length
-        | tag, _ ->
+        | _, _ ->
           let i = i + 2 in
           tokenize ~acc bytes i lim (Some cvc_type) Length
       end
@@ -186,7 +184,7 @@ let decode bytes =
   let symbols = parse tokens in
   let oid =
     try
-      let x = List.find (function `Oid x -> true | _ -> false) symbols in
+      let x = List.find (function `Oid _ -> true | _ -> false) symbols in
       match x with
       | `Oid x ->
         Some x

@@ -1,7 +1,0 @@
-version = "%%VERSION_NUM%%"
-description = "Parsers for multiple key format"
-archive(byte) = "key_parsers.cma"
-archive(native) = "key_parsers.cmxa"
-plugin(byte) = "key_parsers.cma"
-plugin(native) = "key_parsers.cmxs"
-requires = "asn1-combinators bin_prot hex ppx_deriving.runtime ppx_deriving_yojson.runtime str result zarith"

@@ -84,7 +84,7 @@ struct
         | _ ->
           parse_error
             "PKCS#1: RSA private key version inconsistent with key data" in
-      let g { n; e; d; p; q; dp; dq; qinv; other_primes } =
+      let g {n; e; d; p; q; dp; dq; qinv; _} =
         (0, (n, (e, (d, (p, (q ,(dp ,(dq, (qinv, None))))))))) in
       map f g @@ sequence
       @@ (required ~label:"version" int)
@@ -612,7 +612,7 @@ struct
 
   let rsa_grammar =
     let open Asn.S in
-    let f (version, (), octet_string, attributes) =
+    let f (version, (), octet_string, _attributes) =
       if version = 0 then
         raise_asn @@ fun () -> RSA.Private.decode octet_string
       else
@@ -626,7 +626,7 @@ struct
 
   let dsa_grammar =
     let open Asn.S in
-    let f (version, params, octet_string, attributes) =
+    let f (version, params, octet_string, _attributes) =
       if version = 0 then
         params, raise_asn @@ fun () -> DSA.Private.decode octet_string
       else
@@ -640,7 +640,7 @@ struct
 
   let ec_grammar =
     let open Asn.S in
-    let f (version, params, octet_string, attributes) =
+    let f (version, params, octet_string, _attributes) =
       if version = 0 then
         params, raise_asn @@ fun () -> EC.Private.decode octet_string
       else
@@ -654,7 +654,7 @@ struct
 
   let dh_grammar =
     let open Asn.S in
-    let f (version, params, octet_string, attributes) =
+    let f (version, params, octet_string, _attributes) =
       if version = 0 then
         params, raise_asn @@ fun () -> DH.Private.decode octet_string
       else
