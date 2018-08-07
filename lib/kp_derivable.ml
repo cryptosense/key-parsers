@@ -53,11 +53,11 @@ module Cstruct = struct
   let of_yojson = function
     | `String "" -> Result.Ok (Cstruct.of_string "")
     | `String s ->
-        if is_hex s then
-          let hex_s = `Hex (String.sub s 2 (String.length s - 2)) in
-          Result.Ok (Hex.to_cstruct hex_s)
-        else
-          Result.Error "Key_parsers.Cstruct.of_yojson: expected hex encoded json string"
+      if is_hex s then
+        let hex_s = `Hex (String.sub s 2 (String.length s - 2)) in
+        Result.Ok (Hex.to_cstruct hex_s)
+      else
+        Result.Error "Key_parsers.Cstruct.of_yojson: expected hex encoded json string"
     | _ -> Result.Error "Key_parsers.Cstruct.of_yojson: expected json string"
 
   include Bin_prot.Utils.Make_binable
@@ -75,15 +75,15 @@ module Asn_OID = struct
 
   let of_string_exn s =
     match Asn.OID.of_string s with
-      | Some oid -> oid
-      | None -> invalid_arg "Kp_derivable.Asn_OID.of_string_exn"
+    | Some oid -> oid
+    | None -> invalid_arg "Kp_derivable.Asn_OID.of_string_exn"
 
   let of_yojson = function
     | `String s ->
-        begin
+      begin
         match Asn.OID.of_string s with
-          | Some oid -> Result.Ok oid
-          | None -> Result.Error "Kp_derivable.Asn_OID.of_yojson"
+        | Some oid -> Result.Ok oid
+        | None -> Result.Error "Kp_derivable.Asn_OID.of_yojson"
       end
     | _ -> Result.Error "Cannot convert this json value to Asn.OID.t"
 
