@@ -6,6 +6,6 @@ let api = ["Key_parsers"]
 
 let () =
   Pkg.describe "key-parsers" @@ fun c ->
-  Ok [ Pkg.mllib ~api "src/key_parsers.mllib"
+  Ok [ Pkg.mllib ~api "lib/key_parsers.mllib"
      ; Pkg.test "tests/test_all"
      ]

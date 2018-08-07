@@ -1,4 +1,4 @@
-B _build/src
+B _build/lib
 B _build/tests
 
 PKG asn1-combinators
