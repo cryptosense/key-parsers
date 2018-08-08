@@ -1,3 +1,9 @@
+## unreleased
+
+### Changed
+
+- Use dune instead of ocamlbuild and topkg
+
 ## 0.9.2
 
 *2017-12-12*

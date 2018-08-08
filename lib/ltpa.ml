@@ -1,5 +1,3 @@
-open Bin_prot.Std
-
 (** Read a big-endian arbitrary length number *)
 let get_z_be cs off len =
   let r = ref Z.zero in
@@ -17,10 +15,10 @@ module RSA = struct
 
   module Private = struct
     type t = {
-      e: Kp_derivable.Z.t;
-      d: Kp_derivable.Z.t;
-      p: Kp_derivable.Z.t;
-      q: Kp_derivable.Z.t;
+      e: Derivable.Z.t;
+      d: Derivable.Z.t;
+      p: Derivable.Z.t;
+      q: Derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -42,8 +40,8 @@ module RSA = struct
 
   module Public = struct
     type t = {
-      e: Kp_derivable.Z.t;
-      n: Kp_derivable.Z.t;
+      e: Derivable.Z.t;
+      n: Derivable.Z.t;
     }
     [@@deriving ord,eq,show,yojson,bin_io]
 

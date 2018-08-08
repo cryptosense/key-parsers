@@ -1,5 +1,3 @@
-open Bin_prot.Std
-
 let base_rsa_oid = Asn.OID.(base 0 4 <|| [0;127;0;7;2;2;2;1])
 let base_ecdsa_oid = Asn.OID.(base 0 4 <|| [0;127;0;7;2;2;2;2])
 
@@ -23,9 +21,6 @@ let ecdsa_oids =
   ; base_ecdsa_oid <| 4
   ; base_ecdsa_oid <| 5
   ]
-
-type t =
-  [ `RSA of Z.t * Z.t | `ECDSA of Z.t * Z.t * Z.t * Z.t * Z.t * Z.t * Z.t  | `UNKNOWN ]
 
 type algo_typ =
   | RSA of Asn.OID.t
@@ -106,7 +101,7 @@ let decode bytes =
         | tag, _ when tag <= 0xff ->
           let i = i + 1 in
           tokenize ~acc bytes i lim (Some cvc_type) Length
-        | tag, _ ->
+        | _, _ ->
           let i = i + 2 in
           tokenize ~acc bytes i lim (Some cvc_type) Length
       end
@@ -186,7 +181,7 @@ let decode bytes =
   let symbols = parse tokens in
   let oid =
     try
-      let x = List.find (function `Oid x -> true | _ -> false) symbols in
+      let x = List.find (function `Oid _ -> true | _ -> false) symbols in
       match x with
       | `Oid x ->
         Some x
@@ -230,7 +225,7 @@ let decode bytes =
         Error "Parse error: some elements are missing or are not correctly sorted"
     end
   | Some (Unknown oid) ->
-    Error (Printf.sprintf "unknown OID \"%s\"." (Kp_derivable.Asn_OID.show oid))
+    Error (Printf.sprintf "unknown OID \"%s\"." (Derivable.Asn_OID.show oid))
   | None ->
     Error "invalid CVC key: OID not found"
 
@@ -239,8 +234,8 @@ struct
   module Public =
   struct
     type t = {
-      n: Kp_derivable.Z.t;
-      e: Kp_derivable.Z.t;
+      n: Derivable.Z.t;
+      e: Derivable.Z.t;
     }
     [@@deriving ord,eq,yojson,eq,show,bin_io]
 
@@ -262,13 +257,13 @@ struct
   module Public =
   struct
     type t =
-      { modulus : Kp_derivable.Z.t
-      ; coefficient_a : Kp_derivable.Cstruct.t
-      ; coefficient_b : Kp_derivable.Cstruct.t
-      ; base_point_g : Kp_derivable.Cstruct.t
-      ; base_point_r_order : Kp_derivable.Z.t
-      ; public_point_y : Kp_derivable.Cstruct.t
-      ; cofactor_f : Kp_derivable.Z.t
+      { modulus : Derivable.Z.t
+      ; coefficient_a : Derivable.Cstruct.t
+      ; coefficient_b : Derivable.Cstruct.t
+      ; base_point_g : Derivable.Cstruct.t
+      ; base_point_r_order : Derivable.Z.t
+      ; public_point_y : Derivable.Cstruct.t
+      ; cofactor_f : Derivable.Z.t
       }
     [@@deriving ord,eq,yojson,eq,show,bin_io]
 
