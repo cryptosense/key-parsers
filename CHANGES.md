@@ -1,6 +1,10 @@
 ## unreleased
 
-### Changed
+### Deprecates
+
+- `Yojson` and `Bin_prot` (de)serializers are deprecated ahead of their removal in `1.0.0`.
+
+### Changes
 
 - Use dune instead of ocamlbuild and topkg
 
