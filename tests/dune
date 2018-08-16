@@ -1,14 +1,8 @@
-(alias
-  (name runtest)
+(test
+  (name test_all)
   (deps
-    (:tests test_all.exe)
     (glob_files keys/*)
   )
-  (action (run %{tests}))
-)
-
-(executable
-  (name test_all)
   (libraries
     key-parsers
     oUnit
