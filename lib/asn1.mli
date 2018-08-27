@@ -1,6 +1,6 @@
 (** Parsers for RSA PKCS#1 and RSA, DSA, DH and EC PKCS#8 and X509 formats *)
 
-module RSA :
+module Rsa :
 sig
   module Params :
   sig
@@ -112,7 +112,7 @@ sig
   end
 end
 
-module DSA :
+module Dsa :
 sig
   module Params :
   sig
@@ -212,7 +212,7 @@ sig
   end
 end
 
-module EC :
+module Ec :
 sig
   type point = Cstruct.t
   [@@deriving ord,eq,show]
@@ -526,7 +526,7 @@ sig
   end
 end
 
-module DH :
+module Dh :
 sig
   module Params :
   sig
@@ -628,19 +628,19 @@ end
 
 module Algorithm_identifier :
 sig
-  val rsa_grammar : RSA.Params.t Asn.t
-  val dsa_grammar : DSA.Params.t Asn.t
-  val ec_grammar : EC.Params.t Asn.t
-  val dh_grammar : DH.Params.t Asn.t
+  val rsa_grammar : Rsa.Params.t Asn.t
+  val dsa_grammar : Dsa.Params.t Asn.t
+  val ec_grammar : Ec.Params.t Asn.t
+  val dh_grammar : Dh.Params.t Asn.t
 end
 
 module X509 :
 sig
   type t =
-    [ `RSA of RSA.Public.t
-    | `DSA of DSA.Params.t * DSA.Public.t
-    | `EC of EC.Params.t * EC.Public.t
-    | `DH of DH.Params.t * DH.Public.t
+    [ `RSA of Rsa.Public.t
+    | `DSA of Dsa.Params.t * Dsa.Public.t
+    | `EC of Ec.Params.t * Ec.Public.t
+    | `DH of Dh.Params.t * Dh.Public.t
     ]
   [@@deriving ord,eq,show]
 
@@ -664,30 +664,30 @@ sig
   val of_yojson : Yojson.Safe.json -> (t, string) result
   [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
-  val rsa_grammar : RSA.Public.t Asn.t
-  val dsa_grammar : (DSA.Params.t * DSA.Public.t) Asn.t
-  val ec_grammar : (EC.Params.t * EC.Public.t) Asn.t
-  val dh_grammar : (DH.Params.t * DH.Public.t) Asn.t
+  val rsa_grammar : Rsa.Public.t Asn.t
+  val dsa_grammar : (Dsa.Params.t * Dsa.Public.t) Asn.t
+  val ec_grammar : (Ec.Params.t * Ec.Public.t) Asn.t
+  val dh_grammar : (Dh.Params.t * Dh.Public.t) Asn.t
 
   val encode : t -> Cstruct.t
-  val encode_rsa : RSA.Public.t -> Cstruct.t
-  val encode_dsa : (DSA.Params.t * DSA.Public.t) -> Cstruct.t
-  val encode_ec : (EC.Params.t * EC.Public.t) -> Cstruct.t
-  val encode_dh : (DH.Params.t * DH.Public.t) -> Cstruct.t
+  val encode_rsa : Rsa.Public.t -> Cstruct.t
+  val encode_dsa : (Dsa.Params.t * Dsa.Public.t) -> Cstruct.t
+  val encode_ec : (Ec.Params.t * Ec.Public.t) -> Cstruct.t
+  val encode_dh : (Dh.Params.t * Dh.Public.t) -> Cstruct.t
   val decode : Cstruct.t -> (t, string) Result.result
-  val decode_rsa : Cstruct.t -> (RSA.Public.t, string) Result.result
-  val decode_dsa : Cstruct.t -> ((DSA.Params.t * DSA.Public.t), string) Result.result
-  val decode_ec : Cstruct.t -> ((EC.Params.t * EC.Public.t), string) Result.result
-  val decode_dh : Cstruct.t -> ((DH.Params.t * DH.Public.t), string) Result.result
+  val decode_rsa : Cstruct.t -> (Rsa.Public.t, string) Result.result
+  val decode_dsa : Cstruct.t -> ((Dsa.Params.t * Dsa.Public.t), string) Result.result
+  val decode_ec : Cstruct.t -> ((Ec.Params.t * Ec.Public.t), string) Result.result
+  val decode_dh : Cstruct.t -> ((Dh.Params.t * Dh.Public.t), string) Result.result
 end
 
 module PKCS8 :
 sig
   type t =
-    [ `RSA of RSA.Private.t
-    | `DSA of DSA.Params.t * DSA.Private.t
-    | `EC of EC.Params.t * EC.Private.t
-    | `DH of DH.Params.t * DH.Private.t
+    [ `RSA of Rsa.Private.t
+    | `DSA of Dsa.Params.t * Dsa.Private.t
+    | `EC of Ec.Params.t * Ec.Private.t
+    | `DH of Dh.Params.t * Dh.Private.t
     ]
   [@@deriving ord,eq,show]
 
@@ -711,19 +711,28 @@ sig
   val of_yojson : Yojson.Safe.json -> (t, string) result
   [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
-  val rsa_grammar : RSA.Private.t Asn.t
-  val dsa_grammar : (DSA.Params.t * DSA.Private.t) Asn.t
-  val ec_grammar : (EC.Params.t * EC.Private.t) Asn.t
-  val dh_grammar : (DH.Params.t * DH.Private.t) Asn.t
+  val rsa_grammar : Rsa.Private.t Asn.t
+  val dsa_grammar : (Dsa.Params.t * Dsa.Private.t) Asn.t
+  val ec_grammar : (Ec.Params.t * Ec.Private.t) Asn.t
+  val dh_grammar : (Dh.Params.t * Dh.Private.t) Asn.t
 
   val encode : t -> Cstruct.t
-  val encode_rsa : RSA.Private.t -> Cstruct.t
-  val encode_dsa : (DSA.Params.t * DSA.Private.t) -> Cstruct.t
-  val encode_ec : (EC.Params.t * EC.Private.t) -> Cstruct.t
-  val encode_dh : (DH.Params.t * DH.Private.t) -> Cstruct.t
+  val encode_rsa : Rsa.Private.t -> Cstruct.t
+  val encode_dsa : (Dsa.Params.t * Dsa.Private.t) -> Cstruct.t
+  val encode_ec : (Ec.Params.t * Ec.Private.t) -> Cstruct.t
+  val encode_dh : (Dh.Params.t * Dh.Private.t) -> Cstruct.t
   val decode : Cstruct.t -> (t, string) Result.result
-  val decode_rsa : Cstruct.t -> (RSA.Private.t, string) Result.result
-  val decode_dsa : Cstruct.t -> ((DSA.Params.t * DSA.Private.t), string) Result.result
-  val decode_ec : Cstruct.t -> ((EC.Params.t * EC.Private.t), string) Result.result
-  val decode_dh : Cstruct.t -> ((DH.Params.t * DH.Private.t), string) Result.result
+  val decode_rsa : Cstruct.t -> (Rsa.Private.t, string) Result.result
+  val decode_dsa : Cstruct.t -> ((Dsa.Params.t * Dsa.Private.t), string) Result.result
+  val decode_ec : Cstruct.t -> ((Ec.Params.t * Ec.Private.t), string) Result.result
+  val decode_dh : Cstruct.t -> ((Dh.Params.t * Dh.Private.t), string) Result.result
 end
+
+module RSA = Rsa
+[@@ocaml.deprecated "Use module Rsa instead"]
+module DSA = Dsa
+[@@ocaml.deprecated "Use module Dsa instead"]
+module EC = Ec
+[@@ocaml.deprecated "Use module Ec instead"]
+module DH = Dh
+[@@ocaml.deprecated "Use module Dh instead"]

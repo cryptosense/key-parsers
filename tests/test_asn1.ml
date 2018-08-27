@@ -2,7 +2,7 @@ open OUnit2
 open Test_helpers
 
 let rsa_suite =
-  let open Key_parsers.Asn1.RSA in
+  let open Key_parsers.Asn1.Rsa in
   (* This key pair was generated using openssl genrsa*)
   let expected_public, expected_private =
     let n =
@@ -83,7 +83,7 @@ let rsa_suite =
   ]
 
 let dsa_suite =
-  let open Key_parsers.Asn1.DSA in
+  let open Key_parsers.Asn1.Dsa in
   (* These parameters and key pair were generated using openssl dsaparam and gendsa *)
   let expected_params =
     let p =
@@ -149,7 +149,7 @@ let dsa_suite =
   ]
 
 let ec_suite =
-  let open Key_parsers.Asn1.EC in
+  let open Key_parsers.Asn1.Ec in
   let p256v1_oid = Asn.OID.(base 1 2 <|| [840;10045;3;1;7]) in
   let exp_named_params = Params.Named p256v1_oid in
   let test_params expected real ctxt =
@@ -274,7 +274,7 @@ let ec_suite =
   ]
 
 let dh_suite =
-  let open Key_parsers.Asn1.DH in
+  let open Key_parsers.Asn1.Dh in
   (* These parameters and key pair were generated using openssl dhparam and genpkey *)
   let expected_params =
     let p =
@@ -339,8 +339,8 @@ let dh_suite =
   ]
 
 let suite =
-  [ "RSA" >::: rsa_suite
-  ; "DSA" >::: dsa_suite
-  ; "EC" >::: ec_suite
-  ; "DH" >::: dh_suite
+  [ "Rsa" >::: rsa_suite
+  ; "Dsa" >::: dsa_suite
+  ; "Ec" >::: ec_suite
+  ; "Dh" >::: dh_suite
   ]

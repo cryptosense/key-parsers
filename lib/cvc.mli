@@ -1,6 +1,6 @@
 (** Parsers for RSA and EC Card Verifiable Certificate key formats *)
 
-module RSA :
+module Rsa :
 sig
   module Public :
   sig
@@ -34,7 +34,7 @@ sig
   end
 end
 
-module EC :
+module Ec :
 sig
   module Public :
   sig
@@ -72,3 +72,8 @@ sig
     val decode : Cstruct.t -> (t, string) Result.result
   end
 end
+
+module RSA = Rsa
+[@@ocaml.deprecated "Use module Rsa instead"]
+module EC = Ec
+[@@ocaml.deprecated "Use module Ec instead"]

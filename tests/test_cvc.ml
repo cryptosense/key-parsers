@@ -3,7 +3,7 @@ open Test_helpers
 
 let rsa_suite =
   let open Key_parsers in
-  let open Cvc.RSA in
+  let open Cvc.Rsa in
   let expected_public =
     let n =
       Z.of_string
@@ -25,13 +25,13 @@ let rsa_suite =
     assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
   in
   let cvc = fixture "rsa_cvc_dummy.key" in
-  [ "Public" >:: test_pub ~decode:Cvc.RSA.Public.decode expected_public cvc
+  [ "Public" >:: test_pub ~decode:Cvc.Rsa.Public.decode expected_public cvc
   ]
 
 let ec_suite =
   let open Key_parsers in
   let open Cvc in
-  let open EC in
+  let open Ec in
   let expected_public =
     (* parameters from secp256r1, public_point_y generated using openssl ecparam and pkey *)
     let modulus =
@@ -78,11 +78,11 @@ let ec_suite =
     assert_equal ~ctxt ~printer:(show) ~cmp:(equal) expected real
   in
   let cvc = fixture "ecdsa_cvc_dummy.key" in
-  [ "Public" >:: test_pub ~decode:Cvc.EC.Public.decode expected_public cvc
+  [ "Public" >:: test_pub ~decode:Cvc.Ec.Public.decode expected_public cvc
   ]
 
 let suite =
-  [ "RSA" >::: rsa_suite
-  ; "EC" >::: ec_suite
+  [ "Rsa" >::: rsa_suite
+  ; "Ec" >::: ec_suite
   ]
 

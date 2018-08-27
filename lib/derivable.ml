@@ -69,7 +69,7 @@ module Cstruct = struct
       end)
 end
 
-module Asn_OID = struct
+module Asn_oid = struct
   type t = Asn.OID.t
   [@@deriving eq,ord,show]
 

@@ -1,12 +1,18 @@
 ## unreleased
 
+### Add
+
+- Lowercase aliases for uppercase modules `RSA`, `DSA`, `EC` and `DH` in `Asn1`, `Cvc` and `Ltpa`
+
 ### Deprecates
 
 - `Yojson` and `Bin_prot` (de)serializers are deprecated ahead of their removal in `1.0.0`.
+- Uppercase modules such as `Asn1.RSA` in favor of their lowercase counterparts
 
 ### Changes
 
 - Use dune instead of ocamlbuild and topkg
+- Rename uppercase private variants and modules to lowercase ones
 
 ## 0.9.2
 

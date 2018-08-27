@@ -14,7 +14,7 @@ let decode_helper name grammar x =
   | Result.Ok _ -> eprintf "%s: non empty leftover" name
   | Result.Error (`Parse s) -> eprintf "%s: %s" name s
 
-module RSA =
+module Rsa =
 struct
   module Params =
   struct
@@ -104,7 +104,7 @@ struct
   end
 end
 
-module DSA =
+module Dsa =
 struct
   module Params =
   struct
@@ -154,7 +154,7 @@ struct
   end
 end
 
-module EC =
+module Ec =
 struct
   type point = Derivable.Cstruct.t
   [@@deriving ord,eq,show,yojson,bin_io]
@@ -177,7 +177,7 @@ struct
         | oid when oid = gn_oid -> GN_typ
         | oid when oid = tp_oid -> TP_typ
         | oid when oid = pp_oid -> PP_typ
-        | _ -> parse_error "EC: unexpected basis type OID" in
+        | _ -> parse_error "Ec: unexpected basis type OID" in
       let g = function
         | GN_typ -> gn_oid
         | TP_typ -> tp_oid
@@ -220,7 +220,7 @@ struct
         | (m, GN_typ, GN) -> { m; basis=GN }
         | (m, TP_typ, TP k) -> { m; basis=TP k }
         | (m, PP_typ, PP (k1, k2, k3)) -> { m; basis=PP (k1, k2, k3) }
-        | _ -> parse_error "EC: field basis type and parameters don't match" in
+        | _ -> parse_error "Ec: field basis type and parameters don't match" in
       let g { m; basis } =
         match basis with
         | GN -> (m, GN_typ, GN)
@@ -240,7 +240,7 @@ struct
       let f = function
         | oid when oid = prime_oid -> Prime_typ
         | oid when oid = characteristic_two_oid -> C_two_typ
-        | _ -> parse_error "EC: unexpected field type OID" in
+        | _ -> parse_error "Ec: unexpected field type OID" in
       let g = function
         | Prime_typ -> prime_oid
         | C_two_typ -> characteristic_two_oid in
@@ -272,7 +272,7 @@ struct
       let f = function
         | Prime_typ, Prime_p p -> Prime p
         | C_two_typ, C_two_p params -> C_two params
-        | _ -> parse_error "EC: field type and parameters don't match" in
+        | _ -> parse_error "Ec: field type and parameters don't match" in
       let g = function
         | Prime p -> Prime_typ, Prime_p p
         | C_two params -> C_two_typ, C_two_p params in
@@ -318,7 +318,7 @@ struct
       let open Asn.S in
       let f (version, field, curve, base, order , cofactor) =
         if version = 1 then { field; curve; base; order; cofactor }
-        else parse_error "EC: Unknown ECParameters version" in
+        else parse_error "Ec: Unknown ECParameters version" in
       let g { field; curve; base; order; cofactor } =
         (1, field, curve, base, order, cofactor) in
       map f g @@ sequence6
@@ -333,7 +333,7 @@ struct
   module Params =
   struct
     type t =
-      | Named of Derivable.Asn_OID.t
+      | Named of Derivable.Asn_oid.t
       | Implicit
       | Specified of Specified_domain.t
     [@@deriving ord,eq,show,yojson,bin_io]
@@ -383,7 +383,7 @@ struct
       let open Asn.S in
       let f (version, k, params, public_key) =
         if version = 1 then { k; params; public_key }
-        else parse_error "EC: unknown private key version" in
+        else parse_error "Ec: unknown private key version" in
       let g { k; params; public_key } =
         (1, k, params, public_key) in
       map f g @@ sequence4
@@ -398,7 +398,7 @@ struct
   end
 end
 
-module DH =
+module Dh =
 struct
   module Params =
   struct
@@ -461,27 +461,27 @@ struct
     let ec_mqv = Asn.OID.(base 1 3 <|| [132;1;13])
 
     type t =
-      | DSA
-      | RSA
-      | EC
-      | DH
+      | Dsa
+      | Rsa
+      | Ec
+      | Dh
       | Unknown of Asn.OID.t
 
     let grammar =
       let open Asn.S in
       let f = function
-        | oid when oid = rsa_oid -> RSA
-        | oid when oid = dsa_oid -> DSA
+        | oid when oid = rsa_oid -> Rsa
+        | oid when oid = dsa_oid -> Dsa
         | oid when oid = ec_oid
                 || oid = ec_dh
-                || oid = ec_mqv -> EC
-        | oid when oid = dh_oid -> DH
+                || oid = ec_mqv -> Ec
+        | oid when oid = dh_oid -> Dh
         | oid -> Unknown oid in
       let g = function
-        | RSA -> rsa_oid
-        | DSA -> dsa_oid
-        | EC -> ec_oid
-        | DH -> dh_oid
+        | Rsa -> rsa_oid
+        | Dsa -> dsa_oid
+        | Ec -> ec_oid
+        | Dh -> dh_oid
         | Unknown oid -> oid in
       map f g oid
   end
@@ -489,42 +489,42 @@ struct
   let rsa_grammar =
     let open Asn.S in
     let f = function
-      | Algo.RSA, () -> ()
+      | Algo.Rsa, () -> ()
       | _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g () = Algo.RSA, () in
+    let g () = Algo.Rsa, () in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
-      (required ~label:"parameters" RSA.Params.grammar)
+      (required ~label:"parameters" Rsa.Params.grammar)
 
   let dsa_grammar =
     let open Asn.S in
     let f = function
-      | Algo.DSA, params -> params
+      | Algo.Dsa, params -> params
       | _, _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g params = Algo.DSA, params in
+    let g params = Algo.Dsa, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
-      (required ~label:"parameters" DSA.Params.grammar)
+      (required ~label:"parameters" Dsa.Params.grammar)
 
   let ec_grammar =
     let open Asn.S in
     let f = function
-      | Algo.EC, params -> params
+      | Algo.Ec, params -> params
       | _, _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g params = Algo.EC, params in
+    let g params = Algo.Ec, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
-      (required ~label:"parameters" EC.Params.grammar)
+      (required ~label:"parameters" Ec.Params.grammar)
 
   let dh_grammar =
     let open Asn.S in
     let f = function
-      | Algo.DH, params -> params
+      | Algo.Dh, params -> params
       | _, _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g params = Algo.DH, params in
+    let g params = Algo.Dh, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
-      (required ~label:"parameters" DH.Params.grammar)
+      (required ~label:"parameters" Dh.Params.grammar)
 
 end
 
@@ -534,25 +534,25 @@ let default_result default = function Result.Error _ -> default () | Result.Ok _
 module X509 =
 struct
   type t =
-    [ `RSA of RSA.Public.t
-    | `DSA of DSA.Params.t * DSA.Public.t
-    | `EC of EC.Params.t * EC.Public.t
-    | `DH of DH.Params.t * DH.Public.t
+    [ `RSA of Rsa.Public.t
+    | `DSA of Dsa.Params.t * Dsa.Public.t
+    | `EC of Ec.Params.t * Ec.Public.t
+    | `DH of Dh.Params.t * Dh.Public.t
     ]
   [@@deriving ord,eq,show,yojson,bin_io]
 
   let rsa_grammar =
     let open Asn.S in
-    let f ((), bit_string) = raise_asn @@ fun () -> RSA.Public.decode bit_string in
-    let g key = (), RSA.Public.encode key in
+    let f ((), bit_string) = raise_asn @@ fun () -> Rsa.Public.decode bit_string in
+    let g key = (), Rsa.Public.encode key in
     map f g @@ sequence2
       (required ~label:"alogrithm" Algorithm_identifier.rsa_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
 
   let dsa_grammar =
     let open Asn.S in
-    let f (params, bit_string) = params, raise_asn @@ fun () -> DSA.Public.decode bit_string in
-    let g (params, key) = params, DSA.Public.encode key in
+    let f (params, bit_string) = params, raise_asn @@ fun () -> Dsa.Public.decode bit_string in
+    let g (params, key) = params, Dsa.Public.encode key in
     map f g @@ sequence2
       (required ~label:"alogrithm" Algorithm_identifier.dsa_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
@@ -567,8 +567,8 @@ struct
 
   let dh_grammar =
     let open Asn.S in
-    let f (params, bit_string) = params, raise_asn @@ fun () -> DH.Public.decode bit_string in
-    let g (params, key) = params, DH.Public.encode key in
+    let f (params, bit_string) = params, raise_asn @@ fun () -> Dh.Public.decode bit_string in
+    let g (params, key) = params, Dh.Public.encode key in
     map f g @@ sequence2
       (required ~label:"algorithm" Algorithm_identifier.dh_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
@@ -603,10 +603,10 @@ end
 module PKCS8 =
 struct
   type t =
-    [ `RSA of RSA.Private.t
-    | `DSA of DSA.Params.t * DSA.Private.t
-    | `EC of EC.Params.t * EC.Private.t
-    | `DH of DH.Params.t * DH.Private.t
+    [ `RSA of Rsa.Private.t
+    | `DSA of Dsa.Params.t * Dsa.Private.t
+    | `EC of Ec.Params.t * Ec.Private.t
+    | `DH of Dh.Params.t * Dh.Private.t
     ]
   [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -614,10 +614,10 @@ struct
     let open Asn.S in
     let f (version, (), octet_string, _attributes) =
       if version = 0 then
-        raise_asn @@ fun () -> RSA.Private.decode octet_string
+        raise_asn @@ fun () -> Rsa.Private.decode octet_string
       else
         parse_error "PKCS8: version %d not supported" version in
-    let g key = 0, (), RSA.Private.encode key, None in
+    let g key = 0, (), Rsa.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
       (required ~label:"privateKeyAlogrithm" Algorithm_identifier.rsa_grammar)
@@ -628,10 +628,10 @@ struct
     let open Asn.S in
     let f (version, params, octet_string, _attributes) =
       if version = 0 then
-        params, raise_asn @@ fun () -> DSA.Private.decode octet_string
+        params, raise_asn @@ fun () -> Dsa.Private.decode octet_string
       else
         parse_error "PKCS8: version %d not supported" version in
-    let g (params, key) = 0, params, DSA.Private.encode key, None in
+    let g (params, key) = 0, params, Dsa.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
       (required ~label:"privateKeyAlogrithm" Algorithm_identifier.dsa_grammar)
@@ -642,10 +642,10 @@ struct
     let open Asn.S in
     let f (version, params, octet_string, _attributes) =
       if version = 0 then
-        params, raise_asn @@ fun () -> EC.Private.decode octet_string
+        params, raise_asn @@ fun () -> Ec.Private.decode octet_string
       else
         parse_error "PKCS8: version %d not supported" version in
-    let g (params, key) = 0, params, EC.Private.encode key, None in
+    let g (params, key) = 0, params, Ec.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
       (required ~label:"privateKeyAlogrithm" Algorithm_identifier.ec_grammar)
@@ -656,10 +656,10 @@ struct
     let open Asn.S in
     let f (version, params, octet_string, _attributes) =
       if version = 0 then
-        params, raise_asn @@ fun () -> DH.Private.decode octet_string
+        params, raise_asn @@ fun () -> Dh.Private.decode octet_string
       else
         parse_error "PKCS8: version %d not supported" version in
-    let g (params, key) = 0, params, DH.Private.encode key, None in
+    let g (params, key) = 0, params, Dh.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
       (required ~label:"privateKeyAlogrithm" Algorithm_identifier.dh_grammar)
@@ -692,3 +692,8 @@ struct
     |> default_result (fun () -> map_result (fun x -> `DH x) (decode_dh key))
     |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end
+
+module RSA = Rsa
+module DSA = Dsa
+module EC = Ec
+module DH = Dh
