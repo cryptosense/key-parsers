@@ -333,7 +333,7 @@ struct
   module Params =
   struct
     type t =
-      | Named of Derivable.Asn_OID.t
+      | Named of Derivable.Asn_oid.t
       | Implicit
       | Specified of Specified_domain.t
     [@@deriving ord,eq,show,yojson,bin_io]
@@ -461,27 +461,27 @@ struct
     let ec_mqv = Asn.OID.(base 1 3 <|| [132;1;13])
 
     type t =
-      | DSA
-      | RSA
-      | EC
-      | DH
+      | Dsa
+      | Rsa
+      | Ec
+      | Dh
       | Unknown of Asn.OID.t
 
     let grammar =
       let open Asn.S in
       let f = function
-        | oid when oid = rsa_oid -> RSA
-        | oid when oid = dsa_oid -> DSA
+        | oid when oid = rsa_oid -> Rsa
+        | oid when oid = dsa_oid -> Dsa
         | oid when oid = ec_oid
                 || oid = ec_dh
-                || oid = ec_mqv -> EC
-        | oid when oid = dh_oid -> DH
+                || oid = ec_mqv -> Ec
+        | oid when oid = dh_oid -> Dh
         | oid -> Unknown oid in
       let g = function
-        | RSA -> rsa_oid
-        | DSA -> dsa_oid
-        | EC -> ec_oid
-        | DH -> dh_oid
+        | Rsa -> rsa_oid
+        | Dsa -> dsa_oid
+        | Ec -> ec_oid
+        | Dh -> dh_oid
         | Unknown oid -> oid in
       map f g oid
   end
@@ -489,9 +489,9 @@ struct
   let rsa_grammar =
     let open Asn.S in
     let f = function
-      | Algo.RSA, () -> ()
+      | Algo.Rsa, () -> ()
       | _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g () = Algo.RSA, () in
+    let g () = Algo.Rsa, () in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
       (required ~label:"parameters" Rsa.Params.grammar)
@@ -499,9 +499,9 @@ struct
   let dsa_grammar =
     let open Asn.S in
     let f = function
-      | Algo.DSA, params -> params
+      | Algo.Dsa, params -> params
       | _, _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g params = Algo.DSA, params in
+    let g params = Algo.Dsa, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
       (required ~label:"parameters" Dsa.Params.grammar)
@@ -509,9 +509,9 @@ struct
   let ec_grammar =
     let open Asn.S in
     let f = function
-      | Algo.EC, params -> params
+      | Algo.Ec, params -> params
       | _, _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g params = Algo.EC, params in
+    let g params = Algo.Ec, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
       (required ~label:"parameters" Ec.Params.grammar)
@@ -519,9 +519,9 @@ struct
   let dh_grammar =
     let open Asn.S in
     let f = function
-      | Algo.DH, params -> params
+      | Algo.Dh, params -> params
       | _, _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g params = Algo.DH, params in
+    let g params = Algo.Dh, params in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
       (required ~label:"parameters" Dh.Params.grammar)

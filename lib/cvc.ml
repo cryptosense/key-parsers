@@ -23,8 +23,8 @@ let ecdsa_oids =
   ]
 
 type algo_typ =
-  | RSA of Asn.OID.t
-  | ECDSA of Asn.OID.t
+  | Rsa of Asn.OID.t
+  | Ecdsa of Asn.OID.t
   | Unknown of Asn.OID.t
 
 type parser_state =
@@ -68,12 +68,12 @@ let atoz_bigendian s =
 let grammar =
   let open Asn.S in
   let f = function
-    | oid when List.mem oid rsa_oids -> RSA oid
-    | oid when List.mem oid ecdsa_oids -> ECDSA oid
+    | oid when List.mem oid rsa_oids -> Rsa oid
+    | oid when List.mem oid ecdsa_oids -> Ecdsa oid
     | oid -> Unknown oid in
   let g = function
-    | RSA oid -> oid
-    | ECDSA oid -> oid
+    | Rsa oid -> oid
+    | Ecdsa oid -> oid
     | Unknown oid -> oid in
   map f g oid
 
@@ -190,17 +190,17 @@ let decode bytes =
   in
   let open Result in
   match oid with
-  | Some (RSA _) ->
+  | Some (Rsa _) ->
     begin match symbols with
       | [ `Oid _
         ; `Modulus n
         ; `Exponent e
         ] ->
-        Ok (`RSA (n, (atoz_bigendian e)))
+        Ok (`Rsa (n, (atoz_bigendian e)))
       | _ ->
         Error "Parse error: some elements are missing or are not correctly sorted"
     end
-  | Some (ECDSA _) ->
+  | Some (Ecdsa _) ->
     begin match symbols with
       | [ `Oid _
         ; `Modulus modulus
@@ -212,7 +212,7 @@ let decode bytes =
         ; `Cofactor_f cofactor_f
         ] ->
         Ok (
-          `ECDSA
+          `Ecdsa
             ( modulus
             , coefficient_a
             , coefficient_b
@@ -225,7 +225,7 @@ let decode bytes =
         Error "Parse error: some elements are missing or are not correctly sorted"
     end
   | Some (Unknown oid) ->
-    Error (Printf.sprintf "unknown OID \"%s\"." (Derivable.Asn_OID.show oid))
+    Error (Printf.sprintf "unknown OID \"%s\"." (Derivable.Asn_oid.show oid))
   | None ->
     Error "invalid CVC key: OID not found"
 
@@ -242,10 +242,10 @@ struct
     let decode bytes =
       let open Result in
       match decode bytes with
-      | Ok (`RSA (n, e)) ->
+      | Ok (`Rsa (n, e)) ->
         Ok {n; e}
-      | Ok (`ECDSA _)
-      | Ok `UNKNOWN ->
+      | Ok (`Ecdsa _)
+      | Ok `Unknown ->
         Error "CVC: Algorithm OID and parameters do not match."
       | Error _ as err ->
         err
@@ -271,7 +271,7 @@ struct
       let open Result in
       match decode bytes with
       | Ok(
-          `ECDSA(
+          `Ecdsa(
             modulus
           , coefficient_a
           , coefficient_b
@@ -288,8 +288,8 @@ struct
           ; public_point_y
           ; cofactor_f
           }
-      | Ok (`RSA _)
-      | Ok `UNKNOWN ->
+      | Ok (`Rsa _)
+      | Ok `Unknown ->
         Error "CVC: Algorithm OID and parameters do not match."
       | Error _ as err ->
         err

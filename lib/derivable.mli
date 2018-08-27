@@ -8,7 +8,7 @@ module Cstruct : sig
   [@@deriving bin_io,eq,ord,show,yojson]
 end
 
-module Asn_OID : sig
+module Asn_oid : sig
   type t = Asn.OID.t
   [@@deriving eq,ord,show]
 
