@@ -25,9 +25,6 @@ depends: [
   "result" {>= "1.2"}
   "zarith" {>= "1.4.1"}
 ]
-conflicts: [
-  "ppx_driver" {= "v0.9.1"}
-]
 synopsis: "Parsers for multiple key formats"
 description: """
 This library provides parsers for several encodings of RSA, DSA, Diffie-Hellman or

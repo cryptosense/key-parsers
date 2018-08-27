@@ -20,7 +20,7 @@ module Rsa = struct
       p: Derivable.Z.t;
       q: Derivable.Z.t;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving eq,ord,show]
 
     let decode cs =
       try
@@ -43,7 +43,7 @@ module Rsa = struct
       e: Derivable.Z.t;
       n: Derivable.Z.t;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving eq,ord,show]
 
     let decode cs =
       try

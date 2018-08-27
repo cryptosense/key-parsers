@@ -237,7 +237,7 @@ struct
       n: Derivable.Z.t;
       e: Derivable.Z.t;
     }
-    [@@deriving ord,eq,yojson,eq,show,bin_io]
+    [@@deriving eq,ord,show]
 
     let decode bytes =
       let open Result in
@@ -265,7 +265,7 @@ struct
       ; public_point_y : Derivable.Cstruct.t
       ; cofactor_f : Derivable.Z.t
       }
-    [@@deriving ord,eq,yojson,eq,show,bin_io]
+    [@@deriving eq,ord,show]
 
     let decode bytes =
       let open Result in

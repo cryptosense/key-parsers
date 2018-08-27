@@ -1,5 +1,3 @@
-open Bin_prot.Std
-
 let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.S.parse_error "%s" s
 
 let encode_helper grammar =
@@ -28,7 +26,7 @@ struct
       n: Derivable.Z.t;
       e: Derivable.Z.t;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar =
       let open Asn.S in
@@ -50,7 +48,7 @@ struct
       d: Derivable.Z.t;
       t: Derivable.Z.t;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let other_prime_grammar =
       let open Asn.S in
@@ -72,7 +70,7 @@ struct
       qinv: Derivable.Z.t;
       other_primes: other_prime list;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar =
       let open Asn.S in
@@ -113,7 +111,7 @@ struct
       q: Derivable.Z.t;
       g: Derivable.Z.t;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar =
       let open Asn.S in
@@ -132,7 +130,7 @@ struct
   module Public =
   struct
     type t = Derivable.Z.t
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar = Asn.S.integer
 
@@ -144,7 +142,7 @@ struct
   module Private =
   struct
     type t = Derivable.Z.t
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar = Asn.S.integer
 
@@ -157,7 +155,7 @@ end
 module Ec =
 struct
   type point = Derivable.Cstruct.t
-  [@@deriving ord,eq,show,yojson,bin_io]
+  [@@deriving ord,eq,show]
 
   let point_grammar = Asn.S.octet_string
 
@@ -188,7 +186,7 @@ struct
       | GN
       | TP of Derivable.Z.t
       | PP of Derivable.Z.t * Derivable.Z.t * Derivable.Z.t
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let basis_grammar =
       let open Asn.S in
@@ -212,7 +210,7 @@ struct
       m: Derivable.Z.t;
       basis: basis;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let ctwo_params_grammar =
       let open Asn.S in
@@ -265,7 +263,7 @@ struct
     type t =
       | Prime of Derivable.Z.t
       | C_two of characteristic_two_params
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar =
       let open Asn.S in
@@ -284,7 +282,7 @@ struct
   module Specified_domain =
   struct
     type field_element = Derivable.Cstruct.t
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let field_element_grammar = Asn.S.octet_string
 
@@ -293,7 +291,7 @@ struct
       b: field_element;
       seed: Derivable.Cstruct.t option;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let curve_grammar =
       let open Asn.S in
@@ -312,7 +310,7 @@ struct
       order: Derivable.Z.t;
       cofactor: Derivable.Z.t option;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar =
       let open Asn.S in
@@ -336,7 +334,7 @@ struct
       | Named of Derivable.Asn_oid.t
       | Implicit
       | Specified of Specified_domain.t
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar =
       let open Asn.S in
@@ -361,7 +359,7 @@ struct
   module Public =
   struct
     type t = point
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar = point_grammar
 
@@ -377,7 +375,7 @@ struct
       params: Params.t option;
       public_key: Public.t option;
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar =
       let open Asn.S in
@@ -407,7 +405,7 @@ struct
       g: Derivable.Z.t;
       l: Derivable.Z.t option; (* privateValueLength *)
     }
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar =
       let open Asn.S in
@@ -426,7 +424,7 @@ struct
   module Public =
   struct
     type t = Derivable.Z.t
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar = Asn.S.integer
 
@@ -438,7 +436,7 @@ struct
   module Private =
   struct
     type t = Derivable.Z.t
-    [@@deriving ord,eq,show,yojson,bin_io]
+    [@@deriving ord,eq,show]
 
     let grammar = Asn.S.integer
 
@@ -539,7 +537,7 @@ struct
     | `EC of Ec.Params.t * Ec.Public.t
     | `DH of Dh.Params.t * Dh.Public.t
     ]
-  [@@deriving ord,eq,show,yojson,bin_io]
+  [@@deriving ord,eq,show]
 
   let rsa_grammar =
     let open Asn.S in
@@ -608,7 +606,7 @@ struct
     | `EC of Ec.Params.t * Ec.Private.t
     | `DH of Dh.Params.t * Dh.Private.t
     ]
-  [@@deriving ord,eq,show,yojson,bin_io]
+  [@@deriving ord,eq,show]
 
   let rsa_grammar =
     let open Asn.S in
