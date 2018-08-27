@@ -229,7 +229,7 @@ let decode bytes =
   | None ->
     Error "invalid CVC key: OID not found"
 
-module RSA =
+module Rsa =
 struct
   module Public =
   struct
@@ -252,7 +252,7 @@ struct
   end
 end
 
-module EC =
+module Ec =
 struct
   module Public =
   struct
@@ -295,3 +295,6 @@ struct
         err
   end
 end
+
+module RSA = Rsa
+module EC = Ec

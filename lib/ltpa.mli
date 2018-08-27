@@ -1,6 +1,6 @@
 (** Lightweight Third Party Authentication - keys used in IBM Websphere & Lotus Notes*)
 
-module RSA : sig
+module Rsa : sig
 
   module Private : sig
     (** The format for private keys is:
@@ -87,3 +87,6 @@ module RSA : sig
     val decode : Cstruct.t -> (t, string) Result.result
   end
 end
+
+module RSA = Rsa
+[@@ocaml.deprecated "Use module Rsa instead"]

@@ -7,7 +7,7 @@ let get_z_be cs off len =
   done;
   !r
 
-module RSA = struct
+module Rsa = struct
   (** If public exponent is not 0x10001, it is unclear how to parse the key *)
   let check_public_exponent e =
     if not (Z.equal e (Z.of_int 0x10001)) then
@@ -57,3 +57,5 @@ module RSA = struct
       with Invalid_argument s -> Result.Error s
   end
 end
+
+module RSA = Rsa
