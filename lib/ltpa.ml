@@ -57,5 +57,3 @@ module Rsa = struct
       with Invalid_argument s -> Result.Error s
   end
 end
-
-module RSA = Rsa

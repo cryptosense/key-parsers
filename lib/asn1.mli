@@ -295,12 +295,3 @@ sig
   val decode_ec : Cstruct.t -> ((Ec.Params.t * Ec.Private.t), string) Result.result
   val decode_dh : Cstruct.t -> ((Dh.Params.t * Dh.Private.t), string) Result.result
 end
-
-module RSA = Rsa
-[@@ocaml.deprecated "Use module Rsa instead"]
-module DSA = Dsa
-[@@ocaml.deprecated "Use module Dsa instead"]
-module EC = Ec
-[@@ocaml.deprecated "Use module Ec instead"]
-module DH = Dh
-[@@ocaml.deprecated "Use module Dh instead"]

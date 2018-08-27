@@ -32,8 +32,3 @@ sig
     val decode : Cstruct.t -> (t, string) Result.result
   end
 end
-
-module RSA = Rsa
-[@@ocaml.deprecated "Use module Rsa instead"]
-module EC = Ec
-[@@ocaml.deprecated "Use module Ec instead"]

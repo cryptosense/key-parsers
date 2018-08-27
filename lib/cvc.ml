@@ -295,6 +295,3 @@ struct
         err
   end
 end
-
-module RSA = Rsa
-module EC = Ec

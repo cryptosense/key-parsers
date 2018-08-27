@@ -690,8 +690,3 @@ struct
     |> default_result (fun () -> map_result (fun x -> `DH x) (decode_dh key))
     |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end
-
-module RSA = Rsa
-module DSA = Dsa
-module EC = Ec
-module DH = Dh
