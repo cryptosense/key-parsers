@@ -1,13 +1,13 @@
-## 0.10.0
-
-*2018-08-27*
+## unreleased
 
 ### Removes
 
 - `Yojson` and `Bin_prot` (de)serializers
 - Uppercase module aliases `RSA`, `DSA`, `EC` and `DH` in `Asn1`, `Cvc` and `Ltpa`
 
-## unreleased
+## 0.10.0
+
+*2018-08-27*
 
 ### Add
 
