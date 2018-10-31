@@ -1,3 +1,9 @@
+## unreleased
+
+### Fixes
+
+- Allow RSA parameters to be absent form the AlgorithmIdentifier Sequence
+
 ## 0.10.0
 
 *2018-08-27*

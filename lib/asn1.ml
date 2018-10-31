@@ -489,12 +489,12 @@ struct
   let rsa_grammar =
     let open Asn.S in
     let f = function
-      | Algo.Rsa, () -> ()
+      | Algo.Rsa, _ -> ()
       | _ -> parse_error "Algorithm OID and parameters don't match" in
-    let g () = Algo.Rsa, () in
+    let g () = Algo.Rsa, Some () in
     map f g @@ sequence2
       (required ~label:"algorithm" Algo.grammar)
-      (required ~label:"parameters" Rsa.Params.grammar)
+      (optional ~label:"parameters" Rsa.Params.grammar)
 
   let dsa_grammar =
     let open Asn.S in
