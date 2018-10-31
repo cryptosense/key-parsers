@@ -1,8 +1,7 @@
 open OUnit2
 open Test_helpers
 
-let rsa_suite =
-  let open Key_parsers.Asn1.Rsa in
+module Rsa = struct
   (* This key pair was generated using openssl genrsa*)
   let expected_public, expected_private =
     let n =
@@ -36,51 +35,48 @@ let rsa_suite =
       Z.of_string
         "0x008355897ABCEA9F39B116A241872E971F5F85AD2C435FD085D4C665C58B271B17"
     in
-    Public.{ n; e }, Private.{ n; e; d; p; q; dp; dq; qinv; other_primes=[] }
-  in
-  let cmp = Z.equal in
-  let printer = Z.to_string in
+    let open Key_parsers.Asn1.Rsa in
+    Public.{n; e}, Private.{n; e; d; p; q; dp; dq; qinv; other_primes=[]}
+
   let test_pub ~decode expected der ctxt =
-    let real = decode der in
-    let open Public in
-    Test_util.assert_ok real @@ fun real ->
-    assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
-    assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e
-  in
+    let open Key_parsers.Asn1.Rsa in
+    let actual = decode der in
+    Test_util.assert_ok actual @@ fun actual ->
+    assert_equal ~ctxt ~cmp:[%eq: Public.t] ~printer:[%show: Public.t] expected actual
+
   let test_priv ~decode expected der ctxt =
-    let real = decode der in
-    let open Private in
-    Test_util.assert_ok real @@ fun real ->
-    assert_equal ~ctxt ~cmp ~printer ~msg:"n" expected.n real.n;
-    assert_equal ~ctxt ~cmp ~printer ~msg:"e" expected.e real.e;
-    assert_equal ~ctxt ~cmp ~printer ~msg:"d" expected.d real.d;
-    assert_equal ~ctxt ~cmp ~printer ~msg:"p" expected.p real.p;
-    assert_equal ~ctxt ~cmp ~printer ~msg:"q" expected.q real.q;
-    assert_equal ~ctxt ~cmp ~printer ~msg:"dp" expected.dp real.dp;
-    assert_equal ~ctxt ~cmp ~printer ~msg:"dq" expected.dq real.dq;
-    assert_equal ~ctxt ~cmp ~printer ~msg:"qinv" expected.qinv real.qinv
-  in
-  let pkcs1_suite =
-    let private_der = fixture "rsa_pkcs1.der" in
-    let public_der = fixture "rsa_pkcs1_pub.der" in
-    [ "Private" >:: test_priv ~decode:Private.decode expected_private private_der
-    ; "Public" >:: test_pub ~decode:Public.decode expected_public public_der
+    let open Key_parsers.Asn1.Rsa in
+    let actual = decode der in
+    Test_util.assert_ok actual @@ fun actual ->
+    assert_equal ~ctxt ~cmp:[%eq: Private.t] ~printer:[%show: Private.t] expected actual
+
+  let test_pkcs1 =
+    let open Key_parsers.Asn1.Rsa in
+    "PKCS#1" >:::
+    [ "Private" >:: test_priv ~decode:Private.decode expected_private (fixture "rsa_pkcs1.der")
+    ; "Public" >:: test_pub ~decode:Public.decode expected_public (fixture "rsa_pkcs1_pub.der")
     ]
-  in
-  let x509_suite =
-    let der = fixture "rsa_x509.der" in
-    [ "Public" >:: test_pub ~decode:Key_parsers.Asn1.X509.decode_rsa expected_public der
+
+  let test_x509 =
+    let decode = Key_parsers.Asn1.X509.decode_rsa in
+    "X509" >:::
+    [ "Public" >:: test_pub ~decode expected_public (fixture "rsa_x509.der")
+    ; "Without parameters" >:: test_pub ~decode expected_public (fixture "rsa_x509_no_params.der")
     ]
-  in
-  let pkcs8_suite =
-    let der = fixture "rsa_pkcs8.der" in
-    [ "Private" >:: test_priv ~decode:Key_parsers.Asn1.PKCS8.decode_rsa expected_private der
+
+  let test_pkcs8 =
+    let decode = Key_parsers.Asn1.PKCS8.decode_rsa in
+    "PKCS#8" >:::
+    [ "Private" >:: test_priv ~decode expected_private (fixture "rsa_pkcs8.der")
     ]
-  in
-  [ "PKCS1" >::: pkcs1_suite
-  ; "X509" >::: x509_suite
-  ; "PKCS8" >::: pkcs8_suite
-  ]
+
+  let suite =
+    "Rsa" >:::
+    [ test_pkcs1
+    ; test_x509
+    ; test_pkcs8
+    ]
+end
 
 let dsa_suite =
   let open Key_parsers.Asn1.Dsa in
@@ -339,7 +335,7 @@ let dh_suite =
   ]
 
 let suite =
-  [ "Rsa" >::: rsa_suite
+  [ Rsa.suite
   ; "Dsa" >::: dsa_suite
   ; "Ec" >::: ec_suite
   ; "Dh" >::: dh_suite
