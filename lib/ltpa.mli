@@ -41,9 +41,9 @@ module Rsa : sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val decode : Cstruct.t -> (t, string) Result.result
@@ -79,9 +79,9 @@ module Rsa : sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val decode : Cstruct.t -> (t, string) Result.result
