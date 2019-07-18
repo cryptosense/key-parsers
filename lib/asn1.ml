@@ -546,7 +546,7 @@ struct
     let f ((), bit_string) = raise_asn @@ fun () -> Rsa.Public.decode bit_string in
     let g key = (), Rsa.Public.encode key in
     map f g @@ sequence2
-      (required ~label:"alogrithm" Algorithm_identifier.rsa_grammar)
+      (required ~label:"algorithm" Algorithm_identifier.rsa_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
 
   let dsa_grammar =
@@ -554,7 +554,7 @@ struct
     let f (params, bit_string) = params, raise_asn @@ fun () -> Dsa.Public.decode bit_string in
     let g (params, key) = params, Dsa.Public.encode key in
     map f g @@ sequence2
-      (required ~label:"alogrithm" Algorithm_identifier.dsa_grammar)
+      (required ~label:"algorithm" Algorithm_identifier.dsa_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
 
   let ec_grammar =
@@ -562,7 +562,7 @@ struct
     let f (params, bit_string) = params, bit_string in
     let g (params, key) = params, key in
     map f g @@ sequence2
-      (required ~label:"alogrithm" Algorithm_identifier.ec_grammar)
+      (required ~label:"algorithm" Algorithm_identifier.ec_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
 
   let dh_grammar =
@@ -620,7 +620,7 @@ struct
     let g key = 0, (), Rsa.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
-      (required ~label:"privateKeyAlogrithm" Algorithm_identifier.rsa_grammar)
+      (required ~label:"privateKeyAlgorithm" Algorithm_identifier.rsa_grammar)
       (required ~label:"privateKey" octet_string)
       (optional ~label:"attributes" @@ implicit 0 null)
 
@@ -634,7 +634,7 @@ struct
     let g (params, key) = 0, params, Dsa.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
-      (required ~label:"privateKeyAlogrithm" Algorithm_identifier.dsa_grammar)
+      (required ~label:"privateKeyAlgorithm" Algorithm_identifier.dsa_grammar)
       (required ~label:"privateKey" octet_string)
       (optional ~label:"attributes" @@ implicit 0 null)
 
@@ -648,7 +648,7 @@ struct
     let g (params, key) = 0, params, Ec.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
-      (required ~label:"privateKeyAlogrithm" Algorithm_identifier.ec_grammar)
+      (required ~label:"privateKeyAlgorithm" Algorithm_identifier.ec_grammar)
       (required ~label:"privateKey" octet_string)
       (optional ~label:"attributes" @@ implicit 0 null)
 
@@ -662,7 +662,7 @@ struct
     let g (params, key) = 0, params, Dh.Private.encode key, None in
     map f g @@ sequence4
       (required ~label:"version" int)
-      (required ~label:"privateKeyAlogrithm" Algorithm_identifier.dh_grammar)
+      (required ~label:"privateKeyAlgorithm" Algorithm_identifier.dh_grammar)
       (required ~label:"privateKey" octet_string)
       (optional ~label:"attributes" @@ implicit 0 null)
 

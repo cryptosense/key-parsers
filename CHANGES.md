@@ -1,5 +1,9 @@
 ## unreleased
 
+*2019-07-19*
+
+- Correct spelling 'alogrithm' -> 'algorithm' in some labels
+
 ## 0.10.1
 
 *2018-10-31*
@@ -123,4 +127,3 @@
 *2015-11-27*
 
 - Initial release
-
