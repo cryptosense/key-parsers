@@ -31,9 +31,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -66,9 +66,9 @@ sig
     val bin_writer_other_prime : other_prime Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val other_prime_to_yojson : other_prime -> Yojson.Safe.json
+    val other_prime_to_yojson : other_prime -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val other_prime_of_yojson : Yojson.Safe.json -> (other_prime, string) result
+    val other_prime_of_yojson : Yojson.Safe.t -> (other_prime, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     type t = {
@@ -99,9 +99,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val other_prime_grammar : other_prime Asn.t
@@ -138,9 +138,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -169,9 +169,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -200,9 +200,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -232,9 +232,9 @@ sig
   val bin_writer_point : point Bin_prot.Type_class.writer0
   [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-  val point_to_yojson : point -> Yojson.Safe.json
+  val point_to_yojson : point -> Yojson.Safe.t
   [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-  val point_of_yojson : Yojson.Safe.json -> (point, string) result
+  val point_of_yojson : Yojson.Safe.t -> (point, string) result
   [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
   val point_grammar : point Asn.t
@@ -262,9 +262,9 @@ sig
     val bin_writer_basis : basis Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val basis_to_yojson : basis -> Yojson.Safe.json
+    val basis_to_yojson : basis -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val basis_of_yojson : Yojson.Safe.json -> (basis, string) result
+    val basis_of_yojson : Yojson.Safe.t -> (basis, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val basis_grammar : basis Asn.t
@@ -297,10 +297,10 @@ sig
     val bin_writer_characteristic_two_params : characteristic_two_params Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val characteristic_two_params_to_yojson : characteristic_two_params -> Yojson.Safe.json
+    val characteristic_two_params_to_yojson : characteristic_two_params -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
     val characteristic_two_params_of_yojson :
-      Yojson.Safe.json ->
+      Yojson.Safe.t ->
       (characteristic_two_params, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
@@ -326,9 +326,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -357,9 +357,9 @@ sig
     val bin_writer_field_element : field_element Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val field_element_to_yojson : field_element -> Yojson.Safe.json
+    val field_element_to_yojson : field_element -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val field_element_of_yojson : Yojson.Safe.json -> (field_element, string) result
+    val field_element_of_yojson : Yojson.Safe.t -> (field_element, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val field_element_grammar : field_element Asn.t
@@ -386,9 +386,9 @@ sig
     val bin_writer_curve : curve Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val curve_to_yojson : curve -> Yojson.Safe.json
+    val curve_to_yojson : curve -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val curve_of_yojson : Yojson.Safe.json -> (curve, string) result
+    val curve_of_yojson : Yojson.Safe.t -> (curve, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val curve_grammar : curve Asn.t
@@ -417,9 +417,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -448,9 +448,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -479,9 +479,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -514,9 +514,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -552,9 +552,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -583,9 +583,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -614,9 +614,9 @@ sig
     val bin_writer_t : t Bin_prot.Type_class.writer0
     [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-    val to_yojson : t -> Yojson.Safe.json
+    val to_yojson : t -> Yojson.Safe.t
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-    val of_yojson : Yojson.Safe.json -> (t, string) result
+    val of_yojson : Yojson.Safe.t -> (t, string) result
     [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
     val grammar : t Asn.t
@@ -659,9 +659,9 @@ sig
   val bin_writer_t : t Bin_prot.Type_class.writer0
   [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-  val to_yojson : t -> Yojson.Safe.json
+  val to_yojson : t -> Yojson.Safe.t
   [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-  val of_yojson : Yojson.Safe.json -> (t, string) result
+  val of_yojson : Yojson.Safe.t -> (t, string) result
   [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
   val rsa_grammar : Rsa.Public.t Asn.t
@@ -706,9 +706,9 @@ sig
   val bin_writer_t : t Bin_prot.Type_class.writer0
   [@@ocaml.deprecated "Bin_prot serializers will be removed in key-parsers 1.0.0"]
 
-  val to_yojson : t -> Yojson.Safe.json
+  val to_yojson : t -> Yojson.Safe.t
   [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
-  val of_yojson : Yojson.Safe.json -> (t, string) result
+  val of_yojson : Yojson.Safe.t -> (t, string) result
   [@@ocaml.deprecated "Yojson serializers will be removed in key-parsers 1.0.0"]
 
   val rsa_grammar : Rsa.Private.t Asn.t
