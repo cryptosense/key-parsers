@@ -839,4 +839,3 @@ module RSA = Rsa
 module DSA = Dsa
 module EC = Ec
 module DH = Dh
-module PGP = Pgp
