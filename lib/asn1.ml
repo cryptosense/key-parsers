@@ -1,6 +1,7 @@
-open Bin_prot.Std
+open Bin_prot.Std 
 
 let raise_asn f = match f () with Result.Ok x -> x | Result.Error s -> Asn.S.parse_error "%s" s
+
 
 let encode_helper grammar =
   let open Asn in
@@ -448,6 +449,98 @@ struct
   end
 end
 
+(* Only RSA/RSA keys
+Next step : DSA/El Gamal *)
+module Pgp =
+struct
+  module Params =
+  struct
+    type t = unit
+    let grammar = Asn.S.null
+  end
+
+  module Public =
+  struct
+    type t = {
+      n: Derivable.Z.t;
+      e: Derivable.Z.t;
+    }
+    [@@deriving ord,eq,show,yojson,bin_io]
+
+    let grammar =
+      let open Asn.S in
+      let f (n, e) = { n; e } in
+      let g { n; e } = (n, e) in
+      map f g @@ sequence2
+        (required ~label:"modulus" integer)
+        (required ~label:"publicExponent" integer)
+
+    let encode = encode_helper grammar
+
+    let decode = decode_helper "PKCS1 PGP public key" grammar
+  end
+
+  module Private =
+  struct
+    type other_prime = {
+      r: Derivable.Z.t;
+      d: Derivable.Z.t;
+      t: Derivable.Z.t;
+    }
+    [@@deriving ord,eq,show,yojson,bin_io]
+
+    let other_prime_grammar =
+      let open Asn.S in
+      let f (r, d, t) = { r; d; t } in
+      let g { r; d; t } = (r, d, t) in
+      map f g @@ sequence3
+        (required ~label:"prime" integer)
+        (required ~label:"exponent" integer)
+        (required ~label:"coefficient" integer)
+
+    type t = {
+      n: Derivable.Z.t;
+      e: Derivable.Z.t;
+      d: Derivable.Z.t;
+      p: Derivable.Z.t;
+      q: Derivable.Z.t;
+      dp: Derivable.Z.t;
+      dq: Derivable.Z.t;
+      qinv: Derivable.Z.t;
+      other_primes: other_prime list;
+    }
+    [@@deriving ord,eq,show,yojson,bin_io]
+
+    let grammar =
+      let open Asn.S in
+      let f = function
+        | (0, (n, (e, (d, (p, (q, (dp, (dq, (qinv, None))))))))) ->
+          { n; e; d; p; q; dp; dq; qinv; other_primes=[]; }
+        | (1, (n, (e, (d, (p, (q, (dp, (dq, (qinv, Some other_primes))))))))) ->
+          { n; e; d; p; q; dp; dq; qinv; other_primes; }
+        | _ ->
+          parse_error
+            "PKCS#1: PGP private key version inconsistent with key data" in
+      let g {n; e; d; p; q; dp; dq; qinv; _} =
+        (0, (n, (e, (d, (p, (q ,(dp ,(dq, (qinv, None))))))))) in
+      map f g @@ sequence
+      @@ (required ~label:"version" int)
+         @ (required ~label:"modulus" integer)
+         @ (required ~label:"publicExponent" integer)
+         @ (required ~label:"privateExponent" integer)
+         @ (required ~label:"prime1" integer)
+         @ (required ~label:"prime2" integer)
+         @ (required ~label:"exponent1" integer)
+         @ (required ~label:"exponent2" integer)
+         @ (required ~label:"coefficient" integer)
+           -@ (optional ~label:"otherPrimeInfo" (sequence_of other_prime_grammar))
+
+    let encode = encode_helper grammar
+
+    let decode = decode_helper "PKCS1 PGP private key" grammar
+  end
+end
+
 module Algorithm_identifier =
 struct
   module Algo =
@@ -456,7 +549,8 @@ struct
     let dsa_oid = Asn.OID.(base 1 2 <|| [840;10040;4;1])
     let ec_oid = Asn.OID.(base 1 2 <|| [840;10045;2;1])
     let dh_oid = Asn.OID.(base 1 2 <|| [840;113549;1;3;1])
-
+    let pgp_oid = Asn.OID.(base 1 2 <|| [840;113549;1;1;1])
+    (* add a specific identifier for pgp keys *)
     let ec_dh = Asn.OID.(base 1 3 <|| [132;1;12])
     let ec_mqv = Asn.OID.(base 1 3 <|| [132;1;13])
 
@@ -465,6 +559,7 @@ struct
       | Rsa
       | Ec
       | Dh
+      | Pgp 
       | Unknown of Asn.OID.t
 
     let grammar =
@@ -476,12 +571,14 @@ struct
                 || oid = ec_dh
                 || oid = ec_mqv -> Ec
         | oid when oid = dh_oid -> Dh
+        | oid when oid = pgp_oid -> Pgp 
         | oid -> Unknown oid in
       let g = function
         | Rsa -> rsa_oid
         | Dsa -> dsa_oid
         | Ec -> ec_oid
         | Dh -> dh_oid
+        | Pgp -> pgp_oid
         | Unknown oid -> oid in
       map f g oid
   end
@@ -526,6 +623,16 @@ struct
       (required ~label:"algorithm" Algo.grammar)
       (required ~label:"parameters" Dh.Params.grammar)
 
+  let pgp_grammar =
+    let open Asn.S in
+    let f = function
+      | Algo.Pgp, _ -> ()
+      | _ -> parse_error "Algorithm OID and parameters don't match" in
+    let g () = Algo.Pgp, Some () in
+    map f g @@ sequence2
+      (required ~label:"algorithm" Algo.grammar)
+      (optional ~label:"parameters" Pgp.Params.grammar)
+
 end
 
 let map_result f = function Result.Ok x -> Result.Ok (f x) | Result.Error _ as r -> r
@@ -538,6 +645,7 @@ struct
     | `DSA of Dsa.Params.t * Dsa.Public.t
     | `EC of Ec.Params.t * Ec.Public.t
     | `DH of Dh.Params.t * Dh.Public.t
+    | `PGP of Pgp.Public.t 
     ]
   [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -573,16 +681,26 @@ struct
       (required ~label:"algorithm" Algorithm_identifier.dh_grammar)
       (required ~label:"subjectPublicKey" bit_string_cs)
 
+  let pgp_grammar =
+    let open Asn.S in
+    let f ((), bit_string) = raise_asn @@ fun () -> Pgp.Public.decode bit_string in
+    let g key = (), Pgp.Public.encode key in
+    map f g @@ sequence2
+      (required ~label:"algorithm" Algorithm_identifier.pgp_grammar)
+      (required ~label:"subjectPublicKey" bit_string_cs)
+    
   let encode_rsa = encode_helper rsa_grammar
   let encode_dsa = encode_helper dsa_grammar
   let encode_ec = encode_helper ec_grammar
   let encode_dh = encode_helper dh_grammar
+  let encode_pgp = encode_helper pgp_grammar
 
   let encode = function
     | `RSA key -> encode_rsa key
     | `DSA key -> encode_dsa key
     | `EC key -> encode_ec key
     | `DH key -> encode_dh key
+    | `PGP key -> encode_pgp key
 
   let decode_rsa = decode_helper "X509 RSA key" rsa_grammar
 
@@ -592,11 +710,14 @@ struct
 
   let decode_dh = decode_helper "X509 DH key" dh_grammar
 
+  let decode_pgp = decode_helper "X509 PGP key" pgp_grammar
+
   let decode key : (t, string) Result.result =
     (map_result (fun x -> `RSA x) (decode_rsa key))
     |> default_result (fun () -> map_result (fun x -> `DSA x) (decode_dsa key))
     |> default_result (fun () -> map_result (fun x -> `EC x) (decode_ec key))
     |> default_result (fun () -> map_result (fun x -> `DH x) (decode_dh key))
+    |> default_result (fun () -> map_result (fun x -> `PGP x) (decode_pgp key))
     |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end
 
@@ -607,6 +728,7 @@ struct
     | `DSA of Dsa.Params.t * Dsa.Private.t
     | `EC of Ec.Params.t * Ec.Private.t
     | `DH of Dh.Params.t * Dh.Private.t
+    | `PGP of Pgp.Private.t
     ]
   [@@deriving ord,eq,show,yojson,bin_io]
 
@@ -666,16 +788,33 @@ struct
       (required ~label:"privateKey" octet_string)
       (optional ~label:"attributes" @@ implicit 0 null)
 
+  let pgp_grammar =
+    let open Asn.S in
+    let f (version, (), octet_string, _attributes) =
+      if version = 0 then
+        raise_asn @@ fun () -> Pgp.Private.decode octet_string
+      else
+        parse_error "PKCS8: version %d not supported" version in
+    let g key = 0, (), Pgp.Private.encode key, None in
+    map f g @@ sequence4
+      (required ~label:"version" int)
+      (required ~label:"privateKeyAlgorithm" Algorithm_identifier.pgp_grammar)
+      (required ~label:"privateKey" octet_string)
+      (optional ~label:"attributes" @@ implicit 0 null)
+    
   let encode_rsa = encode_helper rsa_grammar
   let encode_dsa = encode_helper dsa_grammar
   let encode_ec = encode_helper ec_grammar
   let encode_dh = encode_helper dh_grammar
+  let encode_pgp = encode_helper pgp_grammar
 
   let encode = function
     | `RSA key -> encode_rsa key
     | `DSA key -> encode_dsa key
     | `EC key -> encode_ec key
     | `DH key -> encode_dh key
+    | `PGP key -> encode_pgp key
+
 
   let decode_rsa = decode_helper "PKCS8 RSA key" rsa_grammar
 
@@ -685,11 +824,14 @@ struct
 
   let decode_dh = decode_helper "PKCS8 DH key" dh_grammar
 
+  let decode_pgp = decode_helper "PKCS8 PGP key" pgp_grammar
+
   let decode key : (t, string) Result.result =
     (map_result (fun x -> `RSA x) (decode_rsa key))
     |> default_result (fun () -> map_result (fun x -> `DSA x) (decode_dsa key))
     |> default_result (fun () -> map_result (fun x -> `EC x) (decode_ec key))
     |> default_result (fun () -> map_result (fun x -> `DH x) (decode_dh key))
+    |> default_result (fun () -> map_result (fun x -> `PGP x) (decode_pgp key))
     |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end
 
@@ -697,3 +839,4 @@ module RSA = Rsa
 module DSA = Dsa
 module EC = Ec
 module DH = Dh
+module PGP = Pgp
