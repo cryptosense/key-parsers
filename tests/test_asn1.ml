@@ -371,13 +371,6 @@ module Pgp = struct
     Public.{n; e}, Private.{n; e; d; p; q; dp; dq; qinv; other_primes=[]}
 
 
-  let test_pub ~decode expected der ctxt =
-    let open Key_parsers.Asn1.Pgp in
-    let actual = decode der in
-    Test_util.assert_ok actual @@ fun actual ->
-    assert_equal ~ctxt ~cmp:[%eq: Public.t] ~printer:[%show: Public.t] expected actual
-
-
   let test_priv ~decode expected der ctxt =
     let open Key_parsers.Asn1.Pgp in
     let actual = decode der in
