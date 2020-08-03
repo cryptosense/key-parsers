@@ -23,7 +23,7 @@ module Z = struct
     `String (Z.to_string z)
 
   include Bin_prot.Utils.Make_binable_without_uuid
-       (struct
+      (struct
         module Binable = Bin_string
         type t = Z.t
         let to_binable = Z.to_string
