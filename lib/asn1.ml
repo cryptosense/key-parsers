@@ -550,7 +550,6 @@ struct
     let ec_oid = Asn.OID.(base 1 2 <|| [840;10045;2;1])
     let dh_oid = Asn.OID.(base 1 2 <|| [840;113549;1;3;1])
     let pgp_oid = Asn.OID.(base 1 2 <|| [840;113549;1;1;1])
-    (* add a specific identifier for pgp keys *)
     let ec_dh = Asn.OID.(base 1 3 <|| [132;1;12])
     let ec_mqv = Asn.OID.(base 1 3 <|| [132;1;13])
 
