@@ -1,10 +1,6 @@
 open OUnit2
 open Test_helpers
 
-(* Rajouter 0x devant *)
-(* Ma clé : n="" *)
-(* e= "010001" *)
-
 module Rsa = struct
   (* This key pair was generated using openssl genrsa*)
   let expected_public, expected_private =
@@ -393,7 +389,6 @@ module Pgp = struct
       let open Key_parsers.Asn1.Pgp in
       "PKCS#1" >:::
       [ "Private" >:: test_priv ~decode:Private.decode expected_private (fixture "pgp_pkcs1.der")
-      (* ; "Public" >:: test_pub ~decode:Public.decode expected_public (fixture "pgp_pkcs1_pub.der") *)
       ]
 
   let suite =
