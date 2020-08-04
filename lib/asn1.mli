@@ -857,5 +857,3 @@ module EC = Ec
 [@@ocaml.deprecated "Use module Ec instead"]
 module DH = Dh
 [@@ocaml.deprecated "Use module Dh instead"]
-module PGP = Pgp
-[@@ocaml.deprecated "Use module Rsa instead"]
