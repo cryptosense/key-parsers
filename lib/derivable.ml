@@ -22,7 +22,7 @@ module Z = struct
   let to_yojson z =
     `String (Z.to_string z)
 
-  include Bin_prot.Utils.Make_binable
+  include Bin_prot.Utils.Make_binable_without_uuid
       (struct
         module Binable = Bin_string
         type t = Z.t
@@ -60,7 +60,7 @@ module Cstruct = struct
         Result.Error "Key_parsers.Cstruct.of_yojson: expected hex encoded json string"
     | _ -> Result.Error "Key_parsers.Cstruct.of_yojson: expected json string"
 
-  include Bin_prot.Utils.Make_binable
+  include Bin_prot.Utils.Make_binable_without_uuid
       (struct
         module Binable = Bin_string
         type t = Cstruct.t
@@ -90,7 +90,7 @@ module Asn_oid = struct
   let to_yojson oid =
     `String (show oid)
 
-  include Bin_prot.Utils.Make_binable
+  include Bin_prot.Utils.Make_binable_without_uuid
       (struct
         module Binable = Bin_string
         type t = Asn.OID.t
