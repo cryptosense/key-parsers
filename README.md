@@ -21,6 +21,7 @@ Here you can find parsers for the following formats:
 [RFC5280](https://tools.ietf.org/html/rfc5280#appendix-A)
   - DER encodings of DSA, EC and DH Parameters and Private keys as produced by openssl
 commands such as `dsaparam` and `gendsa`
+  - PGP keys
 
 ## `Ltpa`
 
