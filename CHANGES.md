@@ -1,8 +1,26 @@
 ## unreleased
 
+## 0.11.0
+
+2020-08-06
+
+### Add
+
+- Add PGP parser
+- Add OCaml 4.08, 4.09, 4.10 to CI checks
+
+### Deprecates
+
+- Replace deprecated `Bin_prot.make_bin`
+
 *2019-07-19*
 
+### Fixes
+
 - Correct spelling 'alogrithm' -> 'algorithm' in some labels
+
+### Add
+
 - Replace deprecated `Yojson.Safe.json` type with `Yojson.Safe.t` throughout
 
 ## 0.10.1
