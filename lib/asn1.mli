@@ -626,125 +626,12 @@ sig
   end
 end
 
-module Pgp :
-sig
-  module Params :
-  sig
-    type t = unit
-    val grammar : t Asn.t
-  end
-
-  module Public :
-  sig
-    type t = {
-      n: Z.t;
-      e: Z.t;
-    }
-    [@@deriving ord,eq,show]
-
-    val bin_t : t Bin_prot.Type_class.t0
-    [@@ocaml.deprecated]
-    val bin_size_t : t -> int
-    [@@ocaml.deprecated]
-    val bin_read_t : Bin_prot.Common.buf -> pos_ref:Bin_prot.Common.pos_ref -> t
-    [@@ocaml.deprecated ]
-    val bin_write_t : Bin_prot.Common.buf -> pos:int -> t -> int
-    [@@ocaml.deprecated]
-    val bin_shape_t : Bin_prot.Shape.t
-    [@@ocaml.deprecated]
-    val bin_reader_t : t Bin_prot.Type_class.reader0
-    [@@ocaml.deprecated]
-    val bin_writer_t : t Bin_prot.Type_class.writer0
-    [@@ocaml.deprecated]
-
-    val to_yojson : t -> Yojson.Safe.t
-    [@@ocaml.deprecated]
-    val of_yojson : Yojson.Safe.t -> (t, string) result
-    [@@ocaml.deprecated]
-
-    val grammar : t Asn.t
-
-    val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> (t, string) Result.result
-  end
-
-  module Private :
-  sig
-    type other_prime = {
-      r: Z.t;
-      d: Z.t;
-      t: Z.t;
-    }
-    [@@deriving ord,eq,show]
-
-    val bin_other_prime : other_prime Bin_prot.Type_class.t0
-    [@@ocaml.deprecated]
-    val bin_size_other_prime : other_prime -> int
-    [@@ocaml.deprecated]
-    val bin_read_other_prime : Bin_prot.Common.buf -> pos_ref:Bin_prot.Common.pos_ref -> other_prime
-    [@@ocaml.deprecated]
-    val bin_write_other_prime : Bin_prot.Common.buf -> pos:int -> other_prime -> int
-    [@@ocaml.deprecated]
-    val bin_shape_other_prime : Bin_prot.Shape.t
-    [@@ocaml.deprecated]
-    val bin_reader_other_prime : other_prime Bin_prot.Type_class.reader0
-    [@@ocaml.deprecated]
-    val bin_writer_other_prime : other_prime Bin_prot.Type_class.writer0
-    [@@ocaml.deprecated]
-
-    val other_prime_to_yojson : other_prime -> Yojson.Safe.t
-    [@@ocaml.deprecated]
-    val other_prime_of_yojson : Yojson.Safe.t -> (other_prime, string) result
-    [@@ocaml.deprecated]
-
-    type t = {
-      n: Z.t;
-      e: Z.t;
-      d: Z.t;
-      p: Z.t;
-      q: Z.t;
-      dp: Z.t;
-      dq: Z.t;
-      qinv: Z.t;
-      other_primes: other_prime list;
-    }
-    [@@deriving ord,eq,show]
-
-    val bin_t : t Bin_prot.Type_class.t0
-    [@@ocaml.deprecated]
-    val bin_size_t : t -> int
-    [@@ocaml.deprecated]
-    val bin_read_t : Bin_prot.Common.buf -> pos_ref:Bin_prot.Common.pos_ref -> t
-    [@@ocaml.deprecated]
-    val bin_write_t : Bin_prot.Common.buf -> pos:int -> t -> int
-    [@@ocaml.deprecated]
-    val bin_shape_t : Bin_prot.Shape.t
-    [@@ocaml.deprecated]
-    val bin_reader_t : t Bin_prot.Type_class.reader0
-    [@@ocaml.deprecated]
-    val bin_writer_t : t Bin_prot.Type_class.writer0
-    [@@ocaml.deprecated]
-
-    val to_yojson : t -> Yojson.Safe.t
-    [@@ocaml.deprecated]
-    val of_yojson : Yojson.Safe.t -> (t, string) result
-    [@@ocaml.deprecated]
-
-    val other_prime_grammar : other_prime Asn.t
-    val grammar : t Asn.t
-
-    val encode : t -> Cstruct.t
-    val decode : Cstruct.t -> (t, string) Result.result
-  end
-end
-
 module Algorithm_identifier :
 sig
   val rsa_grammar : Rsa.Params.t Asn.t
   val dsa_grammar : Dsa.Params.t Asn.t
   val ec_grammar : Ec.Params.t Asn.t
   val dh_grammar : Dh.Params.t Asn.t
-  val pgp_grammar : Pgp.Params.t Asn.t
 end
 
 module X509 :
@@ -754,7 +641,6 @@ sig
     | `DSA of Dsa.Params.t * Dsa.Public.t
     | `EC of Ec.Params.t * Ec.Public.t
     | `DH of Dh.Params.t * Dh.Public.t
-    | `PGP of Pgp.Public.t
     ]
   [@@deriving ord,eq,show]
 
@@ -782,20 +668,17 @@ sig
   val dsa_grammar : (Dsa.Params.t * Dsa.Public.t) Asn.t
   val ec_grammar : (Ec.Params.t * Ec.Public.t) Asn.t
   val dh_grammar : (Dh.Params.t * Dh.Public.t) Asn.t
-  val pgp_grammar : Pgp.Public.t Asn.t
 
   val encode : t -> Cstruct.t
   val encode_rsa : Rsa.Public.t -> Cstruct.t
   val encode_dsa : (Dsa.Params.t * Dsa.Public.t) -> Cstruct.t
   val encode_ec : (Ec.Params.t * Ec.Public.t) -> Cstruct.t
   val encode_dh : (Dh.Params.t * Dh.Public.t) -> Cstruct.t
-  val encode_pgp : Pgp.Public.t -> Cstruct.t
   val decode : Cstruct.t -> (t, string) Result.result
   val decode_rsa : Cstruct.t -> (Rsa.Public.t, string) Result.result
   val decode_dsa : Cstruct.t -> ((Dsa.Params.t * Dsa.Public.t), string) Result.result
   val decode_ec : Cstruct.t -> ((Ec.Params.t * Ec.Public.t), string) Result.result
   val decode_dh : Cstruct.t -> ((Dh.Params.t * Dh.Public.t), string) Result.result
-  val decode_pgp : Cstruct.t -> (Pgp.Public.t, string) Result.result
 end
 
 module PKCS8 :
@@ -805,7 +688,6 @@ sig
     | `DSA of Dsa.Params.t * Dsa.Private.t
     | `EC of Ec.Params.t * Ec.Private.t
     | `DH of Dh.Params.t * Dh.Private.t
-    | `PGP of Pgp.Private.t
     ]
   [@@deriving ord,eq,show]
 
@@ -833,20 +715,17 @@ sig
   val dsa_grammar : (Dsa.Params.t * Dsa.Private.t) Asn.t
   val ec_grammar : (Ec.Params.t * Ec.Private.t) Asn.t
   val dh_grammar : (Dh.Params.t * Dh.Private.t) Asn.t
-  val pgp_grammar : Pgp.Private.t Asn.t
 
   val encode : t -> Cstruct.t
   val encode_rsa : Rsa.Private.t -> Cstruct.t
   val encode_dsa : (Dsa.Params.t * Dsa.Private.t) -> Cstruct.t
   val encode_ec : (Ec.Params.t * Ec.Private.t) -> Cstruct.t
   val encode_dh : (Dh.Params.t * Dh.Private.t) -> Cstruct.t
-  val encode_pgp : Pgp.Private.t -> Cstruct.t
   val decode : Cstruct.t -> (t, string) Result.result
   val decode_rsa : Cstruct.t -> (Rsa.Private.t, string) Result.result
   val decode_dsa : Cstruct.t -> ((Dsa.Params.t * Dsa.Private.t), string) Result.result
   val decode_ec : Cstruct.t -> ((Ec.Params.t * Ec.Private.t), string) Result.result
   val decode_dh : Cstruct.t -> ((Dh.Params.t * Dh.Private.t), string) Result.result
-  val decode_pgp : Cstruct.t -> (Pgp.Private.t, string) Result.result
 end
 
 module RSA = Rsa
