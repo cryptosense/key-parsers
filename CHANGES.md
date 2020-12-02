@@ -1,33 +1,23 @@
-## unreleased
+# Changelog
 
-## 0.11.0
+## Unreleased
 
-2020-08-06
-
-### Add
-
-- Add PGP parser
-- Add OCaml 4.08, 4.09, 4.10 to CI checks
-
-### Deprecates
-
-- Replace deprecated `Bin_prot.make_bin`
-
-*2019-07-19*
-
-### Fixes
+### Changed
 
 - Correct spelling 'alogrithm' -> 'algorithm' in some labels
 
-### Add
+### Removed
 
-- Replace deprecated `Yojson.Safe.json` type with `Yojson.Safe.t` throughout
+- Remove dependency on ppx_deriving_yojson and ppx_bin_prot, and associated deprecated
+  serialization values (`bin_t`, `bin_size_t`, `to_yojson`, etc).
+- Remove deprecated uppercase module aliases `RSA`, `DSA`, `EC` and `DH` in `Asn1`, `Cvc`
+  and `Ltpa`.
 
 ## 0.10.1
 
 *2018-10-31*
 
-### Fixes
+### Fixed
 
 - Allow RSA parameters to be absent form the AlgorithmIdentifier Sequence
 
@@ -35,16 +25,16 @@
 
 *2018-08-27*
 
-### Add
+### Added
 
 - Lowercase aliases for uppercase modules `RSA`, `DSA`, `EC` and `DH` in `Asn1`, `Cvc` and `Ltpa`
 
-### Deprecates
+### Deprecated
 
 - `Yojson` and `Bin_prot` (de)serializers are deprecated ahead of their removal in `1.0.0`.
 - Uppercase modules such as `Asn1.RSA` in favor of their lowercase counterparts
 
-### Changes
+### Changed
 
 - Use dune instead of ocamlbuild and topkg
 - Rename uppercase private variants and modules to lowercase ones
