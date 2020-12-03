@@ -57,7 +57,7 @@ let find_cvc_object_type tag =
     in
     code, List.assoc code cvc_object_types
 
-(* utility function to parse a big-endian blob as a Z.t *)
+(* utility function to parse a big-endian blob as a Derivable.Z.t *)
 let atoz_bigendian s =
   let reverse s =
     let n = String.length s in
@@ -237,7 +237,7 @@ struct
       n: Derivable.Z.t;
       e: Derivable.Z.t;
     }
-    [@@deriving ord,eq,yojson,eq,show,bin_io]
+    [@@deriving eq,ord,show]
 
     let decode bytes =
       let open Result in
@@ -265,7 +265,7 @@ struct
       ; public_point_y : Derivable.Cstruct.t
       ; cofactor_f : Derivable.Z.t
       }
-    [@@deriving ord,eq,yojson,eq,show,bin_io]
+    [@@deriving eq,ord,show]
 
     let decode bytes =
       let open Result in
@@ -295,6 +295,3 @@ struct
         err
   end
 end
-
-module RSA = Rsa
-module EC = Ec
