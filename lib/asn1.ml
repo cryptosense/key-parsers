@@ -28,9 +28,20 @@ struct
     }
     [@@deriving ord,eq,show]
 
+    let reject_negative_modulus = function
+      | Ok {n; e} ->
+        if Z.gt n Z.zero then
+          Ok { n; e }
+        else
+          (* A few tools generate keys without leading 0 bit, which gets interpreted
+             as a negative integer. *)
+          Error "Negative modulus"
+      | e -> e
+
+
     let grammar =
       let open Asn.S in
-      let f (n, e) = { n; e } in
+      let f (n, e) = {n; e} in
       let g { n; e } = (n, e) in
       map f g @@ sequence2
         (required ~label:"modulus" integer)
@@ -38,7 +49,9 @@ struct
 
     let encode = encode_helper grammar
 
-    let decode = decode_helper "PKCS1 RSA public key" grammar
+    let decode k =
+      decode_helper "PKCS1 RSA public key" grammar k
+      |> reject_negative_modulus
   end
 
   module Private =
