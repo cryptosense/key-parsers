@@ -44,6 +44,11 @@ module Rsa = struct
     Test_util.assert_ok actual @@ fun actual ->
     assert_equal ~ctxt ~cmp:[%eq: Public.t] ~printer:[%show: Public.t] expected actual
 
+  let test_error ~decode expected der ctxt =
+    let actual = decode der in
+    Test_util.assert_error actual @@ fun actual ->
+    assert_equal ~ctxt ~cmp:[%eq: string] ~printer:[%show: string] expected actual
+
   let test_priv ~decode expected der ctxt =
     let open Key_parsers.Asn1.Rsa in
     let actual = decode der in
@@ -70,11 +75,19 @@ module Rsa = struct
     [ "Private" >:: test_priv ~decode expected_private (fixture "rsa_pkcs8.der")
     ]
 
+  let test_negative_key =
+    let decode = Key_parsers.Asn1.X509.decode_rsa in
+    "X509" >:::
+    [ "Negative Public Key" >::
+        test_error ~decode "X509 RSA key: Negative modulus" (fixture "negative_rsa.der")
+    ]
+
   let suite =
     "Rsa" >:::
     [ test_pkcs1
     ; test_x509
     ; test_pkcs8
+    ; test_negative_key
     ]
 end
 
