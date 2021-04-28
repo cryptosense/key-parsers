@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1
+
+*2021-04-28*
+
+### Fixed
+
+- Detect malformed RSA keys and return an error
+
 ## 1.0.0
 
 *2020-12-03*
