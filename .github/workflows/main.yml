@@ -1,0 +1,30 @@
+name: main
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        ocaml-version:
+          - 4.11.2
+          - 4.07.1
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+      - run: opam pin add key-parsers.dev . --no-action
+      - run: opam depext key-parsers --yes --with-doc --with-test
+      - run: opam install . --deps-only --with-doc --with-test
+      - run: opam exec -- dune build @all @runtest
