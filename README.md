@@ -1,5 +1,7 @@
 # key-parsers
 
+[![Build Status][build_status_badge]][build_status_link]
+
 `Key_parsers` offers parsers and printers for various asymmetric key formats.
 
 It currently comes with three submodules.
@@ -29,3 +31,6 @@ public keys.
 ## `Cvc`
 
 Parsers for CVC (Card Verifiable Certificates) encodings of RSA and EC Public keys.
+
+[build_status_badge]: https://github.com/cryptosense/key-parsers/actions/workflows/main.yml/badge.svg
+[build_status_link]: https://github.com/cryptosense/key-parsers/actions/workflows/main.yml
