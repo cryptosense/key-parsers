@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+*2021-05-10*
+
+### Added
+
+- Add non-pkcs8 (OpenSSL) DSA private keys
+
 ## 1.0.1
 
 *2021-04-28*
