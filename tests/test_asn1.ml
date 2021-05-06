@@ -94,38 +94,57 @@ end
 let dsa_suite =
   let open Key_parsers.Asn1.Dsa in
   (* These parameters and key pair were generated using openssl dsaparam and gendsa *)
-  let expected_params =
-    let p =
-      Z.of_string
-        "0x00BD4C1FA40C9BE36677E2E4BB20892D67074CCA194D0D0103DE95700BA167E7931C\
-         BFEF3C1BA77E0BB18EBE7CC4393DF8A6C5A7C24FB9FCF993B7E75E77D594ADB51DDB00\
-         F9828858F8949B70090414B83C90CF085EC4C09DCB887BE7DBD623136AFCCA7600E7B6\
-         C332AC432DC673DA1FF7FF0A61B32D5C1B7BFE88B5BBC6DF15"
-    in
-    let q = Z.of_string "0x00B14CECC2CB93C59BC906964C4E44E9CEEADB87FD" in
-    let g =
-      Z.of_string
-        "0x7DDF10D1FB7215A714D83B332314AF0122996717094B6E0358F38CB4C16433C67CB0\
-         A18C2B687484AA53C9EB09A3E4E27F25EB4A42B8C578FC51058DEA8BDC9F417450BD84\
-         D15CCAC7111545E0EB9A50BCDF50E654CF579DEA5922CE6DC98C1FD3CCD26E68B30777\
-         E6101B0BAB004411152EB6D4064EB71677ACAB9943A7A3ED"
-    in
-    Params.{ p; q; g }
+  let p =
+    Z.of_string
+      "0x00E21ECE0A801FFBFBA42C78331538C38E004BF7EBD2F882B5AAB6B17AD0\
+      F9BE7352DFEB7522BCA514884CBBC78197B3889DF954D6C5E06EF824B7DD54F\
+      256A6AF04B77D1A683E725AF3283C4A55A88FCEAACE54328FDF99A690A353E1\
+      D07041DD4D0EC391C8B1249E52541D7BC95229A783AA5C3BBFA0F5C21203B32\
+      C3BC2058D"
   in
-  let expected_public =
-    let y =
-      Z.of_string
-        "0x7B37B6DBC2A1990C2FAB6A0E88FAF232F6BD4B4D0401F61A64D2AB842ECC0AE656A6\
-         0FB2D766F5B15F0EFABD7526B0D57B80A6AC8C8986EBB9A8303C6D651F6189A596E468\
-         51B724C15332280F6328E46ADF77D86A86E89CE5EF29E9413A3EBA4432657F6D4141AC\
-         E1CB3459AF366B2D96B4BA46A8042C2345F6B154E30CBFB6"
+  let q = Z.of_string "0x00B77D5A19B02F7827EE7086E58D669768BCBF6133" in
+  let g =
+    Z.of_string
+      "0x00D827687BE818D99E654B04638F9B4C88C446CDDCDF5EFBB82C6834FDA7\
+      4ECD9D119EAF7CF749270043068CA2E5A844C77B24E5429BD2DBB05C50DB96C\
+      D04BBFA769E52D4E8367AE0D926C7B9E7FE2464951BA2F0A190B0DD1E4540D8\
+      5F6A89A01FD047972EA7FB21AD137A09C0B10087F627DB21A5F7630AC30A421\
+      F0585D1BC"
+  in
+
+  let dsa_public_key =
+    Z.of_string
+      "0x3D43977A2859A30F8BF890597DA1F24FB0978079770EDAAF\
+      CEFE4F6A8BB0C07DDBEF1B4D9FD487BEE92C230085365431215F1935507F854\
+      3D4111A59071B241064589ADCF8FF5037FA8C0FC590C6A41B381089BEC44979\
+      CF3B4B9F6EE93CA3D6C9C3AABF0242F64B1B1F9602E0C7A51E9C62E995F20A3\
+      14B2EB642D7260149A0"
+  in
+
+  let dsa_private_key =
+    Z.of_string "0x515347B306C0D6A4C172AFCB92E1147477EF7ADB"
+  in
+
+  let expected_dsa =
+    let open Key_parsers.Asn1 in
+    Dsa_private_key.{p; q; g; public_key=dsa_public_key; private_key=dsa_private_key}
+  in
+
+  let dsa_private_suite =
+    let test expected_dsa der ctxt =
+      let open Key_parsers.Asn1 in
+      let actual = Dsa_private_key.decode der in
+      Test_util.assert_ok actual @@ fun actual ->
+      assert_equal ~ctxt ~cmp:[%eq: Dsa_private_key.t]
+        ~printer:[%show: Dsa_private_key.t] expected_dsa actual
     in
-    (expected_params, y)
+    let der = fixture "dsa_private_key.der" in
+    ["Private_key" >:: test expected_dsa der]
   in
-  let expected_private =
-    let x = Z.of_string "0x00A9CE6B152FE9832B504A2ECE260E29B7B812CDE8" in
-    (expected_params, x)
-  in
+
+  let expected_params = Params.{ p; q; g } in
+  let expected_public = (expected_params, dsa_public_key) in
+  let expected_private = (expected_params, dsa_private_key) in
   let cmp = Z.equal in
   let printer = Z.to_string in
   let test_params expected real ctxt =
@@ -153,7 +172,9 @@ let dsa_suite =
     [ "Private" >:: test ~typ ~decode:Key_parsers.Asn1.PKCS8.decode_dsa expected_private der
     ]
   in
-  [ "X509" >::: x509_suite
+
+  [ "DSA_PRIVATE" >::: dsa_private_suite
+  ; "X509" >::: x509_suite
   ; "PKCS8" >::: pkcs8_suite
   ]
 

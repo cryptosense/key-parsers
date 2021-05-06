@@ -703,3 +703,32 @@ struct
     |> default_result (fun () -> map_result (fun x -> `DH x) (decode_dh key))
     |> default_result @@ fun () -> Result.Error "Couldn't parse key"
 end
+
+module Dsa_private_key =
+struct
+  type t = {
+    p: Derivable.Z.t;
+    q: Derivable.Z.t;
+    g: Derivable.Z.t;
+    public_key: Derivable.Z.t;
+    private_key: Derivable.Z.t;
+  }
+  [@@deriving ord,eq,show]
+
+  let grammar =
+    let open Asn.S in
+    let f (_version, p, q, g, public_key, private_key) = {p; q; g; public_key; private_key} in
+    let g {p; q; g; public_key; private_key} = (0, p, q, g, public_key, private_key) in
+    map f g @@ sequence6
+      (required ~label:"version" int)
+      (required ~label:"p" integer)
+      (required ~label:"q" integer)
+      (required ~label:"g" integer)
+      (required ~label:"publicKey" integer)
+      (required ~label:"privateKey" integer)
+
+  let encode = encode_helper grammar
+
+  let decode = decode_helper "Private DSA key" grammar
+
+end
