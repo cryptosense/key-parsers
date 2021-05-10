@@ -295,3 +295,21 @@ sig
   val decode_ec : Cstruct.t -> ((Ec.Params.t * Ec.Private.t), string) Result.result
   val decode_dh : Cstruct.t -> ((Dh.Params.t * Dh.Private.t), string) Result.result
 end
+
+module Dsa_private_key :
+sig
+  type t = {
+    p: Derivable.Z.t;
+    q: Derivable.Z.t;
+    g: Derivable.Z.t;
+    public_key: Derivable.Z.t;
+    private_key: Derivable.Z.t;
+  }
+  [@@deriving ord,eq,show]
+
+  val grammar : t Asn.t
+
+  val encode : t -> Cstruct.t
+  val decode : Cstruct.t -> (t, string) Result.result
+
+end
