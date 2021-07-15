@@ -1,0 +1,11 @@
+(executable
+  (name test_pgp)
+  (libraries
+    asn1-combinators
+    hex
+    key-parsers
+    result
+    str
+    zarith
+  )
+)
