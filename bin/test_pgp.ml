@@ -11,5 +11,5 @@ let fixture name =
   let path = Printf.sprintf "keys/%s" name in
   read_cstruct path;;
 
-let pgp = fixture "test_clem.pgp";;
+let pgp = fixture "sample.pgp";;
 Pgp.decode pgp;;
