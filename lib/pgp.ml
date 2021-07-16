@@ -336,8 +336,7 @@ module Packet = struct
         | Ok packet_type ->
           Ok (header_length, {packet_type; packet_length; is_new})
         | Error message ->
-          Error (Header {skip_length = header_length + packet_length; message})
-        )
+          Error (Header {skip_length = header_length + packet_length; message}))
   end
 
   module Id = struct
