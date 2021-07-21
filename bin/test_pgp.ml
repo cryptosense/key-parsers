@@ -11,7 +11,8 @@ let fixture name =
   let path = Printf.sprintf "keys/%s" name in
   read_cstruct path
 
-let pgp = fixture "test_new.pgp"
+let pgp = fixture "test_secret_dsa.pgp";;
 
-;;
-Pgp.decode pgp
+let res = Pgp.decode pgp [] in
+List.iter Pgp.Packet.print_infos res
+

@@ -30,124 +30,126 @@ let decode_mpi cs off =
 module Algo = struct
   module Public = struct
     type t =
-      | RSAEncSign
-      | RSAEncOnly
-      | RSASignOnly
-      | ElgaSignOnly
-      | DSA
-      | EC
-      | ECDSA
+      | Rsa_enc_sign
+      | Rsa_enc_only
+      | Rsa_sign_only
+      | Elgamal_sign_only
+      | Dsa
+      | Ec
+      | Ecdsa
+    [@@deriving ord, eq, show]
 
     let detag tag =
       match tag with
-      | 1 -> RSAEncSign
-      | 2 -> RSAEncOnly
-      | 3 -> RSASignOnly
-      | 16 -> ElgaSignOnly
-      | 17 -> DSA
-      | 18 -> EC
-      | 19 -> ECDSA
+      | 1 -> Rsa_enc_sign
+      | 2 -> Rsa_enc_only
+      | 3 -> Rsa_sign_only
+      | 16 -> Elgamal_sign_only
+      | 17 -> Dsa
+      | 18 -> Ec
+      | 19 -> Ecdsa
       | i -> raise (Algo ("Algorithm not found : tag " ^ Int.to_string i))
 
     let name algo =
       match algo with
-      | RSAEncSign -> "RSA Encryption & Signature"
-      | RSAEncOnly -> "RSA Encryption only"
-      | RSASignOnly -> "RSA Signature only"
-      | ElgaSignOnly -> "Elgamal Signature only"
-      | DSA -> "DSA"
-      | EC -> "EC"
-      | ECDSA -> "EC DSA"
+      | Rsa_enc_sign -> "RSA Encryption & Signature"
+      | Rsa_enc_only -> "RSA Encryption only"
+      | Rsa_sign_only -> "RSA Signature only"
+      | Elgamal_sign_only -> "Elgamal Signature only"
+      | Dsa -> "DSA"
+      | Ec -> "EC"
+      | Ecdsa -> "ECDSA"
   end
 
   module Hash = struct
     type t =
-      | MD5
-      | SHA1
-      | RIPE_MD160
-      | SHA2_256
-      | SHA2_384
-      | SHA2_512
-      | SHA2_224
-      | SHA3_256
-      | SHA3_512
+      | Md5
+      | Sha1
+      | Ripe_md160
+      | Sha2_256
+      | Sha2_384
+      | Sha2_512
+      | Sha2_224
+      | Sha3_256
+      | Sha3_512
+    [@@deriving ord, eq, show]
 
     let name algo =
       match algo with
-      | MD5 -> "MD5"
-      | SHA1 -> "SHA1"
-      | RIPE_MD160 -> "RIPE_MD160"
-      | SHA2_256 -> "SHA2 256"
-      | SHA2_384 -> "SHA2 384"
-      | SHA2_512 -> "SHA2 512"
-      | SHA2_224 -> "SHA2 224"
-      | SHA3_256 -> "SHA3 256"
-      | SHA3_512 -> "SHA3 512"
+      | Md5 -> "MD5"
+      | Sha1 -> "SHA1"
+      | Ripe_md160 -> "RIPE_MD160"
+      | Sha2_256 -> "SHA2 256"
+      | Sha2_384 -> "SHA2 384"
+      | Sha2_512 -> "SHA2 512"
+      | Sha2_224 -> "SHA2 224"
+      | Sha3_256 -> "SHA3 256"
+      | Sha3_512 -> "SHA3 512"
 
     let detag tag =
       match tag with
-      | 1 -> MD5
-      | 2 -> SHA1
-      | 3 -> RIPE_MD160
-      | 8 -> SHA2_256
-      | 9 -> SHA2_384
-      | 10 -> SHA2_512
-      | 11 -> SHA2_224
-      | 12 -> SHA3_256
-      | 14 -> SHA3_512
+      | 1 -> Md5
+      | 2 -> Sha1
+      | 3 -> Ripe_md160
+      | 8 -> Sha2_256
+      | 9 -> Sha2_384
+      | 10 -> Sha2_512
+      | 11 -> Sha2_224
+      | 12 -> Sha3_256
+      | 14 -> Sha3_512
       | _ -> raise (Algo "Hash algorithm not found.")
   end
 
   module Symmetric = struct
     type t =
       | Plaintext
-      | IDEA
-      | TripleDES
-      | CAST5
+      | Idea
+      | Triple_des
+      | Cast_5
       | Blowfish
-      | AES128
-      | AES192
-      | AES256
-      | Twofish256
+      | Aes_128
+      | Aes_192
+      | Aes_256
+      | Twofish_256
       | Unknown
 
     let size algo =
       match algo with
       | Plaintext -> 0
-      | IDEA -> 8
-      | TripleDES -> 8
-      | CAST5 -> 16
+      | Idea -> 8
+      | Triple_des -> 8
+      | Cast_5 -> 16
       | Blowfish -> 8
-      | AES128 -> 16
-      | AES192 -> 24
-      | AES256 -> 32
-      | Twofish256 -> 32
+      | Aes_128 -> 16
+      | Aes_192 -> 24
+      | Aes_256 -> 32
+      | Twofish_256 -> 32
       | Unknown -> 0
 
     let name algo =
       match algo with
       | Plaintext -> "Plain text"
-      | IDEA -> "IDEA"
-      | TripleDES -> "Triple DES"
-      | CAST5 -> "Cast5"
+      | Idea -> "IDEA"
+      | Triple_des -> "Triple DES"
+      | Cast_5 -> "Cast5"
       | Blowfish -> "Blowfish"
-      | AES128 -> "AES 128"
-      | AES192 -> "AES 192"
-      | AES256 -> "AES 256"
-      | Twofish256 -> "Twofish 256"
+      | Aes_128 -> "AES 128"
+      | Aes_192 -> "AES 192"
+      | Aes_256 -> "AES 256"
+      | Twofish_256 -> "Twofish 256"
       | Unknown -> "Unknown symmetric-key algorithm"
 
     let detag tag =
       match tag with
       | 0 -> Plaintext
-      | 1 -> IDEA
-      | 2 -> TripleDES
-      | 3 -> CAST5
+      | 1 -> Idea
+      | 2 -> Triple_des
+      | 3 -> Cast_5
       | 4 -> Blowfish
-      | 7 -> AES128
-      | 8 -> AES192
-      | 9 -> AES256
-      | 10 -> Twofish256
+      | 7 -> Aes_128
+      | 8 -> Aes_192
+      | 9 -> Aes_256
+      | 10 -> Twofish_256
       | _ -> Unknown
   end
 end
@@ -165,7 +167,7 @@ module Rsa = struct
       let (e_length, e) = decode_mpi packet (n_length + off + 2) in
       let length = n_length + e_length + 4 in
       let public_key = {n; e; length} in
-      `RSA public_key
+      `Rsa public_key
   end
 
   module Private = struct
@@ -175,6 +177,7 @@ module Rsa = struct
       ; q : Derivable.Z.t
       ; u : Derivable.Z.t
       ; length : int }
+    [@@deriving ord, eq, show]
 
     let decode packet off =
       let (d_length, d) = decode_mpi packet off in
@@ -183,15 +186,14 @@ module Rsa = struct
       let (u_length, u) =
         decode_mpi packet (d_length + p_length + q_length + off + 6)
       in
+      print_newline ();
       let length = d_length + p_length + q_length + off + u_length + 8 in
-      `RSA {d; p; q; u; length}
+      `Rsa {d; p; q; u; length}
   end
-  [@@deriving ord, eq, show]
 
   module Signature = struct
-    type t = Derivable.Z.t
+    type t = Derivable.Z.t [@@deriving ord, eq, show]
   end
-  [@@deriving ord, eq, show]
 end
 
 module Dsa = struct
@@ -202,6 +204,7 @@ module Dsa = struct
       ; g : Derivable.Z.t
       ; y : Derivable.Z.t
       ; length : int }
+    [@@deriving ord, eq, show]
 
     let decode packet off =
       let (p_length, p) = decode_mpi packet off in
@@ -211,27 +214,26 @@ module Dsa = struct
         decode_mpi packet (p_length + q_length + g_length + off + 6)
       in
       let length = p_length + q_length + g_length + y_length + 8 in
-      `DSA {p; q; g; y; length}
+      `Dsa {p; q; g; y; length}
   end
-  [@@deriving ord, eq, show]
 
   module Private = struct
     type t =
-      { q : Derivable.Z.t
+      { x : Derivable.Z.t
       ; length : int }
+    [@@deriving ord, eq, show]
 
     let decode packet off =
-      let (length, q) = decode_mpi packet off in
-      `DSA {q; length}
+      let (length, x) = decode_mpi packet off in
+      `Dsa {x; length = length + 2}
   end
-  [@@deriving ord, eq, show]
 
   module Signature = struct
     type t =
       { r : Derivable.Z.t
       ; s : Derivable.Z.t }
+    [@@deriving ord, eq, show]
   end
-  [@@deriving ord, eq, show]
 end
 
 module Elgamal = struct
@@ -241,12 +243,13 @@ module Elgamal = struct
       ; g : Derivable.Z.t
       ; y : Derivable.Z.t
       ; length : int }
+    [@@deriving ord, eq, show]
 
     let decode packet off =
       let (p_length, p) = decode_mpi packet off in
       let (g_length, g) = decode_mpi packet (p_length + off + 2) in
       let (y_length, y) = decode_mpi packet (p_length + g_length + off + 4) in
-      let length = p_length + g_length + y_length + off in
+      let length = p_length + g_length + y_length + off + 6 in
       let public_key = {p; g; y; length} in
       `Elgamal public_key
   end
@@ -256,47 +259,48 @@ module Elgamal = struct
     type t =
       { x : Derivable.Z.t
       ; length : int }
+    [@@deriving ord, eq, show]
 
     let decode packet off =
       let (length, x) = decode_mpi packet off in
-      `Elgamal {x; length}
+      `Elgamal {x; length = length + 2}
   end
-  [@@deriving ord, eq, show]
 end
 
 module Packet = struct
   type packet_type =
-    | SessionKey
+    | Session_key
     | Signature
-    | SecretKey
-    | PublicKey
-    | SecretSubkey
-    | ID
-    | PublicSubkey
-    | Unknown of int
+    | Secret_key
+    | Public_key
+    | Secret_subkey
+    | Id
+    | Public_subkey
+    | Unknown_packet
+  [@@deriving ord, eq, show]
 
   let detag tag =
     match tag with
     | 0 -> raise (PacketTag "A packet can't have tag 0.")
-    | 1 -> SessionKey
-    | 2 -> Signature
-    | 5 -> SecretKey
-    | 6 -> PublicKey
-    | 7 -> SecretSubkey
-    | 13 -> ID
-    | 14 -> PublicSubkey
-    | i -> Unknown i
+    | 1 -> Session_key
+    | 2 -> Unknown_packet (*Signature*)
+    | 5 -> Secret_key
+    | 6 -> Public_key
+    | 7 -> Secret_subkey
+    | 13 -> Id
+    | 14 -> Public_subkey
+    | _ -> Unknown_packet
 
   let name packet =
     match packet with
-    | SessionKey -> "Session key packet"
+    | Session_key -> "Session key packet"
     | Signature -> "Signature packet"
-    | SecretKey -> "Secret Key packet"
-    | PublicKey -> "Public key packet"
-    | SecretSubkey -> "Secret subkey packet"
-    | ID -> "Identity packet"
-    | PublicSubkey -> "Public subkey packet"
-    | Unknown i -> "Unknown packet (tag " ^ Int.to_string i ^ ")"
+    | Secret_key -> "Secret Key packet"
+    | Public_key -> "Public key packet"
+    | Secret_subkey -> "Secret subkey packet"
+    | Id -> "Identity packet"
+    | Public_subkey -> "Public subkey packet"
+    | _ -> "Unknown packet"
 
   module Header = struct
     type t =
@@ -304,6 +308,7 @@ module Packet = struct
       ; length_size : int
       ; length : int64
       ; is_new : bool }
+    [@@deriving ord, eq, show]
 
     let is_new_type header_code =
       if header_code >= 192 then
@@ -364,6 +369,7 @@ module Packet = struct
       ; length_size
       ; length
       ; is_new = is_new_type header_code }
+      [@@deriving ord, eq, show]
 
     let print_infos header =
       print_string
@@ -377,71 +383,67 @@ module Packet = struct
       print_string " octets for the size of the header).\n"
   end
 
-  module ID = struct
+  module Id = struct
     type t =
       { name : string
       ; email : string }
+    [@@deriving ord, eq, show]
 
     let print_infos id =
       print_endline ("  name : " ^ id.name);
       print_endline ("  email : " ^ id.email)
 
-    let decode cs (header : Header.t) =
-      let length = Int64.to_int header.length in
-      let packet = Cstruct.sub cs (1 + header.length_size) length in
-      let id = Cstruct.to_string packet in
+    let decode cs =
+      let id = Cstruct.to_string cs in
       let sep_id = String.split_on_char '<' id in
       let name = String.concat "<" (List.rev (List.tl (List.rev sep_id))) in
       let email = List.nth sep_id (List.length sep_id - 1) in
       {name; email = String.sub email 0 (String.length email - 1)}
   end
 
-  type signature =
-    [ `RSA of Rsa.Signature.t
-    | `DSA of Dsa.Signature.t ]
-
   module Signature = struct
     module Subpacket = struct
       type subpacket =
-        | CreationTime
-        | ExpirationTime
-        | ExportCertification
-        | TrustSig
-        | RegularExpression
+        | Creation_time
+        | Expiration_time
+        | Export_certification
+        | Trust_sig
+        | Regular_expression
         | Revocable
-        | KeyExpirationTime
-        | PreferredSymAlgo
-        | RevocKey
+        | Key_expiration_time
+        | Preferred_sym_algo
+        | Revocation_key
         | Issuer
-        | NotationData
-        | PreferredHashAlgo
-        | PreferredCompAlgo
-        | KeyServerPref
-        | PreferredKeyServer
-        | PrimUserID
-        | PolicyURL
-        | KeyFlags
-        | SignerUserID
-        | ReasonRevoc
+        | Notation_data
+        | Preferred_hash_algo
+        | Preferred_comp_algo
+        | Keyserver_pref
+        | Preferred_keyserver
+        | Prim_user_id
+        | Policy_url
+        | Key_flags
+        | Signer_user_id
+        | Reason_revocation
         | Feature
-        | SigTarget
-        | EmbeddedSig
-        | IssuerFingerprint
-        | PreferredAEDEDAlgo
-        | UnknownSubpacket
+        | Sig_target
+        | Embedded_sig
+        | Issuer_fingerprint
+        | Preferred_aeded_algo
+        | Unknown_subpacket
 
       type t =
-        | SubCreationTime of int64
-        | SubExpirationTime of int64
-        | SubExportCertification of bool
-        | SubTrustSig of int * int
-        | SubRevocable of bool
-        | SubKeyExpirationTime of int64
-        | SubIssuer of int64
-        | SubPrimUserID of bool
-        | SubSignerUserID of string
-        | SubEmbeddedSig (* This type has to be moved so this can be defined. *)
-        | SubIssuerFingerprint of int * Cstruct.t
+        | Sub_creation_time of int64
+        | Sub_expiration_time of int64
+        | Sub_export_certification of bool
+        | Sub_trust_sig of int * int
+        | Sub_revocable of bool
+        | Sub_key_expiration_time of int64
+        | Sub_issuer of int64
+        | Sub_prim_user_id of bool
+        | Sub_signer_user_id of string
+        | Sub_embedded_sig (* This type has to be moved so this can be defined. *)
+        | Sub_issuer_fingerprint of int * string
+      [@@deriving ord, eq, show]
 
       type subpacket_data =
         | Useful of t
@@ -449,73 +451,72 @@ module Packet = struct
 
       let detag tag =
         match tag with
-        | 2 -> CreationTime
-        | 3 -> ExpirationTime
-        | 4 -> ExportCertification
-        | 5 -> TrustSig
-        | 6 -> RegularExpression
+        | 2 -> Creation_time
+        | 3 -> Expiration_time
+        | 4 -> Export_certification
+        | 5 -> Trust_sig
+        | 6 -> Regular_expression
         | 7 -> Revocable
-        | 9 -> KeyExpirationTime
-        | 11 -> PreferredSymAlgo
-        | 12 -> RevocKey
+        | 9 -> Key_expiration_time
+        | 11 -> Preferred_sym_algo
+        | 12 -> Revocation_key
         | 16 -> Issuer
-        | 20 -> NotationData
-        | 21 -> PreferredHashAlgo
-        | 22 -> PreferredCompAlgo
-        | 23 -> KeyServerPref
-        | 24 -> PreferredKeyServer
-        | 25 -> PrimUserID
-        | 26 -> PolicyURL
-        | 27 -> KeyFlags
-        | 28 -> SignerUserID
-        | 29 -> ReasonRevoc
+        | 20 -> Notation_data
+        | 21 -> Preferred_hash_algo
+        | 22 -> Preferred_comp_algo
+        | 23 -> Keyserver_pref
+        | 24 -> Preferred_keyserver
+        | 25 -> Prim_user_id
+        | 26 -> Policy_url
+        | 27 -> Key_flags
+        | 28 -> Signer_user_id
+        | 29 -> Reason_revocation
         | 30 -> Feature
-        | 31 -> SigTarget
-        | 32 -> EmbeddedSig
-        | 33 -> IssuerFingerprint
-        | 34 -> PreferredAEDEDAlgo
-        | _ -> UnknownSubpacket
+        | 31 -> Sig_target
+        | 32 -> Embedded_sig
+        | 33 -> Issuer_fingerprint
+        | 34 -> Preferred_aeded_algo
+        | _ -> Unknown_subpacket
 
       let print_infos subpacket =
         match subpacket with
-        | SubCreationTime creation_time ->
+        | Sub_creation_time creation_time ->
           print_endline ("   Creation time : " ^ Int64.to_string creation_time)
-        | SubExpirationTime expiration_time ->
+        | Sub_expiration_time expiration_time ->
           print_endline
             ("   Expiration time : " ^ Int64.to_string expiration_time)
-        | SubExportCertification flag -> (
+        | Sub_export_certification flag -> (
           match flag with
           | true -> print_endline "   This signature is exportable."
           | false -> print_endline "   This signature is not exportable.")
-        | SubTrustSig (depth, amount) ->
+        | Sub_trust_sig (depth, amount) ->
           print_endline
             ("   This signature has a trust depth of "
             ^ Int.to_string depth
             ^ " and amount of "
             ^ Int.to_string amount
             ^ ".")
-        | SubRevocable flag -> (
+        | Sub_revocable flag -> (
           match flag with
           | true -> print_endline "   This signature is revocable."
           | false -> print_endline "   This signature is not revocable.")
-        | SubKeyExpirationTime expiration_time ->
+        | Sub_key_expiration_time expiration_time ->
           print_endline
             ("   Expiration time of the subkey : "
             ^ Int64.to_string expiration_time)
-        | SubIssuer key_id ->
+        | Sub_issuer key_id ->
           let id = Printf.sprintf "%Lx" key_id in
           print_endline ("   The key id is " ^ id)
-        | SubPrimUserID flag -> (
+        | Sub_prim_user_id flag -> (
           match flag with
           | true -> print_endline "   This user is the main user of this key."
           | false ->
             print_endline "   This user is not the main user of this key.")
-        | SubSignerUserID id -> print_endline ("   The signer's ID is " ^ id)
-        | SubEmbeddedSig -> ()
-        | SubIssuerFingerprint (_, fingerprint) ->
+        | Sub_signer_user_id id -> print_endline ("   The signer's ID is " ^ id)
+        | Sub_embedded_sig -> ()
+        | Sub_issuer_fingerprint (_, fingerprint) ->
           print_string "   The Issuer's fingerprint is : ";
-          let fingerprint_str = Cstruct.to_string fingerprint in
-          let fingerprint_seq = String.to_seq fingerprint_str in
+          let fingerprint_seq = String.to_seq fingerprint in
           Seq.iter
             (fun c -> print_string (Printf.sprintf "%02X " (Char.code c)))
             fingerprint_seq
@@ -538,128 +539,139 @@ module Packet = struct
         let tag = Cstruct.get_uint8 cs 0 in
         let subpacket_sigtype = detag tag in
         match subpacket_sigtype with
-        | CreationTime ->
+        | Creation_time ->
           let creation_time = Cstruct.BE.get_uint32 cs 1 in
-          Useful (SubCreationTime (Int64.of_int32 creation_time))
-        | ExpirationTime ->
+          Useful (Sub_creation_time (Int64.of_int32 creation_time))
+        | Expiration_time ->
           let expiration_time = Cstruct.BE.get_uint32 cs 1 in
-          Useful (SubExpirationTime (Int64.of_int32 expiration_time))
-        | ExportCertification -> (
+          Useful (Sub_expiration_time (Int64.of_int32 expiration_time))
+        | Export_certification -> (
           match Cstruct.get_uint8 cs 1 with
-          | 0 -> Useful (SubExportCertification false)
-          | 1 -> Useful (SubExportCertification true)
+          | 0 -> Useful (Sub_export_certification false)
+          | 1 -> Useful (Sub_export_certification true)
           | _ -> raise (Subpacket "Exportable flag should be 0 or 1"))
         | Revocable -> (
           match Cstruct.get_uint8 cs 1 with
-          | 0 -> Useful (SubRevocable false)
-          | 1 -> Useful (SubRevocable true)
+          | 0 -> Useful (Sub_revocable false)
+          | 1 -> Useful (Sub_revocable true)
           | _ -> raise (Subpacket "Revocable flag should be 0 or 1"))
-        | TrustSig ->
+        | Trust_sig ->
           let depth = Cstruct.get_uint8 cs 1 in
           let amount = Cstruct.get_uint8 cs 2 in
-          Useful (SubTrustSig (depth, amount))
-        | KeyExpirationTime ->
+          Useful (Sub_trust_sig (depth, amount))
+        | Key_expiration_time ->
           let expiration_time = Cstruct.BE.get_uint32 cs 1 in
-          Useful (SubExpirationTime (Int64.of_int32 expiration_time))
+          Useful (Sub_expiration_time (Int64.of_int32 expiration_time))
         | Issuer ->
           let issuer_keyid = Cstruct.BE.get_uint64 cs 1 in
-          Useful (SubIssuer issuer_keyid)
-        | PrimUserID -> (
+          Useful (Sub_issuer issuer_keyid)
+        | Prim_user_id -> (
           match Cstruct.get_uint8 cs 1 with
-          | 0 -> Useful (SubPrimUserID false)
-          | 1 -> Useful (SubPrimUserID true)
+          | 0 -> Useful (Sub_prim_user_id false)
+          | 1 -> Useful (Sub_prim_user_id true)
           | _ -> raise (Subpacket "Primary User ID flag should be 0 or 1"))
-        | SignerUserID ->
+        | Signer_user_id ->
           let str = Cstruct.to_string (Cstruct.shift cs 1) in
-          Useful (SubSignerUserID str)
-        | IssuerFingerprint ->
+          Useful (Sub_signer_user_id str)
+        | Issuer_fingerprint ->
           let version = Cstruct.get_uint8 cs 1 in
-          let fingerprint = Cstruct.sub cs 2 20 in
-          Useful (SubIssuerFingerprint (version, fingerprint))
-        | PreferredAEDEDAlgo
-        | RegularExpression
-        | PreferredKeyServer
-        | KeyServerPref
-        | NotationData
-        | PreferredSymAlgo
-        | PreferredCompAlgo
-        | PreferredHashAlgo
+          let _fingerprint = Cstruct.sub cs 2 20 in
+          let fingerprint = Cstruct.to_string _fingerprint in
+          Useful (Sub_issuer_fingerprint (version, fingerprint))
+        | Preferred_aeded_algo
+        | Regular_expression
+        | Preferred_keyserver
+        | Keyserver_pref
+        | Notation_data
+        | Preferred_sym_algo
+        | Preferred_comp_algo
+        | Preferred_hash_algo
         | Feature
-        | PolicyURL
-        | KeyFlags
-        | ReasonRevoc
-        | SigTarget
-        | RevocKey
-        | EmbeddedSig
-        | UnknownSubpacket ->
+        | Policy_url
+        | Key_flags
+        | Reason_revocation
+        | Sig_target
+        | Revocation_key
+        | Embedded_sig
+        | Unknown_subpacket ->
           Useless
     end
 
     type signature_type =
-      | BinaryDocSig
-      | TextDocSig
-      | StandaloneSig
-      | GenericCertif
-      | PersonaCertif
-      | CasualCertif
-      | PositiveCertif
-      | SubkeyBinding
-      | PrimkeyBinding
-      | KeySig
-      | KeyRevocation
-      | SubkeyRevocation
-      | CertifRevocation
-      | TimestampSig
-      | ThirdPartyConfirm
+      | Binary_doc_sig
+      | Textdoc_sig
+      | Standalone_sig
+      | Generic_certif
+      | Persona_certif
+      | Casual_certif
+      | Positive_certif
+      | Subkey_binding
+      | Primkey_binding
+      | Key_sig
+      | Key_revocation
+      | Subkey_revocation
+      | Certif_revocation
+      | Timestamp_sig
+      | Thirdparty_confirm
+    [@@deriving ord, eq, show]
 
     let name sigtype =
       match sigtype with
-      | BinaryDocSig -> "Signature of a binary document"
-      | TextDocSig -> "Signature of a canonical text document"
-      | StandaloneSig -> "Standalone signature of its own subpacket"
-      | GenericCertif ->
+      | Binary_doc_sig -> "Signature of a binary document"
+      | Textdoc_sig -> "Signature of a canonical text document"
+      | Standalone_sig -> "Standalone signature of its own subpacket"
+      | Generic_certif ->
         "Generic certification of a User ID and Public key packet"
-      | PersonaCertif ->
+      | Persona_certif ->
         "Persona certification of a User ID and Public key packet"
-      | CasualCertif ->
+      | Casual_certif ->
         "Casual certification of a User ID and Public key packet"
-      | PositiveCertif ->
+      | Positive_certif ->
         "Positive certification of a User ID and Public key packet"
-      | SubkeyBinding -> "Subkey binding signature"
-      | PrimkeyBinding -> "Primary key binding signature"
-      | KeySig -> "Signature directly on a key"
-      | KeyRevocation -> "Key revocation signature"
-      | SubkeyRevocation -> "Subkey revocation signature"
-      | CertifRevocation -> "Certification revocation signature"
-      | TimestampSig -> "Timestamp signature"
-      | ThirdPartyConfirm -> "Third-Party confirmation signature"
+      | Subkey_binding -> "Subkey binding signature"
+      | Primkey_binding -> "Primary key binding signature"
+      | Key_sig -> "Signature directly on a key"
+      | Key_revocation -> "Key revocation signature"
+      | Subkey_revocation -> "Subkey revocation signature"
+      | Certif_revocation -> "Certification revocation signature"
+      | Timestamp_sig -> "Timestamp signature"
+      | Thirdparty_confirm -> "Third-Party confirmation signature"
 
     let detag tag =
       match tag with
-      | 0 -> BinaryDocSig
-      | 1 -> TextDocSig
-      | 2 -> StandaloneSig
-      | 16 -> GenericCertif
-      | 17 -> PersonaCertif
-      | 18 -> CasualCertif
-      | 19 -> PositiveCertif
-      | 24 -> SubkeyBinding
-      | 25 -> PrimkeyBinding
-      | 31 -> KeySig
-      | 32 -> KeyRevocation
-      | 40 -> SubkeyRevocation
-      | 48 -> CertifRevocation
-      | 64 -> TimestampSig
-      | 80 -> ThirdPartyConfirm
+      | 0 -> Binary_doc_sig
+      | 1 -> Textdoc_sig
+      | 2 -> Standalone_sig
+      | 16 -> Generic_certif
+      | 17 -> Persona_certif
+      | 18 -> Casual_certif
+      | 19 -> Positive_certif
+      | 24 -> Subkey_binding
+      | 25 -> Primkey_binding
+      | 31 -> Key_sig
+      | 32 -> Key_revocation
+      | 40 -> Subkey_revocation
+      | 48 -> Certif_revocation
+      | 64 -> Timestamp_sig
+      | 80 -> Thirdparty_confirm
       | _ -> raise (Signature "Incorrect tag for signature type.")
+
+    module Value = struct
+      type t =
+        [ `Rsa of Rsa.Signature.t
+        | `Dsa of Dsa.Signature.t ]
+      [@@deriving ord, eq, show]
+    end
 
     type t =
       { version : int
       ; signature_type : signature_type
       ; public_algorithm : Algo.Public.t
       ; hash_algorithm : Algo.Hash.t
-      ; signature : signature
+      ; signature : Value.t
+      ; hash : string
       ; subpacket_data : Subpacket.t list }
+    [@@deriving ord, eq, show]
 
     let print_infos signature =
       print_endline ("  Version " ^ Int.to_string signature.version);
@@ -668,18 +680,19 @@ module Packet = struct
         ("  Public algorithm : " ^ Algo.Public.name signature.public_algorithm);
       print_endline
         ("  Hash algorithm : " ^ Algo.Hash.name signature.hash_algorithm);
-      List.iter Subpacket.print_infos signature.subpacket_data
+      List.iter Subpacket.print_infos signature.subpacket_data;
+      print_newline ()
 
-    let decode_algo (algo : Algo.Public.t) packet =
+    let decode_algo (algo : Algo.Public.t) cs =
       match algo with
-      | RSAEncSign
-      | RSASignOnly ->
-        let (_, s) = decode_mpi packet 2 in
-        `RSA s
-      | DSA ->
-        let (r_length, r) = decode_mpi packet 2 in
-        let (_, s) = decode_mpi packet (2 + r_length) in
-        `DSA Dsa.Signature.{r; s}
+      | Rsa_enc_sign
+      | Rsa_sign_only ->
+        let (_, s) = decode_mpi cs 2 in
+        `Rsa s
+      | Dsa ->
+        let (r_length, r) = decode_mpi cs 2 in
+        let (_, s) = decode_mpi cs (4 + r_length) in
+        `Dsa Dsa.Signature.{r; s}
       | _ ->
         raise (Algo "Decoding signatures of this algorithm is not implemented.")
 
@@ -721,17 +734,18 @@ module Packet = struct
       let skipped_subpacket_data =
         Cstruct.shift skipped_hashed_data (2 + unhashed_data_length)
       in
+      let hash_int = Cstruct.get_uint8 skipped_subpacket_data 0 in
+      let hash = Printf.sprintf "%04x" hash_int in
       let signature = decode_algo pub_algo skipped_subpacket_data in
       { version
       ; signature_type = sigtype
       ; public_algorithm = pub_algo
       ; hash_algorithm = hash_algo
       ; signature
+      ; hash
       ; subpacket_data }
 
-    let decode cs (header : Header.t) =
-      let length = Int64.to_int header.length in
-      let packet = Cstruct.sub cs (1 + header.length_size) length in
+    let decode packet =
       let version = Cstruct.get_uint8 packet 0 in
       match version with
       | 3 -> raise (Signature "Version 3 signatures not supported.")
@@ -740,19 +754,24 @@ module Packet = struct
         decode_recent packet version
       | _ -> raise (Signature "Incorrect signature version number.")
   end
+  [@@deriving ord, eq, show]
 
-  type public_key =
-    [ `RSA of Rsa.Public.t
-    | `DSA of Dsa.Public.t
-    | `Elgamal of Elgamal.Public.t ]
+  module Public_key = struct
+    module Public_key_value = struct
+      type t =
+        [ `Rsa of Rsa.Public.t
+        | `Dsa of Dsa.Public.t
+        | `Elgamal of Elgamal.Public.t ]
+      [@@deriving ord, eq, show]
+    end
 
-  module Publickey = struct
     type t =
       { version : int
       ; creation_time : int
       ; validity_period : int option
       ; algo : Algo.Public.t
-      ; public_key : public_key }
+      ; public_key : Public_key_value.t }
+    [@@deriving ord, eq, show]
 
     let print_infos public_key =
       print_endline ("  Version " ^ Int.to_string public_key.version);
@@ -760,25 +779,23 @@ module Packet = struct
         ("  Creation time : " ^ Int.to_string public_key.creation_time);
       print_endline ("  Algorithm : " ^ Algo.Public.name public_key.algo)
 
-    let get_length (public_key : public_key) =
+    let get_length (public_key : Public_key_value.t) =
       match public_key with
-      | `RSA key -> key.length
-      | `DSA key -> key.length
+      | `Rsa key -> key.length
+      | `Dsa key -> key.length
       | `Elgamal key -> key.length
 
-    let decode_publickey (algo : Algo.Public.t) packet =
+    let decode_public_key (algo : Algo.Public.t) packet =
       match algo with
-      | RSAEncSign
-      | RSAEncOnly
-      | RSASignOnly ->
+      | Rsa_enc_sign
+      | Rsa_enc_only
+      | Rsa_sign_only ->
         Rsa.Public.decode packet 6
-      | DSA -> Dsa.Public.decode packet 6
-      | ElgaSignOnly -> Elgamal.Public.decode packet 6
+      | Dsa -> Dsa.Public.decode packet 6
+      | Elgamal_sign_only -> Elgamal.Public.decode packet 6
       | _ -> raise (Algo "Not implemented.")
 
-    let decode cs (header : Header.t) =
-      let length = Int64.to_int header.length in
-      let packet = Cstruct.sub cs (1 + header.length_size) length in
+    let decode packet =
       let version = Cstruct.get_uint8 packet 0 in
       let creation_time = Cstruct.BE.get_uint32 packet 1 in
       let (public_packet, validity_period) =
@@ -792,62 +809,79 @@ module Packet = struct
         | _ -> raise (Packet "Bad version of public key packet.")
       in
       let algo = Algo.Public.detag (Cstruct.get_uint8 packet 5) in
-      let key = decode_publickey algo public_packet in
-      let publickey =
-        { version
-        ; creation_time = Int32.to_int creation_time
-        ; validity_period
-        ; algo
-        ; public_key = key }
-      in
-      publickey
+      let key = decode_public_key algo public_packet in
+      { version
+      ; creation_time = Int32.to_int creation_time
+      ; validity_period
+      ; algo
+      ; public_key = key }
+  end
+  [@@deriving ord, eq, show]
+
+  module Private_key_value = struct
+    type t =
+      [ `Rsa of Rsa.Private.t
+      | `Dsa of Dsa.Private.t
+      | `Elgamal of Elgamal.Private.t ]
+    [@@deriving ord, eq, show]
   end
 
-  type private_key =
-    [ `RSA of Rsa.Private.t
-    | `DSA of Dsa.Private.t
-    | `Elgamal of Elgamal.Private.t ]
-
-  module Secretkey = struct
+  module Secret_key = struct
     module S2k = struct
       type s2k_type =
         | Simple
         | Salted
-        | IteratedSalted
+        | Iterated_salted
         | Unknown
 
       let detag tag =
         match tag with
         | 0 -> Simple
         | 1 -> Salted
-        | 3 -> IteratedSalted
+        | 3 -> Iterated_salted
         | _ -> Unknown
 
       let name specifier =
         match specifier with
         | Simple -> "Simple String2Key"
         | Salted -> "Salted String2Key"
-        | IteratedSalted -> "Iterated&Salted String2Key"
+        | Iterated_salted -> "Iterated&Salted String2Key"
         | Unknown -> "Unknown String2Key"
 
       type t =
         | Simple of Algo.Hash.t
         | Salted of Algo.Hash.t * int64
-        | IteratedSalted of Algo.Hash.t * int64 * int
+        | Iterated_salted of Algo.Hash.t * int64 * int
+      [@@deriving ord, eq, show]
+
+      let print_infos s2k =
+        match s2k with
+        | Simple algo ->
+          print_endline
+            ("   Simple S2k using " ^ Algo.Hash.name algo ^ " algorithm")
+        | Salted (algo, _) ->
+          print_endline
+            ("   Salted S2k using " ^ Algo.Hash.name algo ^ " algorithm")
+        | Iterated_salted (algo, _, _) ->
+          print_endline
+            ("   Iterated & Salted S2k using "
+            ^ Algo.Hash.name algo
+            ^ " algorithm")
     end
 
     type t =
-      { public_key : Publickey.t
+      { public_key : Public_key.t
       ; s2k : S2k.t option
-      ; initial_vector : Cstruct.t option
-      ; private_key : private_key
-      ; checksum : int option
-      ; hash : Cstruct.t option }
+      ; initial_vector : string option
+      ; private_key : Private_key_value.t option
+      ; checksum : string option
+      ; hash : string option }
+    [@@deriving ord, eq, show]
 
-    let get_length (private_key : private_key) =
+    let get_length (private_key : Private_key_value.t) =
       match private_key with
-      | `RSA key -> key.length
-      | `DSA key -> key.length
+      | `Rsa key -> key.length
+      | `Dsa key -> key.length
       | `Elgamal key -> key.length
 
     let decode_s2k packet s2k_specifier =
@@ -859,141 +893,133 @@ module Packet = struct
       | Salted ->
         let salt_value = Cstruct.BE.get_uint64 packet 4 in
         (S2k.Salted (hash_algo, salt_value), 12)
-      | IteratedSalted ->
+      | Iterated_salted ->
         let salt_value = Cstruct.BE.get_uint64 packet 4 in
         let count = Cstruct.get_uint8 packet 12 in
-        (S2k.IteratedSalted (hash_algo, salt_value, count), 13)
+        (S2k.Iterated_salted (hash_algo, salt_value, count), 13)
 
-    let decode_secretkey packet (algo : Algo.Public.t) =
+    let decode_private_key packet (algo : Algo.Public.t) =
       match algo with
-      | RSAEncSign
-      | RSAEncOnly
-      | RSASignOnly ->
+      | Rsa_enc_sign
+      | Rsa_enc_only
+      | Rsa_sign_only ->
         Rsa.Private.decode packet 0
-      | DSA -> Dsa.Private.decode packet 0
-      | ElgaSignOnly -> Elgamal.Private.decode packet 0
+      | Dsa -> Dsa.Private.decode packet 0
+      | Elgamal_sign_only -> Elgamal.Private.decode packet 0
       | _ -> raise (Algo "Not implemented.")
 
-    let decode_convention (public_key : Publickey.t) packet convention =
+    let decode_convention (public_key : Public_key.t) packet convention =
       match convention with
       | 0 ->
         let secret_packet = Cstruct.shift packet 1 in
-        let secret_key = decode_secretkey secret_packet public_key.algo in
-        let off = get_length secret_key in
-        let checksum = Some (Cstruct.BE.get_uint16 secret_packet off) in
+        let private_key = decode_private_key secret_packet public_key.algo in
+        let off = get_length private_key in
+        let checksum_int = Cstruct.BE.get_uint16 secret_packet off in
+        let checksum = Z.format "0x0100" (Z.of_int checksum_int) in
         { public_key
         ; s2k = None
         ; initial_vector = None
-        ; private_key = secret_key
-        ; checksum
+        ; private_key = Some private_key
+        ; checksum = Some checksum
         ; hash = None }
       | 254
       | 255 ->
-        let sym_tag = Cstruct.get_uint8 packet 1 in
+        raise (Packet "Private key type not treated.")
+      (*let sym_tag = Cstruct.get_uint8 packet 1 in
         let sym_algo = Algo.Symmetric.detag sym_tag in
         let s2k_tag = Cstruct.get_uint8 packet 2 in
         let s2k_specifier = S2k.detag s2k_tag in
         let (s2k, off) = decode_s2k packet s2k_specifier in
         let cipher_block = Algo.Symmetric.size sym_algo in
         let initial_vector = Cstruct.sub packet off cipher_block in
-        let secret_packet = Cstruct.shift packet (cipher_block + off) in
-        let secret_key = decode_secretkey secret_packet public_key.algo in
-        let (checksum, hash) =
-          if convention == 255 then
-            let check = Cstruct.BE.get_uint16 packet (off + cipher_block) in
-            (Some check, None)
-          else
-            let hash = Cstruct.sub packet (off + cipher_block) 20 in
-            (None, Some hash)
-        in
         { s2k = Some s2k
         ; public_key
         ; initial_vector = Some initial_vector
-        ; private_key = secret_key
-        ; hash
-        ; checksum }
-      | id ->
-        let sym_algo = Algo.Symmetric.detag id in
-        let s2k = S2k.Simple Algo.Hash.MD5 in
-        let cipher_block = Algo.Symmetric.size sym_algo in
-        let initial_vector = Cstruct.sub packet 1 cipher_block in
-        let secret_packet = Cstruct.shift packet (1 + cipher_block) in
-        let secret_key = decode_secretkey secret_packet public_key.algo in
-        let off = get_length secret_key in
-        let checksum = Some (Cstruct.BE.get_uint16 secret_packet off) in
-        { s2k = Some s2k
-        ; public_key
-        ; initial_vector = Some initial_vector
-        ; private_key = secret_key
+        ; private_key = None
         ; hash = None
-        ; checksum }
+            ; checksum = None }*)
+      | _ -> raise (Packet "Private key type not treated.")
+    (*let sym_algo = Algo.Symmetric.detag id in
+      let s2k = S2k.Simple Algo.Hash.MD5 in
+      let cipher_block = Algo.Symmetric.size sym_algo in
+      let initial_vector = Cstruct.sub packet 1 cipher_block in
+      { s2k = Some s2k
+      ; public_key
+      ; initial_vector = Some initial_vector
+      ; private_key = None
+      ; hash = None
+        ; checksum = None }*)
 
-    let decode cs (header : Header.t) =
-      let public_key = Publickey.decode cs header in
-      let off = 7 + Publickey.get_length public_key.public_key in
-      let _secret_packet = Cstruct.shift cs (header.length_size + off) in
-      let secret_packet =
-        Cstruct.sub _secret_packet 0 (Int64.to_int header.length)
-      in
+    let decode packet =
+      let public_key = Public_key.decode packet in
+      let off = 6 + Public_key.get_length public_key.public_key in
+      let secret_packet = Cstruct.shift packet off in
       let convention = Cstruct.get_uint8 secret_packet 0 in
       decode_convention public_key secret_packet convention
+
+    let print_infos private_key =
+      print_endline "  Informations on the public key :";
+      Public_key.print_infos private_key.public_key;
+      print_endline "  Informations on the private key :";
+      match private_key.s2k with
+      | None -> print_endline "   Private key is not encrypted."
+      | Some s2k ->
+        print_endline "   Private key is encrypted using a String2Key :";
+        S2k.print_infos s2k
+  end
+  [@@deriving ord, eq, show]
+
+  module Body = struct
+    type t =
+      [ `Id of Id.t
+      | `Secret_key of Secret_key.t
+      | `Public_key of Public_key.t
+      | `Signature of Signature.t
+      | `Secret_subkey of Secret_key.t
+      | `Public_subkey of Public_key.t
+      | `Unknown ]
+    [@@deriving ord, eq, show]
   end
 
   type t =
     { header : Header.t
-    ; packet :
-        [ `ID of ID.t
-        | `Secretkey of Secretkey.t
-        | `Publickey of Publickey.t
-        | `Signature of Signature.t
-        | `Secretsubkey of Secretkey.t
-        | `Publicsubkey of Publickey.t ] }
+    ; packet : Body.t }
+  [@@deriving ord, eq, show]
 
-  let advance_cs cs (header : Header.t) =
-    let real_size = header.length_size + Int64.to_int header.length in
-    Cstruct.shift cs (real_size + 1)
-
-  let decode_packet cs (header : Header.t) =
-    let packet =
-      match header.packet_type with
-      | ID -> `ID (ID.decode cs header)
-      | SecretKey -> `Secretkey (Secretkey.decode cs header)
-      | PublicKey -> `Publickey (Publickey.decode cs header)
-      | Signature -> `Signature (Signature.decode cs header)
-      | SecretSubkey -> `Secretsubkey (Secretkey.decode cs header)
-      | PublicSubkey -> `Publicsubkey (Publickey.decode cs header)
-      | _ -> raise (Packet ("Not implemented : " ^ name header.packet_type))
+  let decode cs =
+    let header = Header.decode cs in
+    let packet_cs =
+      Cstruct.sub cs (1 + header.length_size) (Int64.to_int header.length)
     in
-    {header; packet}
-
-  let rec decode_rec cs header packet_list =
-    try
-      let next_cs = advance_cs cs header in
-      let next_header = Header.decode next_cs in
-      let packet = decode_packet next_cs next_header in
-      decode_rec next_cs next_header (packet :: packet_list)
-    with
-    | Invalid_argument _ -> List.rev packet_list
+    let (packet : Body.t) =
+      match header.packet_type with
+      | Id -> `Id (Id.decode packet_cs)
+      | Secret_key -> `Secret_key (Secret_key.decode packet_cs)
+      | Public_key -> `Public_key (Public_key.decode packet_cs)
+      | Signature -> `Unknown (*`Signature (Signature.decode packet_cs)*)
+      | Secret_subkey -> `Secret_key (Secret_key.decode packet_cs)
+      | Public_subkey -> `Public_key (Public_key.decode packet_cs)
+      | _ -> `Unknown
+    in
+    let next_cs =
+      Cstruct.shift cs (1 + header.length_size + Int64.to_int header.length)
+    in
+    (next_cs, {header; packet})
 
   let print_infos packet =
     Header.print_infos packet.header;
     (match packet.packet with
-    | `ID id -> ID.print_infos id
-    | `Secretkey secret_key -> Publickey.print_infos secret_key.public_key
-    | `Publickey public_key -> Publickey.print_infos public_key
-    | `Signature signature -> Signature.print_infos signature
-    | `Secretsubkey secret_subkey ->
-      Publickey.print_infos secret_subkey.public_key
-    | `Publicsubkey public_subkey -> Publickey.print_infos public_subkey);
+    | `Id id_packet -> Id.print_infos id_packet
+    | `Secret_key secret_key_packet -> Secret_key.print_infos secret_key_packet
+    | `Public_key public_key_packet -> Public_key.print_infos public_key_packet
+    | `Signature signature_packet -> Signature.print_infos signature_packet
+    | `Secret_subkey secretsubkey_packet ->
+      Secret_key.print_infos secretsubkey_packet
+    | `Public_subkey public_subkey -> Public_key.print_infos public_subkey
+    | _ -> ());
     print_newline ()
-
-  let decode cs =
-    let header = Header.decode cs in
-    let packet = decode_packet cs header in
-    decode_rec cs header [packet]
 end
-
-(* moves after the armoring *)
+(* moves after the armoring 
 
 let rec check_offset cs i j =
   let first_val = Cstruct.get_uint8 cs i in
@@ -1003,7 +1029,7 @@ let rec check_offset cs i j =
   | 58 -> check_offset cs (i + 1) 0
   | _ -> check_offset cs (i + 1) j
 
-(* I copied this from pem_utils.ml (host-scanner) v *)
+ I copied this from pem_utils.ml (host-scanner) v 
 
 let relaxed_base64_rfc2045_of_string x =
   let decoder = Base64_rfc2045.decoder (`String x) in
@@ -1022,7 +1048,7 @@ let relaxed_base64_rfc2045_of_string x =
   go ();
   Buffer.contents res
 
-(*************************************)
+
 
 let decode_base64 cs =
   let off = check_offset cs 0 0 in
@@ -1032,6 +1058,21 @@ let decode_base64 cs =
   let res = Packet.decode decoded_cs in
   List.iter Packet.print_infos res
 
-let decode cs =
-  let res = Packet.decode cs in
-  List.iter Packet.print_infos res
+let decode_test cs =
+  let header = Header.decode cs in
+  let packet = decode_packetXF cs header in
+  decode_rec cs header [packet]
+  end*)
+
+let advance_cs cs (header : Packet.Header.t) =
+  let real_size = header.length_size + Int64.to_int header.length in
+  Cstruct.shift cs (real_size + 1)
+
+let rec decode cs packet_list =
+  if Cstruct.length cs != 0 then
+    let (next_cs, packet) = Packet.decode cs in
+    match packet.packet with
+    | `Unknown -> decode next_cs packet_list
+    | _ -> decode next_cs (packet :: packet_list)
+  else
+    List.rev packet_list
