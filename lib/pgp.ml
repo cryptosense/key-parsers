@@ -10,6 +10,9 @@ exception Subpacket of string
 
 exception Signature of string
 
+let (>>=) = Result.bind
+let (>|=) result f = Result.map f result
+              
 (*from ltpa.ml*)
 
 let get_z_be cs off len =
@@ -27,6 +30,12 @@ let decode_mpi cs off =
   let length = (bit_length / 8) + min 1 (bit_length mod 8) in
   (length, get_z_be cs (2 + off) length)
 
+let decode_mpi_shift cs off =
+  let bit_length = Cstruct.BE.get_uint16 cs off in
+  let length = (bit_length / 8) + min 1 (bit_length mod 8) in
+  let shifted_cs = Cstruct.shift cs (length + 2) in
+  (shifted_cs, get_z_be cs (2 + off) length)
+
 module Algo = struct
   module Public = struct
     type t =
@@ -37,6 +46,7 @@ module Algo = struct
       | Dsa
       | Ec
       | Ecdsa
+      | Unknown
     [@@deriving ord, eq, show]
 
     let detag tag =
@@ -48,7 +58,7 @@ module Algo = struct
       | 17 -> Dsa
       | 18 -> Ec
       | 19 -> Ecdsa
-      | i -> raise (Algo ("Algorithm not found : tag " ^ Int.to_string i))
+      | _ -> Unknown
 
     let name algo =
       match algo with
@@ -59,6 +69,7 @@ module Algo = struct
       | Dsa -> "DSA"
       | Ec -> "EC"
       | Ecdsa -> "ECDSA"
+      | Unknown -> "Unknown public algorithm"
   end
 
   module Hash = struct
@@ -72,19 +83,8 @@ module Algo = struct
       | Sha2_224
       | Sha3_256
       | Sha3_512
+      | Unknown_hash_algo
     [@@deriving ord, eq, show]
-
-    let name algo =
-      match algo with
-      | Md5 -> "MD5"
-      | Sha1 -> "SHA1"
-      | Ripe_md160 -> "RIPE_MD160"
-      | Sha2_256 -> "SHA2 256"
-      | Sha2_384 -> "SHA2 384"
-      | Sha2_512 -> "SHA2 512"
-      | Sha2_224 -> "SHA2 224"
-      | Sha3_256 -> "SHA3 256"
-      | Sha3_512 -> "SHA3 512"
 
     let detag tag =
       match tag with
@@ -97,7 +97,20 @@ module Algo = struct
       | 11 -> Sha2_224
       | 12 -> Sha3_256
       | 14 -> Sha3_512
-      | _ -> raise (Algo "Hash algorithm not found.")
+      | _ -> Unknown_hash_algo
+
+    let name algo =
+      match algo with
+      | Md5 -> "MD5"
+      | Sha1 -> "SHA1"
+      | Ripe_md160 -> "RIPE_MD160"
+      | Sha2_256 -> "SHA2 256"
+      | Sha2_384 -> "SHA2 384"
+      | Sha2_512 -> "SHA2 512"
+      | Sha2_224 -> "SHA2 224"
+      | Sha3_256 -> "SHA3 256"
+      | Sha3_512 -> "SHA3 512"
+      | Unknown_hash_algo -> "Unknown hash algorithm"
   end
 
   module Symmetric = struct
@@ -158,16 +171,14 @@ module Rsa = struct
   module Public = struct
     type t =
       { n : Derivable.Z.t
-      ; e : Derivable.Z.t
-      ; length : int }
+      ; e : Derivable.Z.t }
     [@@deriving ord, eq, show]
 
     let decode packet off =
-      let (n_length, n) = decode_mpi packet off in
-      let (e_length, e) = decode_mpi packet (n_length + off + 2) in
-      let length = n_length + e_length + 4 in
-      let public_key = {n; e; length} in
-      `Rsa public_key
+      let (cs, n) = decode_mpi_shift packet off in
+      let (shifted_cs, e) = decode_mpi_shift cs off in
+      let public_key = {n; e} in
+      (shifted_cs, public_key)
   end
 
   module Private = struct
@@ -175,20 +186,16 @@ module Rsa = struct
       { d : Derivable.Z.t
       ; p : Derivable.Z.t
       ; q : Derivable.Z.t
-      ; u : Derivable.Z.t
-      ; length : int }
+      ; u : Derivable.Z.t }
     [@@deriving ord, eq, show]
 
     let decode packet off =
-      let (d_length, d) = decode_mpi packet off in
-      let (p_length, p) = decode_mpi packet (d_length + off + 2) in
-      let (q_length, q) = decode_mpi packet (d_length + p_length + off + 4) in
-      let (u_length, u) =
-        decode_mpi packet (d_length + p_length + q_length + off + 6)
-      in
+      let (cs1, d) = decode_mpi_shift packet off in
+      let (cs2, p) = decode_mpi_shift cs1 off in
+      let (cs3, q) = decode_mpi_shift cs2 off in
+      let (shifted_cs, u) = decode_mpi_shift cs3 off in
       print_newline ();
-      let length = d_length + p_length + q_length + off + u_length + 8 in
-      `Rsa {d; p; q; u; length}
+      (shifted_cs, {d; p; q; u})
   end
 
   module Signature = struct
@@ -202,30 +209,21 @@ module Dsa = struct
       { p : Derivable.Z.t
       ; q : Derivable.Z.t
       ; g : Derivable.Z.t
-      ; y : Derivable.Z.t
-      ; length : int }
+      ; y : Derivable.Z.t }
     [@@deriving ord, eq, show]
 
     let decode packet off =
-      let (p_length, p) = decode_mpi packet off in
-      let (q_length, q) = decode_mpi packet (p_length + off + 2) in
-      let (g_length, g) = decode_mpi packet (p_length + q_length + off + 4) in
-      let (y_length, y) =
-        decode_mpi packet (p_length + q_length + g_length + off + 6)
-      in
-      let length = p_length + q_length + g_length + y_length + 8 in
-      `Dsa {p; q; g; y; length}
+      let (cs1, p) = decode_mpi_shift packet off in
+      let (cs2, q) = decode_mpi_shift cs1 off in
+      let (cs3, g) = decode_mpi_shift cs2 off in
+      let (shifted_cs, y) = decode_mpi_shift cs3 off in
+      (shifted_cs, {p; q; g; y})
   end
 
   module Private = struct
-    type t =
-      { x : Derivable.Z.t
-      ; length : int }
-    [@@deriving ord, eq, show]
+    type t = Derivable.Z.t [@@deriving ord, eq, show]
 
-    let decode packet off =
-      let (length, x) = decode_mpi packet off in
-      `Dsa {x; length = length + 2}
+    let decode packet off = decode_mpi_shift packet off
   end
 
   module Signature = struct
@@ -241,29 +239,22 @@ module Elgamal = struct
     type t =
       { p : Derivable.Z.t
       ; g : Derivable.Z.t
-      ; y : Derivable.Z.t
-      ; length : int }
+      ; y : Derivable.Z.t }
     [@@deriving ord, eq, show]
 
     let decode packet off =
-      let (p_length, p) = decode_mpi packet off in
-      let (g_length, g) = decode_mpi packet (p_length + off + 2) in
-      let (y_length, y) = decode_mpi packet (p_length + g_length + off + 4) in
-      let length = p_length + g_length + y_length + off + 6 in
-      let public_key = {p; g; y; length} in
-      `Elgamal public_key
+      let (cs1, p) = decode_mpi_shift packet off in
+      let (cs2, g) = decode_mpi_shift cs1 off in
+      let (shifted_cs, y) = decode_mpi_shift cs2 off in
+      let public_key = {p; g; y} in
+      (shifted_cs, public_key)
   end
   [@@deriving ord, eq, show]
 
   module Private = struct
-    type t =
-      { x : Derivable.Z.t
-      ; length : int }
-    [@@deriving ord, eq, show]
+    type t = Derivable.Z.t [@@deriving ord, eq, show]
 
-    let decode packet off =
-      let (length, x) = decode_mpi packet off in
-      `Elgamal {x; length = length + 2}
+    let decode packet off = decode_mpi_shift packet off
   end
 end
 
@@ -281,15 +272,15 @@ module Packet = struct
 
   let detag tag =
     match tag with
-    | 0 -> raise (PacketTag "A packet can't have tag 0.")
-    | 1 -> Session_key
-    | 2 -> Unknown_packet (*Signature*)
-    | 5 -> Secret_key
-    | 6 -> Public_key
-    | 7 -> Secret_subkey
-    | 13 -> Id
-    | 14 -> Public_subkey
-    | _ -> Unknown_packet
+    | 0 -> Result.Error "Tag 0"
+    | 1 -> Result.Ok Session_key
+    | 2 -> Result.Ok Unknown_packet (*Signature*)
+    | 5 -> Result.Ok Secret_key
+    | 6 -> Result.Ok Public_key
+    | 7 -> Result.Ok Secret_subkey
+    | 13 -> Result.Ok Id
+    | 14 -> Result.Ok Public_subkey
+    | _ -> Result.Ok Unknown_packet
 
   let name packet =
     match packet with
@@ -300,13 +291,12 @@ module Packet = struct
     | Secret_subkey -> "Secret subkey packet"
     | Id -> "Identity packet"
     | Public_subkey -> "Public subkey packet"
-    | _ -> "Unknown packet"
+    | Unknown_packet -> "Unknown packet"
 
   module Header = struct
     type t =
       { packet_type : packet_type
-      ; length_size : int
-      ; length : int64
+      ; packet_length : int64
       ; is_new : bool }
     [@@deriving ord, eq, show]
 
@@ -324,52 +314,52 @@ module Packet = struct
 
     let get_old_length_size length_tag =
       match length_tag with
-      | 0 -> 1
-      | 1 -> 2
-      | 2 -> 4
-      | 3 -> raise (LengthBlock "Not implemented.")
-      | _ -> raise (LengthBlock "Length block doesn't have a correct value.")
+      | 0 -> Ok 2
+      | 1 -> Ok 3
+      | 2 -> Ok 5
+      | 3 -> Error "Length size not implemented"
+      | _ -> Error "Bad length size"
 
     let get_old_length cs header_code =
-      let length_size = get_old_length_size (header_code mod 4) in
-      let length =
-        match length_size with
-        | 1 -> Int64.of_int (Cstruct.get_uint8 cs 1)
-        | 2 -> Int64.of_int (Cstruct.BE.get_uint16 cs 1)
-        | 4 -> Int64.of_int32 (Cstruct.BE.get_uint32 cs 1)
-        | _ -> raise (LengthBlock "Length block doesn't have a correct value.")
-      in
-      (length_size, length)
+      get_old_length_size (header_code mod 4) >>= fun n ->
+      match n with
+      | 2 -> Ok (n, Int64.of_int (Cstruct.get_uint8 cs 1))
+      | 3 -> Ok (n, Int64.of_int (Cstruct.BE.get_uint16 cs 1))
+      | 5 -> Ok (n, Int64.of_int32 (Cstruct.BE.get_uint32 cs 1))
+      | _ -> Error "Bad length size"
 
     let get_new_length cs =
       let first_octet = Cstruct.get_uint8 cs 1 in
       if first_octet < 192 then
-        (1, Int64.of_int first_octet)
+        Ok (2, Int64.of_int first_octet)
       else if first_octet < 224 then
         let second_octet = Cstruct.get_uint8 cs 2 in
         let length = 192 + second_octet + (256 * (first_octet - 192)) in
-        (2, Int64.of_int length)
+        Ok (3, Int64.of_int length)
       else if first_octet < 255 then
-        raise (LengthBlock "Partial body length are not treated.")
+        Error "Partial body lengths are not treated"
       else
         let length = Cstruct.BE.get_uint32 cs 2 in
-        (5, Int64.of_int32 length)
+        Ok (6, Int64.of_int32 length)
 
     let decode cs =
       let header_code = Cstruct.get_uint8 cs 0 in
       let tag = get_tag header_code in
-      let (length_size, length) =
+      let length_infos =
         if is_new_type header_code then
           get_new_length cs
         else
           get_old_length cs header_code
       in
-
-      { packet_type = detag tag
-      ; length_size
-      ; length
-      ; is_new = is_new_type header_code }
-      [@@deriving ord, eq, show]
+      match length_infos with
+      | Error _ -> Error (0, 0L)
+      | Ok (header_length, packet_length) -> (
+        match detag tag with
+        | Ok packet_type ->
+          Ok
+            (header_length
+            , {packet_type; packet_length; is_new = is_new_type header_code} )
+        | Error _ -> Error (header_length, packet_length))
 
     let print_infos header =
       print_string
@@ -377,10 +367,7 @@ module Packet = struct
         | true -> "New type of "
         | false -> "Old type of ");
       print_string (name header.packet_type ^ " of length ");
-      print_string (Int64.to_string header.length);
-      print_string " (+";
-      print_int header.length_size;
-      print_string " octets for the size of the header).\n"
+      print_string (Int64.to_string header.packet_length)
   end
 
   module Id = struct
@@ -658,8 +645,8 @@ module Packet = struct
 
     module Value = struct
       type t =
-        [ `Rsa of Rsa.Signature.t
-        | `Dsa of Dsa.Signature.t ]
+        | Rsa of Rsa.Signature.t
+        | Dsa of Dsa.Signature.t
       [@@deriving ord, eq, show]
     end
 
@@ -688,12 +675,17 @@ module Packet = struct
       | Rsa_enc_sign
       | Rsa_sign_only ->
         let (_, s) = decode_mpi cs 2 in
-        `Rsa s
+        Value.Rsa s
       | Dsa ->
         let (r_length, r) = decode_mpi cs 2 in
         let (_, s) = decode_mpi cs (4 + r_length) in
-        `Dsa Dsa.Signature.{r; s}
-      | _ ->
+        Dsa Dsa.Signature.{r; s}
+      | Rsa_enc_only ->
+        raise (Algo "Decoding signatures of this algorithm is impossible.")
+      | Elgamal_sign_only
+      | Ec
+      | Ecdsa
+      | Unknown ->
         raise (Algo "Decoding signatures of this algorithm is not implemented.")
 
     let rec signature_data cs data length =
@@ -723,6 +715,7 @@ module Packet = struct
       let skipped_hashed_data =
         Cstruct.shift packet (6 + hashed_subdata_length)
       in
+      (* We just read 3 int8 and one int16 coming from an offset of 1*)
       let unhashed_data_length = Cstruct.BE.get_uint16 skipped_hashed_data 0 in
       let hashed_cs = Cstruct.sub packet 6 hashed_subdata_length in
       let unhashed_cs =
@@ -754,14 +747,13 @@ module Packet = struct
         decode_recent packet version
       | _ -> raise (Signature "Incorrect signature version number.")
   end
-  [@@deriving ord, eq, show]
 
   module Public_key = struct
     module Public_key_value = struct
       type t =
-        [ `Rsa of Rsa.Public.t
-        | `Dsa of Dsa.Public.t
-        | `Elgamal of Elgamal.Public.t ]
+        | Rsa of Rsa.Public.t
+        | Dsa of Dsa.Public.t
+        | Elgamal of Elgamal.Public.t
       [@@deriving ord, eq, show]
     end
 
@@ -777,52 +769,64 @@ module Packet = struct
       print_endline ("  Version " ^ Int.to_string public_key.version);
       print_endline
         ("  Creation time : " ^ Int.to_string public_key.creation_time);
-      print_endline ("  Algorithm : " ^ Algo.Public.name public_key.algo)
+      print_endline ("  Algorithm: " ^ Algo.Public.name public_key.algo)
 
-    let get_length (public_key : Public_key_value.t) =
-      match public_key with
-      | `Rsa key -> key.length
-      | `Dsa key -> key.length
-      | `Elgamal key -> key.length
-
-    let decode_public_key (algo : Algo.Public.t) packet =
+    let decode_public_key (algo : Algo.Public.t) packet version=
+      let offset = match version with
+        | 3 -> 8
+        | 4 -> 6
+        | _ -> raise (Packet "Public key packet has a bad version")
+      in
       match algo with
       | Rsa_enc_sign
       | Rsa_enc_only
       | Rsa_sign_only ->
-        Rsa.Public.decode packet 6
-      | Dsa -> Dsa.Public.decode packet 6
-      | Elgamal_sign_only -> Elgamal.Public.decode packet 6
-      | _ -> raise (Algo "Not implemented.")
+        let (cs, key) = Rsa.Public.decode packet offset in
+        (cs, Public_key_value.Rsa key)
+      | Dsa ->
+        let (cs, key) = Dsa.Public.decode packet offset in
+        (cs, Dsa key)
+      | Elgamal_sign_only ->
+        let (cs, key) = Elgamal.Public.decode packet offset in
+        (cs, Elgamal key)
+      | Ec
+      | Ecdsa
+      | Unknown ->
+        raise (Algo ("Unsupported algorithm: " ^ Algo.Public.name algo))
 
     let decode packet =
       let version = Cstruct.get_uint8 packet 0 in
       let creation_time = Cstruct.BE.get_uint32 packet 1 in
-      let (public_packet, validity_period) =
+      let packet_info =
         match version with
-        | 4 -> (packet, None)
+        | 4 -> Ok (packet, None)
         | 2
         | 3 ->
           let time = Cstruct.BE.get_uint16 packet 5 in
           let cs = Cstruct.shift packet 2 in
-          (cs, Some time)
-        | _ -> raise (Packet "Bad version of public key packet.")
+          Ok (cs, Some time)
+        | _ -> Error "Bad version of public key packet."
       in
       let algo = Algo.Public.detag (Cstruct.get_uint8 packet 5) in
-      let key = decode_public_key algo public_packet in
-      { version
-      ; creation_time = Int32.to_int creation_time
-      ; validity_period
-      ; algo
-      ; public_key = key }
+      match packet_info with
+      | Ok (public_packet, validity_period) ->
+        let (cs, key) = decode_public_key algo public_packet version in
+        Ok
+          ( cs
+          , { version
+            ; creation_time = Int32.to_int creation_time
+            ; validity_period
+            ; algo
+            ; public_key = key } )
+      | Error error -> Error error
   end
   [@@deriving ord, eq, show]
 
   module Private_key_value = struct
     type t =
-      [ `Rsa of Rsa.Private.t
-      | `Dsa of Dsa.Private.t
-      | `Elgamal of Elgamal.Private.t ]
+      | Rsa of Rsa.Private.t
+      | Dsa of Dsa.Private.t
+      | Elgamal of Elgamal.Private.t
     [@@deriving ord, eq, show]
   end
 
@@ -878,12 +882,6 @@ module Packet = struct
       ; hash : string option }
     [@@deriving ord, eq, show]
 
-    let get_length (private_key : Private_key_value.t) =
-      match private_key with
-      | `Rsa key -> key.length
-      | `Dsa key -> key.length
-      | `Elgamal key -> key.length
-
     let decode_s2k packet s2k_specifier =
       let hash_tag = Cstruct.get_uint8 packet 3 in
       let hash_algo = Algo.Hash.detag hash_tag in
@@ -903,18 +901,27 @@ module Packet = struct
       | Rsa_enc_sign
       | Rsa_enc_only
       | Rsa_sign_only ->
-        Rsa.Private.decode packet 0
-      | Dsa -> Dsa.Private.decode packet 0
-      | Elgamal_sign_only -> Elgamal.Private.decode packet 0
-      | _ -> raise (Algo "Not implemented.")
+        let (cs, key) = Rsa.Private.decode packet 0 in
+        (cs, Private_key_value.Rsa key)
+      | Dsa ->
+        let (cs, key) = Dsa.Private.decode packet 0 in
+        (cs, Dsa key)
+      | Elgamal_sign_only ->
+        let (cs, key) = Elgamal.Private.decode packet 0 in
+        (cs, Elgamal key)
+      | Ec
+      | Ecdsa
+      | Unknown ->
+        raise (Algo ("Not implemented for algorithm:" ^ Algo.Public.name algo))
 
     let decode_convention (public_key : Public_key.t) packet convention =
       match convention with
       | 0 ->
         let secret_packet = Cstruct.shift packet 1 in
-        let private_key = decode_private_key secret_packet public_key.algo in
-        let off = get_length private_key in
-        let checksum_int = Cstruct.BE.get_uint16 secret_packet off in
+        let (cs, private_key) =
+          decode_private_key secret_packet public_key.algo
+        in
+        let checksum_int = Cstruct.BE.get_uint16 cs 0 in
         let checksum = Z.format "0x0100" (Z.of_int checksum_int) in
         { public_key
         ; s2k = None
@@ -922,40 +929,38 @@ module Packet = struct
         ; private_key = Some private_key
         ; checksum = Some checksum
         ; hash = None }
-      | 254
-      | 255 ->
-        raise (Packet "Private key type not treated.")
-      (*let sym_tag = Cstruct.get_uint8 packet 1 in
+      | 254 ->
+        let sym_tag = Cstruct.get_uint8 packet 1 in
         let sym_algo = Algo.Symmetric.detag sym_tag in
         let s2k_tag = Cstruct.get_uint8 packet 2 in
         let s2k_specifier = S2k.detag s2k_tag in
         let (s2k, off) = decode_s2k packet s2k_specifier in
+        let cs_shifted = Cstruct.shift packet off in
         let cipher_block = Algo.Symmetric.size sym_algo in
-        let initial_vector = Cstruct.sub packet off cipher_block in
+        let initial_vector_z = get_z_be cs_shifted 0 cipher_block in
+        let initial_vector = Z.format "0x100" initial_vector_z in
         { s2k = Some s2k
         ; public_key
         ; initial_vector = Some initial_vector
         ; private_key = None
         ; hash = None
-            ; checksum = None }*)
+        ; checksum = None }
       | _ -> raise (Packet "Private key type not treated.")
-    (*let sym_algo = Algo.Symmetric.detag id in
-      let s2k = S2k.Simple Algo.Hash.MD5 in
-      let cipher_block = Algo.Symmetric.size sym_algo in
-      let initial_vector = Cstruct.sub packet 1 cipher_block in
-      { s2k = Some s2k
-      ; public_key
-      ; initial_vector = Some initial_vector
-      ; private_key = None
-      ; hash = None
-        ; checksum = None }*)
 
     let decode packet =
-      let public_key = Public_key.decode packet in
-      let off = 6 + Public_key.get_length public_key.public_key in
-      let secret_packet = Cstruct.shift packet off in
-      let convention = Cstruct.get_uint8 secret_packet 0 in
-      decode_convention public_key secret_packet convention
+      let public_key_res = Public_key.decode packet in
+      match public_key_res with
+      | Error error -> Error error
+      | Ok (cs, public_key) ->
+        let offset =
+          match public_key.version with
+          | 3 -> 8
+          | 4 -> 6
+          | _ -> raise (Packet "Bad version of Public key packet")
+        in
+        let secret_packet = Cstruct.shift cs offset in
+        let convention = Cstruct.get_uint8 secret_packet 0 in
+        Ok (decode_convention public_key secret_packet convention)
 
     let print_infos private_key =
       print_endline "  Informations on the public key :";
@@ -963,22 +968,50 @@ module Packet = struct
       print_endline "  Informations on the private key :";
       match private_key.s2k with
       | None -> print_endline "   Private key is not encrypted."
-      | Some s2k ->
+      | Some s2k -> (
         print_endline "   Private key is encrypted using a String2Key :";
-        S2k.print_infos s2k
+        S2k.print_infos s2k;
+        match private_key.initial_vector with
+        | Some initial_vector ->
+          print_endline ("   Initialisation vector is :" ^ initial_vector)
+        | None -> ())
   end
   [@@deriving ord, eq, show]
 
   module Body = struct
     type t =
-      [ `Id of Id.t
-      | `Secret_key of Secret_key.t
-      | `Public_key of Public_key.t
-      | `Signature of Signature.t
-      | `Secret_subkey of Secret_key.t
-      | `Public_subkey of Public_key.t
-      | `Unknown ]
+      | Id of Id.t
+      | Secret_key of Secret_key.t
+      | Public_key of Public_key.t
+      | Signature of Signature.t
+      | Secret_subkey of Secret_key.t
+      | Public_subkey of Public_key.t
+      | Unknown
     [@@deriving ord, eq, show]
+
+    let decode packet_type packet =
+      match (packet_type : packet_type) with
+      | Id -> Ok (Id (Id.decode packet))
+      | Secret_key ->  (Secret_key.decode packet >|= (fun key -> (Secret_key key)))
+      | Public_key -> (
+        let res = Public_key.decode packet in
+        match res with
+        | Error error -> Error error
+        | Ok (_, packet) -> Ok (Public_key packet))
+      | Signature -> Ok Unknown (*Signature (Signature.decode packet)*)
+      | Secret_subkey -> (
+        let secret_key_res = Secret_key.decode packet in
+        match secret_key_res with
+        | Error error -> Error error
+        | Ok res -> Ok (Secret_subkey res))
+      | Public_subkey -> (
+        let res = Public_key.decode packet in
+        match res with
+        | Error error -> Error error
+        | Ok (_, packet) -> Ok (Public_subkey packet))
+      | Session_key
+      | Unknown_packet ->
+        Ok Unknown
   end
 
   type t =
@@ -987,92 +1020,48 @@ module Packet = struct
   [@@deriving ord, eq, show]
 
   let decode cs =
-    let header = Header.decode cs in
-    let packet_cs =
-      Cstruct.sub cs (1 + header.length_size) (Int64.to_int header.length)
-    in
-    let (packet : Body.t) =
-      match header.packet_type with
-      | Id -> `Id (Id.decode packet_cs)
-      | Secret_key -> `Secret_key (Secret_key.decode packet_cs)
-      | Public_key -> `Public_key (Public_key.decode packet_cs)
-      | Signature -> `Unknown (*`Signature (Signature.decode packet_cs)*)
-      | Secret_subkey -> `Secret_key (Secret_key.decode packet_cs)
-      | Public_subkey -> `Public_key (Public_key.decode packet_cs)
-      | _ -> `Unknown
-    in
-    let next_cs =
-      Cstruct.shift cs (1 + header.length_size + Int64.to_int header.length)
-    in
-    (next_cs, {header; packet})
+    match Header.decode cs with
+    | Ok (header_length, header) -> (
+      let packet_cs =
+        Cstruct.sub cs header_length (Int64.to_int header.packet_length)
+      in
+      let res = Body.decode header.packet_type packet_cs in
+      match res with
+      | Error _ -> Error Cstruct.empty
+      | Ok packet ->
+        let next_cs =
+          Cstruct.shift cs (header_length + Int64.to_int header.packet_length)
+        in
+        Ok (next_cs, {header; packet}))
+    | Error (0, 0L) -> Error Cstruct.empty
+    (* Created when the length size is bad in the header *)
+    | Error (header_length, packet_length) ->
+      let next_cs =
+        Cstruct.shift cs (header_length + Int64.to_int packet_length)
+      in
+      Error next_cs
 
   let print_infos packet =
     Header.print_infos packet.header;
     (match packet.packet with
-    | `Id id_packet -> Id.print_infos id_packet
-    | `Secret_key secret_key_packet -> Secret_key.print_infos secret_key_packet
-    | `Public_key public_key_packet -> Public_key.print_infos public_key_packet
-    | `Signature signature_packet -> Signature.print_infos signature_packet
-    | `Secret_subkey secretsubkey_packet ->
+    | Id id_packet -> Id.print_infos id_packet
+    | Secret_key secret_key_packet -> Secret_key.print_infos secret_key_packet
+    | Public_key public_key_packet -> Public_key.print_infos public_key_packet
+    | Signature signature_packet -> Signature.print_infos signature_packet
+    | Secret_subkey secretsubkey_packet ->
       Secret_key.print_infos secretsubkey_packet
-    | `Public_subkey public_subkey -> Public_key.print_infos public_subkey
-    | _ -> ());
+    | Public_subkey public_subkey -> Public_key.print_infos public_subkey
+    | Unknown -> ());
     print_newline ()
 end
-(* moves after the armoring 
-
-let rec check_offset cs i j =
-  let first_val = Cstruct.get_uint8 cs i in
-  match first_val with
-  | 10 when j == 1 -> i + 1
-  | 10 -> check_offset cs (i + 1) (j + 1)
-  | 58 -> check_offset cs (i + 1) 0
-  | _ -> check_offset cs (i + 1) j
-
- I copied this from pem_utils.ml (host-scanner) v 
-
-let relaxed_base64_rfc2045_of_string x =
-  let decoder = Base64_rfc2045.decoder (`String x) in
-  let res = Buffer.create 16 in
-  let rec go () =
-    match Base64_rfc2045.decode decoder with
-    | `End -> ()
-    | `Wrong_padding -> go ()
-    | `Malformed _ -> go ()
-    | `Flush x ->
-      Buffer.add_string res x;
-      go ()
-    | `Await -> ()
-  in
-  Base64_rfc2045.src decoder (Bytes.unsafe_of_string x) 0 (String.length x);
-  go ();
-  Buffer.contents res
-
-
-
-let decode_base64 cs =
-  let off = check_offset cs 0 0 in
-  let str = Cstruct.to_string ~off cs in
-  let decoded_str = relaxed_base64_rfc2045_of_string str in
-  let decoded_cs = Cstruct.of_string decoded_str in
-  let res = Packet.decode decoded_cs in
-  List.iter Packet.print_infos res
-
-let decode_test cs =
-  let header = Header.decode cs in
-  let packet = decode_packetXF cs header in
-  decode_rec cs header [packet]
-  end*)
-
-let advance_cs cs (header : Packet.Header.t) =
-  let real_size = header.length_size + Int64.to_int header.length in
-  Cstruct.shift cs (real_size + 1)
 
 let rec decode cs packet_list =
   if Cstruct.length cs != 0 then
-    let (next_cs, packet) = Packet.decode cs in
-    match packet.packet with
-    | `Unknown -> decode next_cs packet_list
-    | _ -> decode next_cs (packet :: packet_list)
+    match Packet.decode cs with
+    | Ok (next_cs, packet) -> (
+      match packet.packet with
+      | Unknown -> decode next_cs packet_list
+      | _ -> decode next_cs (packet :: packet_list))
+    | Error next_cs -> decode next_cs packet_list
   else
     List.rev packet_list

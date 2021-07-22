@@ -12,17 +12,17 @@ module Rsa = struct
           "0xfb4be4285f7bf636362c2a86b2680899c30d9d07851850b474e8db8d96743001917984e222e989751930c09c6c88dff8f17ecf8be3d4796bd18946ffae7be00a95055ad9d508225ce3dcec571a804fb15b34dcea1c52ec3720852a0c3c19a5772b7b2fa3c602209df84bd9756cacc040e0e9b5b7b6eb4fdee3ca6afeadbfea0b2d69064208467bcccc509affe01a8a49778b70150e8d9d289de5229f23b7a414ac7f3f7f196f71767c6b3ff3f2fd46505d8bed9a531a9c9ba0f5024e52173f62e025b84a3038cd39ffe22bf6a0d21bd5de60d5a51df8b364a5878404ae00a25e72e1cec494104e5adff481640bd17df825f191366895939ca588f287ec047348e0250a36e1c5873d7c95ddf8c945d89f344fe67230628d8b3d50124ee6306bba214103102509412e1c0e5df173b4834b061662e4678a73589639eedd256a36425edfea899882c4904c492d45027d1688417913f6c84758852be127695b0804a4537d9eee12ff9dba06b53eeb4456b79079c8e4dfb3ca01fdd3c3e248f5c79905"
       in
       let e = Z.of_string "0x10001" in
-      Rsa.Public.{n; e; length = 391}
+      Rsa.Public.{n; e}
     in
     let packet =
       Packet.Public_key.
         { version = 4
-        ; public_key = `Rsa expected_public
+        ; public_key = Rsa expected_public
         ; algo = Algo.Public.Rsa_enc_sign
         ; creation_time = 1626248155
         ; validity_period = None }
     in
-    `Public_key packet
+    Packet.Body.Public_key packet
 
   let secret_packet =
     let expected_public2 =
@@ -32,11 +32,11 @@ module Rsa = struct
             "0xc64c9e5d63cf62479608c22ba50cf2cbda2497e2cd92bdbb536ab4d55f1befaf262ae89a739698e538c688bce698aa4258bff01464f714ce98a2b1bacf92871f6e2b040990924f2c6634804072a990c6328ccd580e01f54b013aa0e08a388a78cd20ece56ca865079c26e77875c3b1f42d6bf015bb95da4606bf3fb05608ec17f823373dd73b75d77d1a34568797a690cbd21c6c78dd99d4f8cbea71e0327e8ca544619c244d1e9fa1a624209a7986b8663a1b1b0044899120d0daffddcf06df12159f8962c433a3b3ae7d84c5630ad290d97921b21a318a80d6a3b702d51cb2ba23958141a1702096cf891794f929e8396645f697e4f928a8105102f2ffed7b2ea920ffea992e74bfaeef564a6a06a7a61a0a379446367de345e9865205d095be574bb3bbc47721f71d4adaa79e2e4dcc781c94f90c64f32720a61b8dda1e6cf7093a2144276f772844242444cb06e7cf42a7745baaf4eb40b7975cc89aa32ff1d34fa8cadfc5a6aae59fff707c0d225e943ad479585af4bed5b71e78e183f3"
         in
         let e = Z.of_string "0x10001" in
-        Rsa.Public.{n; e; length = 391}
+        Rsa.Public.{n; e}
       in
       Packet.Public_key.
         { version = 4
-        ; public_key = `Rsa public_key2
+        ; public_key = Rsa public_key2
         ; algo = Algo.Public.Rsa_enc_sign
         ; creation_time = 1626770303
         ; validity_period = None }
@@ -58,18 +58,18 @@ module Rsa = struct
       Z.of_string
         "0xaf96592890d66e7c762d11774d700877a3dbc1406a843547fe63f36715cdc11e0f0e8174577ca807dde961358ee44f59170a8ebd1eedc98f0c0b22125c111e6d72ebbaa2a2a477d492840ccbd0ca7f77915fa13b891da483e689671a7321176cb851605ef2970fbe4c8d3c33fb5f48c52ff9e0c7803e5bc6db000dcbf82b77772fc09a6405d1166b6cd8ac1f1b97d142d4730d31deb02f5bed6b12625ab3bc7d46150e2ee5ab432d02e2ccbec991cb4b71b8d43c7b9ef90807c909b302fd11da"
     in
-    let length = 968 in
-    let private_key = Rsa.Private.{d; p; q; u; length} in
+
+    let private_key = Rsa.Private.{d; p; q; u} in
     let packet =
       Packet.Secret_key.
         { public_key = expected_public2
         ; s2k = None
         ; initial_vector = None
-        ; private_key = Some (`Rsa private_key)
+        ; private_key = Some (Rsa private_key)
         ; checksum = Some "e90c"
         ; hash = None }
     in
-    `Secret_key packet
+    Packet.Body.Secret_key packet
 
   let test_val ~decode nth (expected : Packet.Body.t) file ctxt =
     let res = decode file in
@@ -84,12 +84,12 @@ module Rsa = struct
   let treat_secret1 (res : Packet.t list) =
     let res1 = List.hd res in
     match res1.packet with
-    | `Secret_key packet ->
+    | Secret_key packet ->
       let public_packet = packet.public_key in
       let public_key =
         match public_packet.public_key with
-        | `Rsa key -> key
-        | `Dsa _ -> raise (Packet "Rsa_private.pgp is not the right file. lol")
+        | Rsa key -> key
+        | Dsa _ -> raise (Packet "Rsa_private.pgp is not the right file. lol")
         | _ -> raise (Packet "Rsa_private.pgp is not the right file. mdr")
       in
       public_key
@@ -101,7 +101,7 @@ module Rsa = struct
         "0xc64c9e5d63cf62479608c22ba50cf2cbda2497e2cd92bdbb536ab4d55f1befaf262ae89a739698e538c688bce698aa4258bff01464f714ce98a2b1bacf92871f6e2b040990924f2c6634804072a990c6328ccd580e01f54b013aa0e08a388a78cd20ece56ca865079c26e77875c3b1f42d6bf015bb95da4606bf3fb05608ec17f823373dd73b75d77d1a34568797a690cbd21c6c78dd99d4f8cbea71e0327e8ca544619c244d1e9fa1a624209a7986b8663a1b1b0044899120d0daffddcf06df12159f8962c433a3b3ae7d84c5630ad290d97921b21a318a80d6a3b702d51cb2ba23958141a1702096cf891794f929e8396645f697e4f928a8105102f2ffed7b2ea920ffea992e74bfaeef564a6a06a7a61a0a379446367de345e9865205d095be574bb3bbc47721f71d4adaa79e2e4dcc781c94f90c64f32720a61b8dda1e6cf7093a2144276f772844242444cb06e7cf42a7745baaf4eb40b7975cc89aa32ff1d34fa8cadfc5a6aae59fff707c0d225e943ad479585af4bed5b71e78e183f3"
     in
     let e = Z.of_string "0x10001" in
-    Rsa.Public.{n; e; length = 391}
+    Rsa.Public.{n; e}
 
   let test_val ~decode (expected : Packet.Body.t) file ctxt =
     let res = decode file in
@@ -126,7 +126,7 @@ module Rsa = struct
   let suite =
     [ "Public" >:: test_rsa_public1
     ; "Pub2" >:: test_rsa_public2
-    ; "Secret2" >:: test_rsa_private ]
+      ; "Secret" >:: test_rsa_private ]
 end
 
 module Dsa = struct
@@ -148,18 +148,18 @@ module Dsa = struct
         Z.of_string
           "0x5c428f6d55e36966e1aef9de9564c3e100b1979a3c7c19c01ce1aca55e4afa5c57c113bc48c53eee53146701c8e6ae6a445d93c9ec8cf568755eb1c56810ba7e06fd33f5b03e22595e8104aadadf5a58a883d3262ea579bdd6792c493bebaeb0bf3b5570396cc9a88927d51d5919dc50237cef2af387a2d2591596096a09fc8f0995a1ef9a5d33bafabd6432d668b965ae8c800801e6042c38e5800e8d2023bb24420d865d96fb9737f21e0c0838fb798ff6251ac4b8100b2a1abf27bc8b332c35accf37f0b65e692c4595dc23bda3fe06e6c322aa818c8b4963358ad8150369f622c15ac74d65e7235fef6be91401695f530277d8d6f5e2b0e4bb5bb0821455"
       in
-      let length = 808 in
-      Dsa.Public.{p; q; g; y; length}
+
+      Dsa.Public.{p; q; g; y}
     in
     let packet =
       Packet.Public_key.
         { version = 4
-        ; public_key = `Dsa expected_public
+        ; public_key = Dsa expected_public
         ; algo = Algo.Public.Dsa
         ; creation_time = 1626683055
         ; validity_period = None }
     in
-    `Public_key packet
+    Packet.Body.Public_key packet
 
   let secret_packet =
     let expected_public2 =
@@ -179,11 +179,11 @@ module Dsa = struct
         Z.of_string
           "0xc8234a448a9bb87273c33a7b14eaa65b32418586443e4f1aab324d490e451bfe8024c569ce54cea5a6a797277d57ee40987d60bbc77510bbb593f08736289dd1535a793b6f3d35a80dd834911cf09f3a3ef2dea5a54f131afe65bb099ac9c7d165886fd36d54afcb8157a1da864f80eab2627fd20be76d47feee0e5e5cf7e316773b7f7db011fe1a955629293e5642c57f22447b89ddda33fb133d1fa89cca6e64f2bdb89d7c903edffa758588b29dcc5be49ed32c212af75926f0e6958527627fb363af10078530fbdc2cffbda945ca49b9691d3d2e860260afa2b1aec545eedc5d8ce014e66df32a138a836e61fab4813f2c059cce6b5d8635e0f0c10133d7"
       in
-      let length = 808 in
-      let public_key = Dsa.Public.{p; q; g; y; length} in
+
+      let public_key = Dsa.Public.{p; q; g; y} in
       Packet.Public_key.
         { version = 4
-        ; public_key = `Dsa public_key
+        ; public_key = Dsa public_key
         ; algo = Algo.Public.Dsa
         ; creation_time = 1626774824
         ; validity_period = None }
@@ -197,11 +197,11 @@ module Dsa = struct
         { public_key = expected_public2
         ; s2k = None
         ; initial_vector = None
-        ; private_key = Some (`Dsa {x; length = 34})
+        ; private_key = Some (Dsa x)
         ; checksum = Some "1261"
         ; hash = None }
     in
-    `Secret_key packet
+    Packet.Body.Secret_key packet
 
   let test_val ~decode (expected : Packet.Body.t) file ctxt =
     let res = decode file in
@@ -222,7 +222,7 @@ module Dsa = struct
   let suite = ["Public" >:: test_dsa_public1; "Secret" >:: test_dsa_secret]
 end
 
-let id_packet = `Id Packet.Id.{name = "Clement "; email = "clement@test"}
+let id_packet = Packet.Body.Id Packet.Id.{name = "Clement "; email = "clement@test"}
 
 let test_id ctxt =
   let res = decode (fixture "rsa_public.pgp") [] in
