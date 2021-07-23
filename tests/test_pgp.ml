@@ -19,7 +19,7 @@ module Rsa = struct
         { version = 4
         ; public_key = Rsa expected_public
         ; algo = Algo.Public.Rsa_enc_sign
-        ; creation_time = 1626248155
+        ; creation_time = 1626248155l
         ; validity_period = None }
     in
     Packet.Body.Public_key packet
@@ -38,7 +38,7 @@ module Rsa = struct
         { version = 4
         ; public_key = Rsa public_key2
         ; algo = Algo.Public.Rsa_enc_sign
-        ; creation_time = 1626770303
+        ; creation_time = 1626770303l
         ; validity_period = None }
     in
 
@@ -156,7 +156,7 @@ module Dsa = struct
         { version = 4
         ; public_key = Dsa expected_public
         ; algo = Algo.Public.Dsa
-        ; creation_time = 1626683055
+        ; creation_time = 1626683055l
         ; validity_period = None }
     in
     Packet.Body.Public_key packet
@@ -185,7 +185,7 @@ module Dsa = struct
         { version = 4
         ; public_key = Dsa public_key
         ; algo = Algo.Public.Dsa
-        ; creation_time = 1626774824
+        ; creation_time = 1626774824l
         ; validity_period = None }
     in
     let x =

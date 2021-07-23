@@ -1,18 +1,15 @@
-exception LengthBlock of string
+(*exception Subpacket of string
 
-exception PacketTag of string
+  exception Signature of string*)
 
-exception Algo of string
+let ( >>= ) = Result.bind
 
-exception Packet of string
+let ( >|= ) result f = Result.map f result
 
-exception Subpacket of string
+type error_type =
+  | Fatal
+  | Header of int * int64
 
-exception Signature of string
-
-let (>>=) = Result.bind
-let (>|=) result f = Result.map f result
-              
 (*from ltpa.ml*)
 
 let get_z_be cs off len =
@@ -272,15 +269,15 @@ module Packet = struct
 
   let detag tag =
     match tag with
-    | 0 -> Result.Error "Tag 0"
-    | 1 -> Result.Ok Session_key
-    | 2 -> Result.Ok Unknown_packet (*Signature*)
-    | 5 -> Result.Ok Secret_key
-    | 6 -> Result.Ok Public_key
-    | 7 -> Result.Ok Secret_subkey
-    | 13 -> Result.Ok Id
-    | 14 -> Result.Ok Public_subkey
-    | _ -> Result.Ok Unknown_packet
+    | 0 -> Error "Tag 0"
+    | 1 -> Ok Session_key
+    | 2 -> Ok Unknown_packet (*Signature*)
+    | 5 -> Ok Secret_key
+    | 6 -> Ok Public_key
+    | 7 -> Ok Secret_subkey
+    | 13 -> Ok Id
+    | 14 -> Ok Public_subkey
+    | _ -> Ok Unknown_packet
 
   let name packet =
     match packet with
@@ -352,14 +349,14 @@ module Packet = struct
           get_old_length cs header_code
       in
       match length_infos with
-      | Error _ -> Error (0, 0L)
+      | Error _ -> Error Fatal
       | Ok (header_length, packet_length) -> (
         match detag tag with
         | Ok packet_type ->
           Ok
-            (header_length
+            ( header_length
             , {packet_type; packet_length; is_new = is_new_type header_code} )
-        | Error _ -> Error (header_length, packet_length))
+        | Error _ -> Error (Header (header_length, packet_length)))
 
     let print_infos header =
       print_string
@@ -388,7 +385,7 @@ module Packet = struct
       {name; email = String.sub email 0 (String.length email - 1)}
   end
 
-  module Signature = struct
+  (*module Signature = struct
     module Subpacket = struct
       type subpacket =
         | Creation_time
@@ -517,7 +514,7 @@ module Packet = struct
           let length = 192 + second_octet + (256 * (first_octet - 192)) in
           (2, Int64.of_int length)
         else if first_octet < 255 then
-          raise (LengthBlock "Partial body length are not treated.")
+          raise (Subpacket "Partial body length are not treated.")
         else
           let length = Cstruct.BE.get_uint32 cs 1 in
           (5, Int64.of_int32 length)
@@ -681,12 +678,13 @@ module Packet = struct
         let (_, s) = decode_mpi cs (4 + r_length) in
         Dsa Dsa.Signature.{r; s}
       | Rsa_enc_only ->
-        raise (Algo "Decoding signatures of this algorithm is impossible.")
+        raise (Signature "Decoding signatures of this algorithm is impossible.")
       | Elgamal_sign_only
       | Ec
       | Ecdsa
       | Unknown ->
-        raise (Algo "Decoding signatures of this algorithm is not implemented.")
+        raise
+          (Signature "Decoding signatures of this algorithm is not implemented.")
 
     let rec signature_data cs data length =
       match length with
@@ -746,7 +744,7 @@ module Packet = struct
       | 5 ->
         decode_recent packet version
       | _ -> raise (Signature "Incorrect signature version number.")
-  end
+    end*)
 
   module Public_key = struct
     module Public_key_value = struct
@@ -759,7 +757,7 @@ module Packet = struct
 
     type t =
       { version : int
-      ; creation_time : int
+      ; creation_time : int32
       ; validity_period : int option
       ; algo : Algo.Public.t
       ; public_key : Public_key_value.t }
@@ -768,36 +766,41 @@ module Packet = struct
     let print_infos public_key =
       print_endline ("  Version " ^ Int.to_string public_key.version);
       print_endline
-        ("  Creation time : " ^ Int.to_string public_key.creation_time);
+        ("  Creation time : " ^ Int32.to_string public_key.creation_time);
       print_endline ("  Algorithm: " ^ Algo.Public.name public_key.algo)
 
-    let decode_public_key (algo : Algo.Public.t) packet version=
-      let offset = match version with
-        | 3 -> 8
-        | 4 -> 6
-        | _ -> raise (Packet "Public key packet has a bad version")
+    let decode_public_key (algo : Algo.Public.t) packet version =
+      let offset =
+        (*A public key packet has another header*)
+        match version with
+        | 3 ->
+          Ok 8
+          (*and a version 3 public key packet also contains a validity period*)
+        | 4 -> Ok 6
+        | _ -> Error "Public key packet has a bad version"
       in
+      offset >>= fun offset ->
       match algo with
       | Rsa_enc_sign
       | Rsa_enc_only
       | Rsa_sign_only ->
         let (cs, key) = Rsa.Public.decode packet offset in
-        (cs, Public_key_value.Rsa key)
+        Ok (cs, Public_key_value.Rsa key)
       | Dsa ->
         let (cs, key) = Dsa.Public.decode packet offset in
-        (cs, Dsa key)
+        Ok (cs, Dsa key)
       | Elgamal_sign_only ->
         let (cs, key) = Elgamal.Public.decode packet offset in
-        (cs, Elgamal key)
+        Ok (cs, Elgamal key)
       | Ec
       | Ecdsa
       | Unknown ->
-        raise (Algo ("Unsupported algorithm: " ^ Algo.Public.name algo))
+        Error ("Unsupported algorithm: " ^ Algo.Public.name algo)
 
     let decode packet =
       let version = Cstruct.get_uint8 packet 0 in
       let creation_time = Cstruct.BE.get_uint32 packet 1 in
-      let packet_info =
+      let packet_infos =
         match version with
         | 4 -> Ok (packet, None)
         | 2
@@ -808,19 +811,12 @@ module Packet = struct
         | _ -> Error "Bad version of public key packet."
       in
       let algo = Algo.Public.detag (Cstruct.get_uint8 packet 5) in
-      match packet_info with
+      match packet_infos with
       | Ok (public_packet, validity_period) ->
-        let (cs, key) = decode_public_key algo public_packet version in
-        Ok
-          ( cs
-          , { version
-            ; creation_time = Int32.to_int creation_time
-            ; validity_period
-            ; algo
-            ; public_key = key } )
-      | Error error -> Error error
+        decode_public_key algo public_packet version >|= fun (cs, key) ->
+        (cs, {version; creation_time; validity_period; algo; public_key = key})
+      | Error _ -> Error "error"
   end
-  [@@deriving ord, eq, show]
 
   module Private_key_value = struct
     type t =
@@ -886,15 +882,15 @@ module Packet = struct
       let hash_tag = Cstruct.get_uint8 packet 3 in
       let hash_algo = Algo.Hash.detag hash_tag in
       match s2k_specifier with
-      | S2k.Unknown -> raise (Packet "Unknown S2K")
-      | Simple -> (S2k.Simple hash_algo, 4)
+      | S2k.Unknown -> Error "Unknown String2key"
+      | Simple -> Ok (S2k.Simple hash_algo, 4)
       | Salted ->
         let salt_value = Cstruct.BE.get_uint64 packet 4 in
-        (S2k.Salted (hash_algo, salt_value), 12)
+        Ok (S2k.Salted (hash_algo, salt_value), 12)
       | Iterated_salted ->
         let salt_value = Cstruct.BE.get_uint64 packet 4 in
         let count = Cstruct.get_uint8 packet 12 in
-        (S2k.Iterated_salted (hash_algo, salt_value, count), 13)
+        Ok (S2k.Iterated_salted (hash_algo, salt_value, count), 13)
 
     let decode_private_key packet (algo : Algo.Public.t) =
       match algo with
@@ -902,25 +898,24 @@ module Packet = struct
       | Rsa_enc_only
       | Rsa_sign_only ->
         let (cs, key) = Rsa.Private.decode packet 0 in
-        (cs, Private_key_value.Rsa key)
+        Ok (cs, Private_key_value.Rsa key)
       | Dsa ->
         let (cs, key) = Dsa.Private.decode packet 0 in
-        (cs, Dsa key)
+        Ok (cs, Dsa key)
       | Elgamal_sign_only ->
         let (cs, key) = Elgamal.Private.decode packet 0 in
-        (cs, Elgamal key)
+        Ok (cs, Elgamal key)
       | Ec
       | Ecdsa
       | Unknown ->
-        raise (Algo ("Not implemented for algorithm:" ^ Algo.Public.name algo))
+        Error ("Not implemented for algorithm:" ^ Algo.Public.name algo)
 
     let decode_convention (public_key : Public_key.t) packet convention =
       match convention with
       | 0 ->
         let secret_packet = Cstruct.shift packet 1 in
-        let (cs, private_key) =
-          decode_private_key secret_packet public_key.algo
-        in
+        decode_private_key secret_packet public_key.algo
+        >|= fun (cs, private_key) ->
         let checksum_int = Cstruct.BE.get_uint16 cs 0 in
         let checksum = Z.format "0x0100" (Z.of_int checksum_int) in
         { public_key
@@ -934,7 +929,7 @@ module Packet = struct
         let sym_algo = Algo.Symmetric.detag sym_tag in
         let s2k_tag = Cstruct.get_uint8 packet 2 in
         let s2k_specifier = S2k.detag s2k_tag in
-        let (s2k, off) = decode_s2k packet s2k_specifier in
+        decode_s2k packet s2k_specifier >|= fun (s2k, off) ->
         let cs_shifted = Cstruct.shift packet off in
         let cipher_block = Algo.Symmetric.size sym_algo in
         let initial_vector_z = get_z_be cs_shifted 0 cipher_block in
@@ -945,22 +940,20 @@ module Packet = struct
         ; private_key = None
         ; hash = None
         ; checksum = None }
-      | _ -> raise (Packet "Private key type not treated.")
+      | _ -> Error "Private key type not treated."
 
     let decode packet =
-      let public_key_res = Public_key.decode packet in
-      match public_key_res with
-      | Error error -> Error error
-      | Ok (cs, public_key) ->
-        let offset =
-          match public_key.version with
-          | 3 -> 8
-          | 4 -> 6
-          | _ -> raise (Packet "Bad version of Public key packet")
-        in
-        let secret_packet = Cstruct.shift cs offset in
-        let convention = Cstruct.get_uint8 secret_packet 0 in
-        Ok (decode_convention public_key secret_packet convention)
+      Public_key.decode packet >>= fun (cs, public_key) ->
+      let offset =
+        match public_key.version with
+        | 3 -> Ok 8
+        | 4 -> Ok 6
+        | _ -> Error "Bad version of Public key packet"
+      in
+      offset >>= fun offset ->
+      let secret_packet = Cstruct.shift cs offset in
+      let convention = Cstruct.get_uint8 secret_packet 0 in
+      decode_convention public_key secret_packet convention
 
     let print_infos private_key =
       print_endline "  Informations on the public key :";
@@ -983,7 +976,7 @@ module Packet = struct
       | Id of Id.t
       | Secret_key of Secret_key.t
       | Public_key of Public_key.t
-      | Signature of Signature.t
+      | Signature (*of Signature.t*)
       | Secret_subkey of Secret_key.t
       | Public_subkey of Public_key.t
       | Unknown
@@ -992,23 +985,14 @@ module Packet = struct
     let decode packet_type packet =
       match (packet_type : packet_type) with
       | Id -> Ok (Id (Id.decode packet))
-      | Secret_key ->  (Secret_key.decode packet >|= (fun key -> (Secret_key key)))
-      | Public_key -> (
-        let res = Public_key.decode packet in
-        match res with
-        | Error error -> Error error
-        | Ok (_, packet) -> Ok (Public_key packet))
+      | Secret_key -> Secret_key.decode packet >|= fun key -> Secret_key key
+      | Public_key ->
+        Public_key.decode packet >|= fun (_, key) -> Public_key key
       | Signature -> Ok Unknown (*Signature (Signature.decode packet)*)
-      | Secret_subkey -> (
-        let secret_key_res = Secret_key.decode packet in
-        match secret_key_res with
-        | Error error -> Error error
-        | Ok res -> Ok (Secret_subkey res))
-      | Public_subkey -> (
-        let res = Public_key.decode packet in
-        match res with
-        | Error error -> Error error
-        | Ok (_, packet) -> Ok (Public_subkey packet))
+      | Secret_subkey ->
+        Secret_key.decode packet >|= fun key -> Secret_subkey key
+      | Public_subkey ->
+        Public_key.decode packet >|= fun (_, key) -> Public_subkey key
       | Session_key
       | Unknown_packet ->
         Ok Unknown
@@ -1027,15 +1011,21 @@ module Packet = struct
       in
       let res = Body.decode header.packet_type packet_cs in
       match res with
-      | Error _ -> Error Cstruct.empty
+      | Error _ ->
+        let next_cs =
+          Cstruct.shift cs (header_length + Int64.to_int header.packet_length)
+        in
+        Error next_cs
+      (*When a packet can't be parsed, but the header is correct*)
       | Ok packet ->
         let next_cs =
           Cstruct.shift cs (header_length + Int64.to_int header.packet_length)
         in
         Ok (next_cs, {header; packet}))
-    | Error (0, 0L) -> Error Cstruct.empty
-    (* Created when the length size is bad in the header *)
-    | Error (header_length, packet_length) ->
+    | Error Fatal -> Error Cstruct.empty
+    (* When the length of the header can't be parsed *)
+    | Error (Header (header_length, packet_length)) ->
+      (*When the length of the header can be parsed*)
       let next_cs =
         Cstruct.shift cs (header_length + Int64.to_int packet_length)
       in
@@ -1047,21 +1037,18 @@ module Packet = struct
     | Id id_packet -> Id.print_infos id_packet
     | Secret_key secret_key_packet -> Secret_key.print_infos secret_key_packet
     | Public_key public_key_packet -> Public_key.print_infos public_key_packet
-    | Signature signature_packet -> Signature.print_infos signature_packet
+    | Signature -> print_newline () (*Signature.print_infos signature_packet*)
     | Secret_subkey secretsubkey_packet ->
       Secret_key.print_infos secretsubkey_packet
     | Public_subkey public_subkey -> Public_key.print_infos public_subkey
-    | Unknown -> ());
+    | Unknown -> print_newline ());
     print_newline ()
 end
 
 let rec decode cs packet_list =
   if Cstruct.length cs != 0 then
     match Packet.decode cs with
-    | Ok (next_cs, packet) -> (
-      match packet.packet with
-      | Unknown -> decode next_cs packet_list
-      | _ -> decode next_cs (packet :: packet_list))
+    | Ok (next_cs, packet) -> decode next_cs (packet :: packet_list)
     | Error next_cs -> decode next_cs packet_list
   else
     List.rev packet_list
