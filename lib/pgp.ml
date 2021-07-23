@@ -8,11 +8,11 @@ let ( >|= ) result f = Result.map f result
 
 type error_type =
   | Fatal
-  | Header of int * int64
+  | Header of int
 
 (*from ltpa.ml*)
 
-let get_z_be cs off len =
+let get_z_be cs ~off ~len =
   let r = ref Z.zero in
   let base = Z.of_int 0x100 in
   for i = off to off + len - 1 do
@@ -22,16 +22,16 @@ let get_z_be cs off len =
 
 (***)
 
-let decode_mpi cs off =
+let decode_mpi cs ~off =
   let bit_length = Cstruct.BE.get_uint16 cs off in
   let length = (bit_length / 8) + min 1 (bit_length mod 8) in
-  (length, get_z_be cs (2 + off) length)
+  (length, get_z_be cs ~off:(2 + off) ~len:length)
 
-let decode_mpi_shift cs off =
+let decode_mpi_shift cs ~off =
   let bit_length = Cstruct.BE.get_uint16 cs off in
   let length = (bit_length / 8) + min 1 (bit_length mod 8) in
   let shifted_cs = Cstruct.shift cs (length + 2) in
-  (shifted_cs, get_z_be cs (2 + off) length)
+  (shifted_cs, get_z_be cs ~off:(2 + off) ~len:length)
 
 module Algo = struct
   module Public = struct
@@ -171,9 +171,9 @@ module Rsa = struct
       ; e : Derivable.Z.t }
     [@@deriving ord, eq, show]
 
-    let decode packet off =
-      let (cs, n) = decode_mpi_shift packet off in
-      let (shifted_cs, e) = decode_mpi_shift cs off in
+    let decode packet ~off =
+      let (cs, n) = decode_mpi_shift packet ~off in
+      let (shifted_cs, e) = decode_mpi_shift cs ~off in
       let public_key = {n; e} in
       (shifted_cs, public_key)
   end
@@ -186,11 +186,11 @@ module Rsa = struct
       ; u : Derivable.Z.t }
     [@@deriving ord, eq, show]
 
-    let decode packet off =
-      let (cs1, d) = decode_mpi_shift packet off in
-      let (cs2, p) = decode_mpi_shift cs1 off in
-      let (cs3, q) = decode_mpi_shift cs2 off in
-      let (shifted_cs, u) = decode_mpi_shift cs3 off in
+    let decode packet ~off =
+      let (cs1, d) = decode_mpi_shift packet ~off in
+      let (cs2, p) = decode_mpi_shift cs1 ~off in
+      let (cs3, q) = decode_mpi_shift cs2 ~off in
+      let (shifted_cs, u) = decode_mpi_shift cs3 ~off in
       print_newline ();
       (shifted_cs, {d; p; q; u})
   end
@@ -209,18 +209,18 @@ module Dsa = struct
       ; y : Derivable.Z.t }
     [@@deriving ord, eq, show]
 
-    let decode packet off =
-      let (cs1, p) = decode_mpi_shift packet off in
-      let (cs2, q) = decode_mpi_shift cs1 off in
-      let (cs3, g) = decode_mpi_shift cs2 off in
-      let (shifted_cs, y) = decode_mpi_shift cs3 off in
+    let decode packet ~off =
+      let (cs1, p) = decode_mpi_shift packet ~off in
+      let (cs2, q) = decode_mpi_shift cs1 ~off in
+      let (cs3, g) = decode_mpi_shift cs2 ~off in
+      let (shifted_cs, y) = decode_mpi_shift cs3 ~off in
       (shifted_cs, {p; q; g; y})
   end
 
   module Private = struct
     type t = Derivable.Z.t [@@deriving ord, eq, show]
 
-    let decode packet off = decode_mpi_shift packet off
+    let decode packet ~off = decode_mpi_shift packet ~off
   end
 
   module Signature = struct
@@ -239,10 +239,10 @@ module Elgamal = struct
       ; y : Derivable.Z.t }
     [@@deriving ord, eq, show]
 
-    let decode packet off =
-      let (cs1, p) = decode_mpi_shift packet off in
-      let (cs2, g) = decode_mpi_shift cs1 off in
-      let (shifted_cs, y) = decode_mpi_shift cs2 off in
+    let decode packet ~off =
+      let (cs1, p) = decode_mpi_shift packet ~off in
+      let (cs2, g) = decode_mpi_shift cs1 ~off in
+      let (shifted_cs, y) = decode_mpi_shift cs2 ~off in
       let public_key = {p; g; y} in
       (shifted_cs, public_key)
   end
@@ -251,7 +251,7 @@ module Elgamal = struct
   module Private = struct
     type t = Derivable.Z.t [@@deriving ord, eq, show]
 
-    let decode packet off = decode_mpi_shift packet off
+    let decode packet ~off = decode_mpi_shift packet ~off
   end
 end
 
@@ -293,7 +293,7 @@ module Packet = struct
   module Header = struct
     type t =
       { packet_type : packet_type
-      ; packet_length : int64
+      ; packet_length : int
       ; is_new : bool }
     [@@deriving ord, eq, show]
 
@@ -323,24 +323,24 @@ module Packet = struct
     let get_old_length cs header_code =
       get_old_length_size (header_code mod 4) >>= fun n ->
       match n with
-      | 2 -> Ok (n, Int64.of_int (Cstruct.get_uint8 cs 1))
-      | 3 -> Ok (n, Int64.of_int (Cstruct.BE.get_uint16 cs 1))
-      | 5 -> Ok (n, Int64.of_int32 (Cstruct.BE.get_uint32 cs 1))
+      | 2 -> Ok (n, Cstruct.get_uint8 cs 1)
+      | 3 -> Ok (n, Cstruct.BE.get_uint16 cs 1)
+      | 5 -> Ok (n, Int32.to_int (Cstruct.BE.get_uint32 cs 1))
       | _ -> Error "Bad length size"
 
     let get_new_length cs =
       let first_octet = Cstruct.get_uint8 cs 1 in
       if first_octet < 192 then
-        Ok (2, Int64.of_int first_octet)
+        Ok (2, first_octet)
       else if first_octet < 224 then
         let second_octet = Cstruct.get_uint8 cs 2 in
         let length = 192 + second_octet + (256 * (first_octet - 192)) in
-        Ok (3, Int64.of_int length)
+        Ok (3, length)
       else if first_octet < 255 then
         Error "Partial body lengths are not treated"
       else
         let length = Cstruct.BE.get_uint32 cs 2 in
-        Ok (6, Int64.of_int32 length)
+        Ok (6, Int32.to_int length)
 
     let decode cs =
       let header_code = Cstruct.get_uint8 cs 0 in
@@ -357,7 +357,7 @@ module Packet = struct
         match detag tag with
         | Ok packet_type ->
           Ok (header_length, {packet_type; packet_length; is_new})
-        | Error _ -> Error (Header (header_length, packet_length)))
+        | Error _ -> Error (Header (header_length + packet_length)))
 
     let print_infos header =
       print_string
@@ -365,7 +365,7 @@ module Packet = struct
         | true -> "New type of "
         | false -> "Old type of ");
       print_string (name header.packet_type ^ " of length ");
-      print_string (Int64.to_string header.packet_length)
+      print_string (Int.to_string header.packet_length)
   end
 
   module Id = struct
@@ -770,7 +770,7 @@ module Packet = struct
         ("  Creation time: " ^ Int32.to_string public_key.creation_time);
       print_endline ("  Algorithm: " ^ Algo.Public.name public_key.algo)
 
-    let decode_public_key (algo : Algo.Public.t) packet version =
+    let decode_public_key (algo : Algo.Public.t) packet ~version =
       let offset =
         (*A public key packet has another header*)
         match version with
@@ -780,18 +780,18 @@ module Packet = struct
         | 4 -> Ok 6
         | _ -> Error "Public key packet has a bad version"
       in
-      offset >>= fun offset ->
+      offset >>= fun off ->
       match algo with
       | Rsa_enc_sign
       | Rsa_enc_only
       | Rsa_sign_only ->
-        let (cs, key) = Rsa.Public.decode packet offset in
+        let (cs, key) = Rsa.Public.decode packet ~off in
         Ok (cs, Public_key_value.Rsa key)
       | Dsa ->
-        let (cs, key) = Dsa.Public.decode packet offset in
+        let (cs, key) = Dsa.Public.decode packet ~off in
         Ok (cs, Dsa key)
       | Elgamal_sign_only ->
-        let (cs, key) = Elgamal.Public.decode packet offset in
+        let (cs, key) = Elgamal.Public.decode packet ~off in
         Ok (cs, Elgamal key)
       | Ec
       | Ecdsa
@@ -814,7 +814,7 @@ module Packet = struct
       let algo = Algo.Public.detag (Cstruct.get_uint8 packet 5) in
       match packet_infos with
       | Ok (public_packet, validity_period) ->
-        decode_public_key algo public_packet version >|= fun (cs, key) ->
+        decode_public_key algo public_packet ~version >|= fun (cs, key) ->
         (cs, {version; creation_time; validity_period; algo; public_key = key})
       | Error _ -> Error "error"
   end
@@ -898,13 +898,13 @@ module Packet = struct
       | Rsa_enc_sign
       | Rsa_enc_only
       | Rsa_sign_only ->
-        let (cs, key) = Rsa.Private.decode packet 0 in
+        let (cs, key) = Rsa.Private.decode packet ~off:0 in
         Ok (cs, Private_key_value.Rsa key)
       | Dsa ->
-        let (cs, key) = Dsa.Private.decode packet 0 in
+        let (cs, key) = Dsa.Private.decode packet ~off:0 in
         Ok (cs, Dsa key)
       | Elgamal_sign_only ->
-        let (cs, key) = Elgamal.Private.decode packet 0 in
+        let (cs, key) = Elgamal.Private.decode packet ~off:0 in
         Ok (cs, Elgamal key)
       | Ec
       | Ecdsa
@@ -930,10 +930,10 @@ module Packet = struct
         let sym_algo = Algo.Symmetric.detag sym_tag in
         let s2k_tag = Cstruct.get_uint8 packet 2 in
         let s2k_specifier = S2k.detag s2k_tag in
-        decode_s2k packet s2k_specifier >|= fun (s2k, off) ->
-        let cs_shifted = Cstruct.shift packet off in
+        decode_s2k packet s2k_specifier >|= fun (s2k, offset) ->
+        let cs_shifted = Cstruct.shift packet offset in
         let cipher_block = Algo.Symmetric.size sym_algo in
-        let initial_vector_z = get_z_be cs_shifted 0 cipher_block in
+        let initial_vector_z = get_z_be cs_shifted ~off:0 ~len:cipher_block in
         let initial_vector = Z.format "0x100" initial_vector_z in
         { s2k = Some s2k
         ; public_key
@@ -1008,27 +1008,27 @@ module Packet = struct
     match Header.decode cs with
     | Ok (header_length, header) -> (
       let packet_cs =
-        Cstruct.sub cs header_length (Int64.to_int header.packet_length)
+        Cstruct.sub cs header_length header.packet_length
       in
       let res = Body.decode header.packet_type packet_cs in
       match res with
       | Error _ ->
         let next_cs =
-          Cstruct.shift cs (header_length + Int64.to_int header.packet_length)
+          Cstruct.shift cs (header_length + header.packet_length)
         in
         Error next_cs
       (*When a packet can't be parsed, but the header is correct*)
       | Ok packet ->
         let next_cs =
-          Cstruct.shift cs (header_length + Int64.to_int header.packet_length)
+          Cstruct.shift cs (header_length + header.packet_length)
         in
         Ok (next_cs, {header; packet}))
     | Error Fatal -> Error Cstruct.empty
     (* When the length of the header can't be parsed *)
-    | Error (Header (header_length, packet_length)) ->
+    | Error (Header skip_length ) ->
       (*When the length of the header can be parsed*)
       let next_cs =
-        Cstruct.shift cs (header_length + Int64.to_int packet_length)
+        Cstruct.shift cs skip_length
       in
       Error next_cs
 
