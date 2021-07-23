@@ -299,15 +299,18 @@ module Packet = struct
 
     let is_new_type header_code =
       if header_code >= 192 then
-        true
+        Result.Ok true
+      else if header_code >= 128 then
+        Result.Ok false
       else
-        false
+        Result.Error Fatal
 
     let get_tag header_code =
-      if is_new_type header_code then
-        header_code - 192
+      is_new_type header_code >|= fun is_new ->
+      if is_new then
+        (is_new, header_code - 192)
       else
-        (header_code - 128) / 4
+        (is_new, (header_code - 128) / 4)
 
     let get_old_length_size length_tag =
       match length_tag with
@@ -341,9 +344,9 @@ module Packet = struct
 
     let decode cs =
       let header_code = Cstruct.get_uint8 cs 0 in
-      let tag = get_tag header_code in
+      get_tag header_code >>= fun (is_new, tag) ->
       let length_infos =
-        if is_new_type header_code then
+        if is_new then
           get_new_length cs
         else
           get_old_length cs header_code
@@ -353,9 +356,7 @@ module Packet = struct
       | Ok (header_length, packet_length) -> (
         match detag tag with
         | Ok packet_type ->
-          Ok
-            ( header_length
-            , {packet_type; packet_length; is_new = is_new_type header_code} )
+          Ok (header_length, {packet_type; packet_length; is_new})
         | Error _ -> Error (Header (header_length, packet_length)))
 
     let print_infos header =
@@ -465,10 +466,10 @@ module Packet = struct
       let print_infos subpacket =
         match subpacket with
         | Sub_creation_time creation_time ->
-          print_endline ("   Creation time : " ^ Int64.to_string creation_time)
+          print_endline ("   Creation time: " ^ Int64.to_string creation_time)
         | Sub_expiration_time expiration_time ->
           print_endline
-            ("   Expiration time : " ^ Int64.to_string expiration_time)
+            ("   Expiration time: " ^ Int64.to_string expiration_time)
         | Sub_export_certification flag -> (
           match flag with
           | true -> print_endline "   This signature is exportable."
@@ -486,7 +487,7 @@ module Packet = struct
           | false -> print_endline "   This signature is not revocable.")
         | Sub_key_expiration_time expiration_time ->
           print_endline
-            ("   Expiration time of the subkey : "
+            ("   Expiration time of the subkey: "
             ^ Int64.to_string expiration_time)
         | Sub_issuer key_id ->
           let id = Printf.sprintf "%Lx" key_id in
@@ -499,7 +500,7 @@ module Packet = struct
         | Sub_signer_user_id id -> print_endline ("   The signer's ID is " ^ id)
         | Sub_embedded_sig -> ()
         | Sub_issuer_fingerprint (_, fingerprint) ->
-          print_string "   The Issuer's fingerprint is : ";
+          print_string "   The Issuer's fingerprint is: ";
           let fingerprint_seq = String.to_seq fingerprint in
           Seq.iter
             (fun c -> print_string (Printf.sprintf "%02X " (Char.code c)))
@@ -659,11 +660,11 @@ module Packet = struct
 
     let print_infos signature =
       print_endline ("  Version " ^ Int.to_string signature.version);
-      print_endline ("  Signature type : " ^ name signature.signature_type);
+      print_endline ("  Signature type: " ^ name signature.signature_type);
       print_endline
-        ("  Public algorithm : " ^ Algo.Public.name signature.public_algorithm);
+        ("  Public algorithm: " ^ Algo.Public.name signature.public_algorithm);
       print_endline
-        ("  Hash algorithm : " ^ Algo.Hash.name signature.hash_algorithm);
+        ("  Hash algorithm: " ^ Algo.Hash.name signature.hash_algorithm);
       List.iter Subpacket.print_infos signature.subpacket_data;
       print_newline ()
 
@@ -766,7 +767,7 @@ module Packet = struct
     let print_infos public_key =
       print_endline ("  Version " ^ Int.to_string public_key.version);
       print_endline
-        ("  Creation time : " ^ Int32.to_string public_key.creation_time);
+        ("  Creation time: " ^ Int32.to_string public_key.creation_time);
       print_endline ("  Algorithm: " ^ Algo.Public.name public_key.algo)
 
     let decode_public_key (algo : Algo.Public.t) packet version =
@@ -956,17 +957,17 @@ module Packet = struct
       decode_convention public_key secret_packet convention
 
     let print_infos private_key =
-      print_endline "  Informations on the public key :";
+      print_endline "  Informations on the public key: ";
       Public_key.print_infos private_key.public_key;
-      print_endline "  Informations on the private key :";
+      print_endline "  Informations on the private key: ";
       match private_key.s2k with
       | None -> print_endline "   Private key is not encrypted."
       | Some s2k -> (
-        print_endline "   Private key is encrypted using a String2Key :";
+        print_endline "   Private key is encrypted using a String2Key: ";
         S2k.print_infos s2k;
         match private_key.initial_vector with
         | Some initial_vector ->
-          print_endline ("   Initialisation vector is :" ^ initial_vector)
+          print_endline ("   Initialisation vector is: " ^ initial_vector)
         | None -> ())
   end
   [@@deriving ord, eq, show]

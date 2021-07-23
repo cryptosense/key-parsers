@@ -89,11 +89,11 @@ module Rsa = struct
       let public_key =
         match public_packet.public_key with
         | Rsa key -> key
-        | Dsa _ -> raise (Packet "Rsa_private.pgp is not the right file. lol")
-        | _ -> raise (Packet "Rsa_private.pgp is not the right file. mdr")
+        | Dsa _ -> raise (File "Rsa_private.pgp is not the right file")
+        | _ -> raise (File "Rsa_private.pgp is not the right file")
       in
       public_key
-    | _ -> raise (Packet "Rsa_private.pgp is not the right file.")
+    | _ -> raise (File "Rsa_private.pgp is not the right file.")
 
   let public_key2 =
     let n =
@@ -126,7 +126,7 @@ module Rsa = struct
   let suite =
     [ "Public" >:: test_rsa_public1
     ; "Pub2" >:: test_rsa_public2
-      ; "Secret" >:: test_rsa_private ]
+    ; "Secret" >:: test_rsa_private ]
 end
 
 module Dsa = struct
@@ -222,11 +222,34 @@ module Dsa = struct
   let suite = ["Public" >:: test_dsa_public1; "Secret" >:: test_dsa_secret]
 end
 
-let id_packet = Packet.Body.Id Packet.Id.{name = "Clement "; email = "clement@test"}
+let id_packet =
+  Packet.Body.Id Packet.Id.{name = "Clement "; email = "clement@test"}
+
+module Test_errors = struct
+  let test_rsa_tag0 ctxt =
+    let res = decode (fixture "rsa_tag0.pgp") [] in
+    let id = (List.hd res).packet in
+    assert_equal ~ctxt id id_packet
+
+  let test_bad_algo ctxt =
+    let res = decode (fixture "bad_pub_algo.pgp") [] in
+    let id = (List.hd res).packet in
+    assert_equal ~ctxt id id_packet
+
+  let test_bad_file ctxt =
+    let res = decode (fixture "bad_file.pgp") [] in
+    assert_equal ~ctxt res []
+  
+  let suite = ["Tag0" >:: test_rsa_tag0; "Bad_algo" >:: test_bad_algo; "Bad_file" >:: test_bad_file]
+end
 
 let test_id ctxt =
   let res = decode (fixture "rsa_public.pgp") [] in
   let id = (List.nth res 1).packet in
   assert_equal ~ctxt id id_packet
 
-let suite = ["Rsa" >::: Rsa.suite; "Dsa" >::: Dsa.suite; "ID" >:: test_id]
+let suite =
+  [ "Rsa" >::: Rsa.suite
+  ; "Dsa" >::: Dsa.suite
+  ; "Id" >:: test_id
+  ; "Errors" >::: Test_errors.suite ]
