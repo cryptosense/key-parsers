@@ -1,3 +1,13 @@
+# Changelog
+
+## 1.2.0
+
+*2021-07-27*
+
+### Added
+
+- Added the possibility of parsing PGP files to the library
+
 ## 1.1.0
 
 *2021-05-10*
