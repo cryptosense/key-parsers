@@ -1,3 +1,2 @@
-(lang dune 1.11)
+(lang dune 2.0)
 (name key-parsers)
-(explicit_js_mode)
