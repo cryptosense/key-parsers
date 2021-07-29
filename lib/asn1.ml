@@ -11,7 +11,7 @@ let decode_helper name grammar x =
   let open Asn in
   let eprintf fmt = Printf.ksprintf (fun s -> Result.Error s) fmt in
   match decode (codec ber grammar) x with
-  | Result.Ok (t, left) when Cstruct.len left = 0 -> Result.Ok t
+  | Result.Ok (t, left) when Cstruct.length left = 0 -> Result.Ok t
   | Result.Ok _ -> eprintf "%s: non empty leftover" name
   | Result.Error (`Parse s) -> eprintf "%s: %s" name s
 
