@@ -17,7 +17,7 @@ run-test: [
 ]
 depends: [
   "asn1-combinators" {>= "0.2.0"}
-  "cstruct" {>= "1.6.0" & < "6.0.1"}
+  "cstruct" {>= "6.0.0"}
   "dune" {>= "2.0"}
   "hex" {>= "1.0.0"}
   "ocaml" {>= "4.08.0"}
