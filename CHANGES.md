@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1
+
+*2021-07-30*
+
+### Changed
+
+- Update the minimal Cstruct version to 6.0.0 and Dune to 2.0
+
 ## 1.2.0
 
 *2021-07-27*
