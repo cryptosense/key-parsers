@@ -79,7 +79,7 @@ let grammar =
 
 let decode_oid str =
   match Asn.(decode (codec ber grammar) str) with
-  | Ok (t, left) when Cstruct.len left = 0 -> t
+  | Ok (t, left) when Cstruct.length left = 0 -> t
   | Ok _ -> Asn.S.parse_error "CVC: OID with leftover"
   | Error _ -> Asn.S.parse_error "Cannot parse CVC OID"
 
@@ -135,18 +135,18 @@ let decode bytes =
           let bytes' = Cstruct.sub bytes i length in
           `Bytes bytes' :: acc
       in
-      if length + i >= Cstruct.len bytes then
+      if length + i >= Cstruct.length bytes then
         List.rev acc
       else
         tokenize ~acc bytes (i + length) lim None Init
   in
-  let tokens = tokenize ~acc:[] bytes 0 (Cstruct.len bytes) None Init in
+  let tokens = tokenize ~acc:[] bytes 0 (Cstruct.length bytes) None Init in
   let rec parse = function
     | `Type (_, (`PUBLIC_KEY, _)) :: `Length _ :: `Value ls :: _ -> parse ls
     | `Type (_, (`OID, _)) :: `Length _ :: `Bytes bytes :: tl ->
       let bytes =
         let prefix =
-          Printf.sprintf "\006%c" (Char.chr (Cstruct.len bytes))
+          Printf.sprintf "\006%c" (Char.chr (Cstruct.length bytes))
           |> Cstruct.of_string
         in
         Cstruct.append prefix bytes

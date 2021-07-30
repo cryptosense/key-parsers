@@ -46,7 +46,7 @@ module Rsa = struct
 
     let decode cs =
       try
-        let e_off = Cstruct.len cs - 3 in
+        let e_off = Cstruct.length cs - 3 in
         let e_len = 3 in
         let e = get_z_be cs e_off e_len in
         check_public_exponent e;
