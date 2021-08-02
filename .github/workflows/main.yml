@@ -21,7 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v2.0.0-beta3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
       - run: opam pin add key-parsers.dev . --no-action
