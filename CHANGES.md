@@ -1,3 +1,11 @@
+## 1.3.0
+
+*2021-08-05*
+
+### Changed
+
+- Change the way ID packets are represented in the PGP module
+
 ## 1.2.1
 
 *2021-07-30*

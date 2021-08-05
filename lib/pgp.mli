@@ -148,10 +148,7 @@ module Packet : sig
   end
 
   module Id : sig
-    type t =
-      { name : string
-      ; email : string }
-    [@@deriving ord, eq, show]
+    type t = string [@@deriving ord, eq, show]
 
     val decode : Cstruct.t -> t
   end

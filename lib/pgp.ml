@@ -340,17 +340,9 @@ module Packet = struct
   end
 
   module Id = struct
-    type t =
-      { name : string
-      ; email : string }
-    [@@deriving ord, eq, show]
+    type t = string [@@deriving ord, eq, show]
 
-    let decode cs =
-      let id = Cstruct.to_string cs in
-      let sep_id = String.split_on_char '<' id in
-      let name = String.concat "<" (List.rev (List.tl (List.rev sep_id))) in
-      let email = List.nth sep_id (List.length sep_id - 1) in
-      {name; email = String.sub email 0 (String.length email - 1)}
+    let decode cs = Cstruct.to_string cs
   end
 
   module Public_key = struct

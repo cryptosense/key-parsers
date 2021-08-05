@@ -199,8 +199,7 @@ module Elgamal = struct
   let suite = ["Public" >:: test_public]
 end
 
-let id_packet =
-  Packet.Body.Id Packet.Id.{name = "Clement "; email = "clement@test"}
+let id_packet = Packet.Body.Id "Clement <clement@test>"
 
 module Test_errors = struct
   let test_rsa_tag0 ctxt =
