@@ -131,6 +131,7 @@ module Packet : sig
     | Public_key
     | Secret_subkey
     | Id
+    | Marker
     | Public_subkey
     | Unknown_packet
   [@@deriving ord, eq, show]
@@ -218,6 +219,7 @@ module Packet : sig
       | Signature
       | Secret_subkey of Secret_key.t
       | Public_subkey of Public_key.t
+      | Marker
       | Unknown
     [@@deriving ord, eq, show]
 

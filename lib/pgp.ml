@@ -241,6 +241,7 @@ module Packet = struct
     | Public_key
     | Secret_subkey
     | Id
+    | Marker
     | Public_subkey
     | Unknown_packet
   [@@deriving ord, eq, show]
@@ -253,6 +254,7 @@ module Packet = struct
     | 5 -> Ok Secret_key
     | 6 -> Ok Public_key
     | 7 -> Ok Secret_subkey
+    | 10 -> Ok Marker
     | 13 -> Ok Id
     | 14 -> Ok Public_subkey
     | _ -> Ok Unknown_packet
@@ -265,6 +267,7 @@ module Packet = struct
     | Public_key -> "Public key packet"
     | Secret_subkey -> "Secret subkey packet"
     | Id -> "Identity packet"
+    | Marker -> "Marker packet"
     | Public_subkey -> "Public subkey packet"
     | Unknown_packet -> "Unknown packet"
 
@@ -548,12 +551,14 @@ module Packet = struct
       | Signature
       | Secret_subkey of Secret_key.t
       | Public_subkey of Public_key.t
+      | Marker
       | Unknown
     [@@deriving ord, eq, show]
 
     let decode packet_type packet =
       match (packet_type : packet_type) with
       | Id -> Ok (Id (Id.decode packet))
+      | Marker -> Ok Marker
       | Secret_key -> Secret_key.decode packet >|= fun key -> Secret_key key
       | Public_key ->
         Public_key.decode packet >|= fun (_, key) -> Public_key key
