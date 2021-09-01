@@ -202,6 +202,8 @@ end
 
 let id_packet = Packet.Body.Id "Clement <clement@test>"
 
+let id_packet2 = Packet.Body.Id "Dimitri Torterat <kra@diti.me>"
+
 module Test_errors = struct
   let test_rsa_tag0 ctxt =
     let file = fixture "rsa_tag0.pgp" in
@@ -235,11 +237,85 @@ module Test_errors = struct
     ; "Bad file header" >:: test_bad_file_header ]
 end
 
-let test_id = test_val ~nth:1 ~decode ~expected:id_packet "rsa_public.pgp"
+module Signature = struct
+  let signature
+      ~tag
+      ~id
+      ?(version = 4)
+      ?(revocation = [])
+      ?(key_flags = [])
+      validity_period
+      signature_type =
+    let subpackets =
+      List.concat
+        [ key_flags
+        ; validity_period
+          |> Option.to_list
+          |> List.map (fun validity_period ->
+                 Packet.Signature.Subpacket.Key_expiration_time validity_period)
+        ; revocation
+        ; [Packet.Signature.Subpacket.Issuer_id id] ]
+    in
+    Packet.Body.Signature {tag; version; subpackets; signature_type}
+
+  let test_no_validity_key =
+    let signature_packet =
+      signature ~tag:19 None User_certification ~id:"a03468a124471e7d"
+        ~key_flags:[Uses [Certification; Sign_data]]
+    in
+    test_val ~nth:2 ~decode ~expected:signature_packet "dsa_public.pgp"
+
+  let test_2_years_key =
+    let signature_packet =
+      signature ~tag:19 (Some 63072000l) User_certification
+        ~id:"19568ea520a6efa1"
+        ~key_flags:[Uses [Certification; Sign_data]]
+    in
+    test_val ~nth:2 ~decode ~expected:signature_packet "rsa_public.pgp"
+
+  let test_2_years_subkey =
+    let signature_packet =
+      signature ~tag:24 (Some 63072000l) Subkey_binding ~id:"19568ea520a6efa1"
+        ~key_flags:[Uses [Encrypt_communication; Encrypt_storage]]
+    in
+    test_val ~nth:4 ~decode ~expected:signature_packet "rsa_public.pgp"
+
+  let test_revocation =
+    let signature_packet =
+      signature ~tag:40 None Revocation ~id:"87f30257ae1e0000"
+        ~revocation:
+          [ Revocation_reason
+              (Key_superseded
+                 "Forgot the PIN to my smartcard on which these subkeys were \
+                  stored.") ]
+    in
+    test_val ~nth:17 ~decode ~expected:signature_packet
+      "revocation_signature.pgp"
+
+  let suite =
+    [ "No 2 years period key" >:: test_2_years_key
+    ; "No 2 years period subkey" >:: test_2_years_subkey
+    ; "No validity period key" >:: test_no_validity_key
+    ; "Revocation" >:: test_revocation ]
+end
+
+module Id = struct
+  let test_id = test_val ~nth:1 ~decode ~expected:id_packet "rsa_public.pgp"
+
+  let test_id2 =
+    test_val ~nth:6 ~decode ~expected:id_packet2 "revocation_signature.pgp"
+
+  let suite = ["Id 1" >:: test_id; "Id 2" >:: test_id2]
+end
+
+let test_marker =
+  test_val ~decode ~expected:Packet.Body.Marker "test_marker.pgp"
 
 let suite =
   [ "Rsa" >::: Rsa.suite
   ; "Dsa" >::: Dsa.suite
-  ; "Id" >:: test_id
+  ; "Id" >::: Id.suite
+  ; "Signatures" >::: Signature.suite
+  ; "Marker" >:: test_marker
   ; "Errors" >::: Test_errors.suite
   ; "Elgamal" >::: Elgamal.suite ]

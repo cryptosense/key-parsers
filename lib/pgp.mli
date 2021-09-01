@@ -166,7 +166,7 @@ module Packet : sig
     type t =
       { version : int
       ; creation_time : int32
-      ; validity_period : int option
+      ; validity_period : int32 option
       ; algo : Algo.Public.t
       ; public_key : Value.t }
     [@@deriving ord, eq, show]
@@ -211,12 +211,59 @@ module Packet : sig
     val decode : Cstruct.t -> (t, string) result
   end
 
+  module Signature : sig
+    module Subpacket : sig
+      type key_flag =
+        | Certification
+        | Sign_data
+        | Encrypt_communication
+        | Encrypt_storage
+        | Split
+        | Authentication
+        | Private_shared
+        | Unknown_flag
+      [@@deriving ord, eq, show]
+
+      type revocation_reason =
+        | Key_superseded of string
+        | Compromised of string
+        | Key_retired of string
+        | User_ID_not_valid of string
+        | Unknown_reason of string
+      [@@deriving ord, eq, show]
+
+      type t =
+        | Key_expiration_time of int32
+        | Revocation_reason of revocation_reason
+        | Issuer_id of string
+        | Uses of key_flag list
+        | Unknown
+      [@@deriving ord, eq, show]
+    end
+
+    type signature_type =
+      | Revocation
+      | Subkey_binding
+      | User_certification
+      | Other
+    [@@deriving ord, eq, show]
+
+    type t =
+      { tag : int
+      ; version : int
+      ; signature_type : signature_type
+      ; subpackets : Subpacket.t list }
+    [@@deriving ord, eq, show]
+
+    val decode : Cstruct.t -> (t, string) result
+  end
+
   module Body : sig
     type t =
       | Id of Id.t
       | Secret_key of Secret_key.t
       | Public_key of Public_key.t
-      | Signature
+      | Signature of Signature.t
       | Secret_subkey of Secret_key.t
       | Public_subkey of Public_key.t
       | Marker
