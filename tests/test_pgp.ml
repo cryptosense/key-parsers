@@ -220,10 +220,18 @@ module Test_errors = struct
     let error = Result.get_error (List.hd res) in
     assert_equal ~ctxt error "Bad header code"
 
+  let test_bad_file_header ctxt =
+    let file = fixture "bad_file_header.pgp" in
+    let res = decode file in
+    let error = Result.get_error (List.hd res) in
+    assert_equal ~ctxt error
+      "Bad packet header: length is greater than packet size"
+
   let suite =
     [ "Tag0" >:: test_rsa_tag0
     ; "Bad_algo" >:: test_bad_algo
-    ; "Bad_file" >:: test_bad_file ]
+    ; "Bad_file" >:: test_bad_file
+    ; "Bad file header" >:: test_bad_file_header ]
 end
 
 let test_id = test_val ~nth:1 ~decode ~expected:id_packet "rsa_public.pgp"
