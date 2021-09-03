@@ -366,6 +366,7 @@ module Packet = struct
       let offset =
         (*A public key packet has another header*)
         match version with
+        | 2
         | 3 ->
           Ok 8
           (*and a version 3 public key packet also contains a validity period*)
@@ -395,22 +396,20 @@ module Packet = struct
     let decode packet =
       let version = Cstruct.get_uint8 packet 0 in
       let creation_time = Cstruct.BE.get_uint32 packet 1 in
-      let packet_infos =
-        match version with
-        | 4 -> Ok (packet, None)
-        | 2
-        | 3 ->
-          let time = Cstruct.BE.get_uint16 packet 5 in
-          let cs = Cstruct.shift packet 2 in
-          Ok (cs, Some time)
-        | _ -> Error "Bad version of public key packet."
-      in
-      let algo = Algo.Public.of_int (Cstruct.get_uint8 packet 5) in
-      match packet_infos with
-      | Ok (public_packet, validity_period) ->
-        decode_public_key algo public_packet ~version >|= fun (cs, key) ->
-        (cs, {version; creation_time; validity_period; algo; public_key = key})
-      | Error error -> Error error
+      (match version with
+      | 4 ->
+        let algo = Algo.Public.of_int (Cstruct.get_uint8 packet 5) in
+        Ok (algo, None)
+      | 2
+      | 3 ->
+        let algo = Algo.Public.of_int (Cstruct.get_uint8 packet 7) in
+        let time = Cstruct.BE.get_uint16 packet 5 in
+        Ok (algo, Some time)
+      | _ ->
+        Error (Printf.sprintf "Bad version (v%i) of public key packet." version))
+      >>= fun (algo, validity_period) ->
+      decode_public_key algo packet ~version >|= fun (cs, public_key) ->
+      (cs, {version; creation_time; validity_period; algo; public_key})
   end
 
   module Private_key_value = struct
