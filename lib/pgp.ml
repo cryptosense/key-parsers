@@ -510,17 +510,21 @@ module Packet = struct
         let sym_algo = Algo.Symmetric.of_int sym_tag in
         let s2k_tag = Cstruct.get_uint8 packet 2 in
         let s2k_specifier = S2k.of_int s2k_tag in
-        decode_s2k packet s2k_specifier >|= fun (s2k, offset) ->
-        let cs_shifted = Cstruct.shift packet offset in
-        let cipher_block = Algo.Symmetric.size sym_algo in
-        let initial_vector_z = get_z_be cs_shifted ~off:0 ~len:cipher_block in
-        let initial_vector = Z.format "0x100" initial_vector_z in
-        { s2k = Some s2k
-        ; public_key
-        ; initial_vector = Some initial_vector
-        ; private_key = None
-        ; hash = None
-        ; checksum = None }
+        decode_s2k packet s2k_specifier >>= fun (s2k, offset) ->
+        if offset <= Cstruct.length packet then
+          let cs_shifted = Cstruct.shift packet offset in
+          let cipher_block = Algo.Symmetric.size sym_algo in
+          let initial_vector_z = get_z_be cs_shifted ~off:0 ~len:cipher_block in
+          let initial_vector = Z.format "0x100" initial_vector_z in
+          Ok
+            { s2k = Some s2k
+            ; public_key
+            ; initial_vector = Some initial_vector
+            ; private_key = None
+            ; hash = None
+            ; checksum = None }
+        else
+          Error "Bad offset in String2Key"
       | _ -> Error "Private key type not treated."
 
     let decode packet =
@@ -571,21 +575,28 @@ module Packet = struct
 
   let decode cs =
     Header.decode cs >>= fun (header_length, header) ->
-    let packet_cs = Cstruct.sub cs header_length header.packet_length in
-    let res = Body.decode header.packet_type packet_cs in
-    match res with
-    | Error message ->
-      Error
-        (Header {skip_length = header_length + header.packet_length; message})
-    (*When a packet can't be parsed, but the header is correct*)
-    | Ok packet ->
-      let next_cs = Cstruct.shift cs (header_length + header.packet_length) in
-      Ok (next_cs, {header; packet})
+    if header.packet_length + header_length <= Cstruct.length cs then
+      let packet_cs = Cstruct.sub cs header_length header.packet_length in
+      let res = Body.decode header.packet_type packet_cs in
+      match res with
+      | Error message ->
+        Error
+          (Header {skip_length = header_length + header.packet_length; message})
+      (*When a packet can't be parsed, but the header is correct*)
+      | Ok packet ->
+        let next_cs = Cstruct.shift cs (header_length + header.packet_length) in
+        Ok (next_cs, {header; packet})
+    else
+      Error (Fatal "Bad packet header: length is greater than packet size")
 end
 
 let rec decode_rec cs packet_list =
   if Cstruct.length cs != 0 then
-    match Packet.decode cs with
+    let decoded_packet =
+      try Packet.decode cs with
+      | _ -> Error (Fatal "Incorrect packet")
+    in
+    match decoded_packet with
     | Ok (next_cs, packet) -> decode_rec next_cs (Ok packet :: packet_list)
     | Error (Fatal message) -> List.rev (Error message :: packet_list)
     (* When the length of the header can't be parsed *)
