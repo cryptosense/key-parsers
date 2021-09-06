@@ -8,7 +8,8 @@ let test_val ?(nth = 0) ~decode ~expected filename ctxt =
   let file = fixture filename in
   let res = decode file in
   let (public_packet : Packet.t) = Result.get_ok (List.nth res nth) in
-  assert_equal ~ctxt public_packet.packet expected
+  assert_equal ~printer:[%show: Packet.Body.t] ~ctxt public_packet.packet
+    expected
 
 module Rsa = struct
   let public_packet =
