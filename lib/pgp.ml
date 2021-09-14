@@ -241,6 +241,7 @@ module Packet = struct
     | Public_key
     | Secret_subkey
     | Id
+    | Marker
     | Public_subkey
     | Unknown_packet
   [@@deriving ord, eq, show]
@@ -249,10 +250,11 @@ module Packet = struct
     match tag with
     | 0 -> Error "Tag 0"
     | 1 -> Ok Session_key
-    | 2 -> Ok Unknown_packet
+    | 2 -> Ok Signature
     | 5 -> Ok Secret_key
     | 6 -> Ok Public_key
     | 7 -> Ok Secret_subkey
+    | 10 -> Ok Marker
     | 13 -> Ok Id
     | 14 -> Ok Public_subkey
     | _ -> Ok Unknown_packet
@@ -265,6 +267,7 @@ module Packet = struct
     | Public_key -> "Public key packet"
     | Secret_subkey -> "Secret subkey packet"
     | Id -> "Identity packet"
+    | Marker -> "Marker packet"
     | Public_subkey -> "Public subkey packet"
     | Unknown_packet -> "Unknown packet"
 
@@ -307,14 +310,14 @@ module Packet = struct
       | _ -> Error "Bad length size"
 
     let get_new_length cs =
-      let first_octet = Cstruct.get_uint8 cs 1 in
-      if first_octet < 192 then
-        Ok (2, first_octet)
-      else if first_octet < 224 then
-        let second_octet = Cstruct.get_uint8 cs 2 in
-        let length = 192 + second_octet + (256 * (first_octet - 192)) in
+      let first_byte = Cstruct.get_uint8 cs 1 in
+      if first_byte < 192 then
+        Ok (2, first_byte)
+      else if first_byte < 224 then
+        let second_byte = Cstruct.get_uint8 cs 2 in
+        let length = 192 + second_byte + (256 * (first_byte - 192)) in
         Ok (3, length)
-      else if first_octet < 255 then
+      else if first_byte < 255 then
         Error "Partial body lengths are not treated"
       else
         let length = Cstruct.BE.get_uint32 cs 2 in
@@ -357,7 +360,7 @@ module Packet = struct
     type t =
       { version : int
       ; creation_time : int32
-      ; validity_period : int option
+      ; validity_period : int32 option
       ; algo : Algo.Public.t
       ; public_key : Value.t }
     [@@deriving ord, eq, show]
@@ -369,7 +372,7 @@ module Packet = struct
         | 2
         | 3 ->
           Ok 8
-          (*and a version 3 public key packet also contains a validity period*)
+          (*and a version 2 or 3 public key packet also contains a validity period*)
         | 4 -> Ok 6
         | _ ->
           Error
@@ -404,9 +407,10 @@ module Packet = struct
       | 3 ->
         let algo = Algo.Public.of_int (Cstruct.get_uint8 packet 7) in
         let time = Cstruct.BE.get_uint16 packet 5 in
-        Ok (algo, Some time)
+        Ok (algo, Some (Int32.of_int time))
       | _ ->
-        Error (Printf.sprintf "Bad version (v%i) of public key packet." version))
+        Error
+          (Printf.sprintf "Unexpected public key packet version: %d" version))
       >>= fun (algo, validity_period) ->
       decode_public_key algo packet ~version >|= fun (cs, public_key) ->
       (cs, {version; creation_time; validity_period; algo; public_key})
@@ -532,7 +536,9 @@ module Packet = struct
         match public_key.version with
         | 3 -> Ok 8
         | 4 -> Ok 6
-        | _ -> Error "Bad version of Public key packet"
+        | version ->
+          Error
+            (Printf.sprintf "Unexpected public key packet version: %d" version)
       in
       offset >>= fun offset ->
       let secret_packet = Cstruct.shift cs offset in
@@ -540,24 +546,212 @@ module Packet = struct
       decode_convention public_key secret_packet convention
   end
 
+  module Signature = struct
+    module Subpacket = struct
+      type key_flag =
+        | Certification
+        | Sign_data
+        | Encrypt_communication
+        | Encrypt_storage
+        | Split
+        | Authentication
+        | Private_shared
+        | Unknown_flag
+      [@@deriving ord, eq, show]
+
+      let tag_to_keyflag tag =
+        match tag with
+        | 0 -> Certification
+        | 1 -> Sign_data
+        | 2 -> Encrypt_communication
+        | 3 -> Encrypt_storage
+        | 4 -> Split
+        | 5 -> Authentication
+        | 7 -> Private_shared
+        | _ -> Unknown_flag
+
+      type revocation_reason =
+        | Key_superseded of string
+        | Compromised of string
+        | Key_retired of string
+        | User_ID_not_valid of string
+        | Unknown_reason of string
+      [@@deriving ord, eq, show]
+
+      type t =
+        | Key_expiration_time of int32
+        | Revocation_reason of revocation_reason
+        | Issuer_id of string
+        | Uses of key_flag list
+        | Unknown
+      [@@deriving ord, eq, show]
+
+      let get_length cs =
+        let first_byte = Cstruct.get_uint8 cs 0 in
+        if first_byte < 192 then
+          (1, first_byte)
+        else if first_byte < 255 then
+          let second_byte = Cstruct.get_uint8 cs 1 in
+          let length = 192 + second_byte + (256 * (first_byte - 192)) in
+          (2, length)
+        else
+          let length = Cstruct.BE.get_uint32 cs 1 in
+          (5, Int32.to_int length)
+
+      let rec keep_some opt_list =
+        match opt_list with
+        | Some x :: _list -> x :: keep_some _list
+        | None :: _list -> keep_some _list
+        | [] -> []
+
+      let decode_uses cs =
+        let nth_bit x n = x land (1 lsl n) <> 0 in
+        let flag_int = Cstruct.get_uint8 cs 1 in
+        let map_tag tag flag =
+          if flag then
+            Some (tag_to_keyflag tag)
+          else
+            None
+        in
+        let flags = List.init 8 (nth_bit flag_int) in
+        if List.nth flags 6 then
+          Error (Printf.sprintf "Bad tag for a key flag: 0x40")
+        else
+          Ok (Uses (keep_some (List.mapi map_tag flags)))
+
+      let decode_code_reason code : (string -> revocation_reason, string) result
+          =
+        match code with
+        | 0 -> Ok (fun reason -> Unknown_reason reason)
+        | 1 -> Ok (fun reason -> Key_superseded reason)
+        | 2 -> Ok (fun reason -> Compromised reason)
+        | 3 -> Ok (fun reason -> Key_retired reason)
+        | i when 100 <= i && i <= 110 ->
+          Ok (fun reason -> Unknown_reason reason)
+        | 32 -> Ok (fun reason -> User_ID_not_valid reason)
+        | code -> Error (Printf.sprintf "Bad revocation reason code: %i" code)
+
+      let decode_revocation_reason cs =
+        let code = Cstruct.get_uint8 cs 1 in
+        decode_code_reason code >|= fun reason ->
+        let reason_string = Cstruct.to_string ~off:2 cs in
+        Revocation_reason (reason reason_string)
+
+      let decode_subpacket cs =
+        let type_code = Cstruct.get_uint8 cs 0 in
+        match type_code with
+        | 9 -> Ok (Key_expiration_time (Cstruct.BE.get_uint32 cs 1))
+        | 16 ->
+          let id = Cstruct.BE.get_uint64 cs 1 in
+          Ok (Issuer_id (Int64.format "%x" id))
+        | 27 -> decode_uses cs
+        | 29 -> decode_revocation_reason cs
+        | _ -> Ok Unknown
+
+      let rec decode_rec cs subpacket_list =
+        if Cstruct.length cs != 0 then
+          let (offset, length) = get_length cs in
+          let next_cs = Cstruct.shift cs (length + offset) in
+          let subpacket_cs = Cstruct.sub cs offset length in
+          decode_subpacket subpacket_cs >>= fun subpacket ->
+          decode_rec next_cs (subpacket :: subpacket_list)
+        else
+          Ok (List.rev subpacket_list)
+
+      let decode cs =
+        let is_filter_unknown_subpacket = function
+          | Unknown -> false
+          | _ -> true
+        in
+        decode_rec cs [] >|= fun subpacket_list ->
+        List.filter is_filter_unknown_subpacket subpacket_list
+    end
+
+    type signature_type =
+      | Revocation
+      | Subkey_binding
+      | User_certification
+      | Other
+    [@@deriving ord, eq, show]
+
+    let tag_to_sigtype tag =
+      match tag with
+      | 16
+      | 17
+      | 18
+      | 19 ->
+        User_certification
+      | 32
+      | 40 ->
+        Revocation
+      | 24 -> Subkey_binding
+      | _ -> Other
+
+    type t =
+      { tag : int
+      ; version : int
+      ; signature_type : signature_type
+      ; subpackets : Subpacket.t list }
+    [@@deriving ord, eq, show]
+
+    let decode_v3 packet =
+      let hash_material_len = Cstruct.get_uint8 packet 0 in
+      let tag = Cstruct.get_uint8 packet 1 in
+      let signature_type = tag_to_sigtype tag in
+      if hash_material_len == 5 then
+        let key_id_int = Cstruct.BE.get_uint64 packet 6 in
+        let key_id = Int64.format "%x" key_id_int in
+        Ok {tag; version = 3; subpackets = [Issuer_id key_id]; signature_type}
+      else
+        Error "Bad hash material length in v3 signature packet"
+
+    let decode_v4 packet =
+      let tag = Cstruct.get_uint8 packet 0 in
+      let hashed_subpackets_len = Cstruct.BE.get_uint16 packet 3 in
+      let hashed_subpackets_cs = Cstruct.sub packet 5 hashed_subpackets_len in
+      Subpacket.decode hashed_subpackets_cs >>= fun hashed_subpackets ->
+      let unhashed_subpackets_len =
+        Cstruct.BE.get_uint16 packet (5 + hashed_subpackets_len)
+      in
+      let unhashed_subpackets_cs =
+        Cstruct.sub packet (7 + hashed_subpackets_len) unhashed_subpackets_len
+      in
+      Subpacket.decode unhashed_subpackets_cs >|= fun unhashed_subpackets ->
+      let subpackets = hashed_subpackets @ unhashed_subpackets in
+      let signature_type = tag_to_sigtype tag in
+      {tag; version = 4; subpackets; signature_type}
+
+    let decode packet =
+      match Cstruct.get_uint8 packet 0 with
+      | 3 -> decode_v3 (Cstruct.shift packet 1)
+      | 4 -> decode_v4 (Cstruct.shift packet 1)
+      | version ->
+        Error
+          ("Unexpected signature packet version number: "
+          ^ Int.to_string version)
+  end
+
   module Body = struct
     type t =
       | Id of Id.t
       | Secret_key of Secret_key.t
       | Public_key of Public_key.t
-      | Signature
+      | Signature of Signature.t
       | Secret_subkey of Secret_key.t
       | Public_subkey of Public_key.t
+      | Marker
       | Unknown
     [@@deriving ord, eq, show]
 
     let decode packet_type packet =
       match (packet_type : packet_type) with
       | Id -> Ok (Id (Id.decode packet))
+      | Marker -> Ok Marker
       | Secret_key -> Secret_key.decode packet >|= fun key -> Secret_key key
       | Public_key ->
         Public_key.decode packet >|= fun (_, key) -> Public_key key
-      | Signature -> Ok Unknown
+      | Signature ->
+        Signature.decode packet >|= fun signature -> Signature signature
       | Secret_subkey ->
         Secret_key.decode packet >|= fun key -> Secret_subkey key
       | Public_subkey ->

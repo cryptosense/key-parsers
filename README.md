@@ -31,7 +31,6 @@ Parsers for PGP (Pretty Good Privacy) encodings of DSA, RSA and Elgamal Public a
 Private keys and user IDs as defined in [RFC 4880] (https://datatracker.ietf.org/doc/html/rfc4880)
 Note that the parsers in this module expect raw byte string. They don't handle PEM armoring
 nor decode Base64 or hex.
-This module is experimental.
 
 ### `Ltpa`
 
