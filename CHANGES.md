@@ -1,3 +1,11 @@
+## 1.4.0
+
+*2021-09-14*
+
+### Changed
+
+- Parse Signature packets/Marker packets in the PGP module
+
 ## 1.3.0
 
 *2021-08-05*
