@@ -39,20 +39,20 @@ module Rsa = struct
   let test_pub ~decode expected der ctxt =
     let open Key_parsers.Asn1.Rsa in
     let actual = decode der in
-    Test_util.assert_ok actual @@ fun actual ->
+    Test_helpers.assert_ok actual @@ fun actual ->
     assert_equal ~ctxt ~cmp:[%eq: Public.t] ~printer:[%show: Public.t] expected
       actual
 
   let test_error ~decode expected der ctxt =
     let actual = decode der in
-    Test_util.assert_error actual @@ fun actual ->
+    Test_helpers.assert_error actual @@ fun actual ->
     assert_equal ~ctxt ~cmp:[%eq: string] ~printer:[%show: string] expected
       actual
 
   let test_priv ~decode expected der ctxt =
     let open Key_parsers.Asn1.Rsa in
     let actual = decode der in
-    Test_util.assert_ok actual @@ fun actual ->
+    Test_helpers.assert_ok actual @@ fun actual ->
     assert_equal ~ctxt ~cmp:[%eq: Private.t] ~printer:[%show: Private.t]
       expected actual
 
@@ -122,7 +122,7 @@ let dsa_suite =
     let test expected_dsa der ctxt =
       let open Key_parsers.Asn1 in
       let actual = Dsa_private_key.decode der in
-      Test_util.assert_ok actual @@ fun actual ->
+      Test_helpers.assert_ok actual @@ fun actual ->
       assert_equal ~ctxt ~cmp:[%eq: Dsa_private_key.t]
         ~printer:[%show: Dsa_private_key.t] expected_dsa actual
     in
@@ -148,7 +148,7 @@ let dsa_suite =
       | `Public -> "y"
       | `Private -> "x"
     in
-    Test_util.assert_ok real @@ fun (real_params, real_key) ->
+    Test_helpers.assert_ok real @@ fun (real_params, real_key) ->
     test_params expected_params real_params ctxt;
     assert_equal ~ctxt ~cmp ~printer ~msg expected_key real_key
   in
@@ -191,21 +191,21 @@ let ec_suite =
       in
       let curve =
         let a =
-          Test_util.cstruct_of_hex
+          Test_helpers.cstruct_of_hex
             "FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC"
         in
         let b =
-          Test_util.cstruct_of_hex
+          Test_helpers.cstruct_of_hex
             "5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B"
         in
         let seed =
           Some
-            (Test_util.cstruct_of_hex "C49D360886E704936A6678E1139D26B7819F7E90")
+            (Test_helpers.cstruct_of_hex "C49D360886E704936A6678E1139D26B7819F7E90")
         in
         Specified_domain.{a; b; seed}
       in
       let base =
-        Test_util.cstruct_of_hex
+        Test_helpers.cstruct_of_hex
           "046B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C2964FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5"
       in
       let order =
@@ -222,16 +222,16 @@ let ec_suite =
         Field.(C_two {m; basis})
       in
       let curve =
-        let a = Test_util.cstruct_of_hex "3088250CA6E7C7FE649CE85820F7" in
-        let b = Test_util.cstruct_of_hex "E8BEE4D3E2260744188BE0E9C723" in
+        let a = Test_helpers.cstruct_of_hex "3088250CA6E7C7FE649CE85820F7" in
+        let b = Test_helpers.cstruct_of_hex "E8BEE4D3E2260744188BE0E9C723" in
         let seed =
           Some
-            (Test_util.cstruct_of_hex "10E723AB14D696E6768756151756FEBF8FCB49A9")
+            (Test_helpers.cstruct_of_hex "10E723AB14D696E6768756151756FEBF8FCB49A9")
         in
         Specified_domain.{a; b; seed}
       in
       let base =
-        Test_util.cstruct_of_hex
+        Test_helpers.cstruct_of_hex
           "04009D73616F35F4AB1407D73562C10F00A52830277958EE84D1315ED31886"
       in
       let order = Z.of_string "0x0100000000000000D9CCEC8A39E56F" in
@@ -240,7 +240,7 @@ let ec_suite =
     in
     let test_params expected der ctxt =
       let real = Params.decode der in
-      Test_util.assert_ok real @@ fun real -> test_params expected real ctxt
+      Test_helpers.assert_ok real @@ fun real -> test_params expected real ctxt
     in
     let named_der = fixture "p256v1_named_param.der" in
     let prime_der = fixture "p256v1_explicit_param.der" in
@@ -251,14 +251,14 @@ let ec_suite =
            ; "BinaryField" >:: test_params exp_specified_binary bin_der ] ]
   in
   let h =
-    Test_util.cstruct_of_hex
+    Test_helpers.cstruct_of_hex
       "04DB81688B7871A0762ADCDC6109F37C45AA689BDB300E3036614C8FE21E7AB1C1E8A133D358F0ED65B478D97064535ECE5BC2809A2BC974D25639DEFE5D38EE89"
   in
   let exp_public = (exp_named_params, h) in
   let exp_private =
     let params = None in
     let k =
-      Test_util.cstruct_of_hex
+      Test_helpers.cstruct_of_hex
         "3F05F839F41567FF8A2D2ACA64BA92AEC698B43C52D4CF0D2264F4615F07FB86"
     in
     let public_key = Some h in
@@ -269,7 +269,7 @@ let ec_suite =
       let printer = Public.show in
       let cmp pub pub' = Public.compare pub pub' = 0 in
       let real = Key_parsers.Asn1.X509.decode_ec der in
-      Test_util.assert_ok real @@ fun (real_params, real_key) ->
+      Test_helpers.assert_ok real @@ fun (real_params, real_key) ->
       test_params expected_params real_params ctxt;
       assert_equal ~ctxt ~cmp ~printer ~msg:"H" expected_key real_key
     in
@@ -281,7 +281,7 @@ let ec_suite =
       let printer = Private.show in
       let cmp priv priv' = Private.compare priv priv' = 0 in
       let real = Key_parsers.Asn1.PKCS8.decode_ec der in
-      Test_util.assert_ok real @@ fun (real_params, real_key) ->
+      Test_helpers.assert_ok real @@ fun (real_params, real_key) ->
       test_params expected_params real_params ctxt;
       assert_equal ~ctxt ~cmp ~printer ~msg:"privateKey" expected_key real_key
     in
@@ -322,7 +322,7 @@ let dh_suite =
     assert_equal ~ctxt ~cmp ~printer ~msg:"p" expected.p real.p;
     assert_equal ~ctxt ~cmp ~printer ~msg:"g" expected.g real.g;
     assert_equal ~ctxt
-      ~cmp:(Test_util.equal_options ~equal:Z.equal)
+      ~cmp:(Test_helpers.equal_options ~equal:Z.equal)
       ~printer:(function
         | Some x -> Z.to_string x
         | None -> "nothing")
@@ -335,7 +335,7 @@ let dh_suite =
       | `Public -> "y"
       | `Private -> "x"
     in
-    Test_util.assert_ok real @@ fun (real_params, real_key) ->
+    Test_helpers.assert_ok real @@ fun (real_params, real_key) ->
     test_params expected_params real_params ctxt;
     assert_equal ~ctxt ~cmp ~printer ~msg expected_key real_key
   in

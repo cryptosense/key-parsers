@@ -1,5 +1,6 @@
-let ( >>= ) = Result.bind
+module Cstruct = Safe_cstruct
 
+let ( >>= ) = Result.bind
 let ( >|= ) result f = Result.map f result
 
 module Packet_error = struct
@@ -777,7 +778,9 @@ module Packet = struct
           (Header {skip_length = header_length + header.packet_length; message})
       (*When a packet can't be parsed, but the header is correct*)
       | Ok packet ->
-        let next_cs = Cstruct.shift cs (header_length + header.packet_length) in
+        let next_cs =
+          Cstruct.shift cs (header_length + header.packet_length)
+        in
         Ok (next_cs, {header; packet})
     else
       Error (Fatal "Bad packet header: length is greater than packet size")

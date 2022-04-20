@@ -36,7 +36,7 @@ let suite =
   let test_private ctxt =
     let open Key_parsers.Ltpa.Rsa.Private in
     let k = decode (Cstruct.of_string private_encoded) in
-    Test_util.assert_ok k @@ fun k ->
+    Test_helpers.assert_ok k @@ fun k ->
     assert_equal ~ctxt ~printer ~msg:"e" e k.e;
     assert_equal ~ctxt ~printer ~msg:"d" d k.d;
     assert_equal ~ctxt ~printer ~msg:"p" p k.p;
@@ -45,7 +45,7 @@ let suite =
   let test_public ctxt =
     let open Key_parsers.Ltpa.Rsa.Public in
     let k = decode (Cstruct.of_string public_encoded) in
-    Test_util.assert_ok k @@ fun k ->
+    Test_helpers.assert_ok k @@ fun k ->
     assert_equal ~ctxt ~printer ~msg:"e" e k.e;
     assert_equal ~ctxt ~printer ~msg:"n" n k.n
   in
