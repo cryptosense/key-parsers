@@ -3,7 +3,7 @@ open Test_helpers
 
 module Rsa = struct
   (* This key pair was generated using openssl genrsa*)
-  let (expected_public, expected_private) =
+  let expected_public, expected_private =
     let n =
       Z.of_string
         "0x00B0DF8DE301B3E8D567285E754661230BEDD203F62C7FF101AA3BBAA1D268C85883D9DCAD1CB39FC51857B10D4EF6BEF6B4FE720E67C1978E4B7801FECB1FBB29"
@@ -200,7 +200,8 @@ let ec_suite =
         in
         let seed =
           Some
-            (Test_helpers.cstruct_of_hex "C49D360886E704936A6678E1139D26B7819F7E90")
+            (Test_helpers.cstruct_of_hex
+               "C49D360886E704936A6678E1139D26B7819F7E90")
         in
         Specified_domain.{a; b; seed}
       in
@@ -226,7 +227,8 @@ let ec_suite =
         let b = Test_helpers.cstruct_of_hex "E8BEE4D3E2260744188BE0E9C723" in
         let seed =
           Some
-            (Test_helpers.cstruct_of_hex "10E723AB14D696E6768756151756FEBF8FCB49A9")
+            (Test_helpers.cstruct_of_hex
+               "10E723AB14D696E6768756151756FEBF8FCB49A9")
         in
         Specified_domain.{a; b; seed}
       in
