@@ -25,8 +25,8 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
       - run: opam pin add key-parsers.dev . --no-action
-      - run: opam depext key-parsers --yes --with-doc --with-test
-      - run: opam install . --deps-only --with-doc --with-test
+      - run: opam depext key-parsers --yes --with-test
+      - run: opam install . --deps-only --with-test
       - run: opam exec -- dune build @all @runtest
   check-format:
     runs-on: ubuntu-latest
