@@ -14,9 +14,7 @@ module Rsa : sig
     [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 
@@ -40,11 +38,8 @@ module Rsa : sig
     [@@deriving ord, eq, show]
 
     val other_prime_grammar : other_prime Asn.t
-
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 end
@@ -58,9 +53,7 @@ module Dsa : sig
     [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 
@@ -68,9 +61,7 @@ module Dsa : sig
     type t = Z.t [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 
@@ -78,9 +69,7 @@ module Dsa : sig
     type t = Z.t [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 end
@@ -146,9 +135,7 @@ module Ec : sig
     [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 
@@ -156,9 +143,7 @@ module Ec : sig
     type t = point [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 
@@ -170,9 +155,7 @@ module Ec : sig
     [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 end
@@ -186,9 +169,7 @@ module Dh : sig
     [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 
@@ -196,9 +177,7 @@ module Dh : sig
     type t = Z.t [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 
@@ -206,20 +185,15 @@ module Dh : sig
     type t = Z.t [@@deriving ord, eq, show]
 
     val grammar : t Asn.t
-
     val encode : t -> Cstruct.t
-
     val decode : Cstruct.t -> (t, string) Result.result
   end
 end
 
 module Algorithm_identifier : sig
   val rsa_grammar : Rsa.Params.t Asn.t
-
   val dsa_grammar : Dsa.Params.t Asn.t
-
   val ec_grammar : Ec.Params.t Asn.t
-
   val dh_grammar : Dh.Params.t Asn.t
 end
 
@@ -232,32 +206,21 @@ module X509 : sig
   [@@deriving ord, eq, show]
 
   val rsa_grammar : Rsa.Public.t Asn.t
-
   val dsa_grammar : (Dsa.Params.t * Dsa.Public.t) Asn.t
-
   val ec_grammar : (Ec.Params.t * Ec.Public.t) Asn.t
-
   val dh_grammar : (Dh.Params.t * Dh.Public.t) Asn.t
-
   val encode : t -> Cstruct.t
-
   val encode_rsa : Rsa.Public.t -> Cstruct.t
-
   val encode_dsa : Dsa.Params.t * Dsa.Public.t -> Cstruct.t
-
   val encode_ec : Ec.Params.t * Ec.Public.t -> Cstruct.t
-
   val encode_dh : Dh.Params.t * Dh.Public.t -> Cstruct.t
-
   val decode : Cstruct.t -> (t, string) Result.result
-
   val decode_rsa : Cstruct.t -> (Rsa.Public.t, string) Result.result
 
   val decode_dsa :
     Cstruct.t -> (Dsa.Params.t * Dsa.Public.t, string) Result.result
 
   val decode_ec : Cstruct.t -> (Ec.Params.t * Ec.Public.t, string) Result.result
-
   val decode_dh : Cstruct.t -> (Dh.Params.t * Dh.Public.t, string) Result.result
 end
 
@@ -270,25 +233,15 @@ module PKCS8 : sig
   [@@deriving ord, eq, show]
 
   val rsa_grammar : Rsa.Private.t Asn.t
-
   val dsa_grammar : (Dsa.Params.t * Dsa.Private.t) Asn.t
-
   val ec_grammar : (Ec.Params.t * Ec.Private.t) Asn.t
-
   val dh_grammar : (Dh.Params.t * Dh.Private.t) Asn.t
-
   val encode : t -> Cstruct.t
-
   val encode_rsa : Rsa.Private.t -> Cstruct.t
-
   val encode_dsa : Dsa.Params.t * Dsa.Private.t -> Cstruct.t
-
   val encode_ec : Ec.Params.t * Ec.Private.t -> Cstruct.t
-
   val encode_dh : Dh.Params.t * Dh.Private.t -> Cstruct.t
-
   val decode : Cstruct.t -> (t, string) Result.result
-
   val decode_rsa : Cstruct.t -> (Rsa.Private.t, string) Result.result
 
   val decode_dsa :
@@ -311,8 +264,6 @@ module Dsa_private_key : sig
   [@@deriving ord, eq, show]
 
   val grammar : t Asn.t
-
   val encode : t -> Cstruct.t
-
   val decode : Cstruct.t -> (t, string) Result.result
 end

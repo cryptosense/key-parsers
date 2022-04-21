@@ -10,8 +10,8 @@ let get_z_be cs off len =
 module Rsa = struct
   (** If public exponent is not 0x10001, it is unclear how to parse the key *)
   let check_public_exponent e =
-    if not (Z.equal e (Z.of_int 0x10001)) then
-      invalid_arg ("RSA_LTPA: invalid public exponent: " ^ Z.to_string e)
+    if not (Z.equal e (Z.of_int 0x10001))
+    then invalid_arg ("RSA_LTPA: invalid public exponent: " ^ Z.to_string e)
 
   module Private = struct
     type t =
@@ -34,8 +34,7 @@ module Rsa = struct
         let p = get_z_be cs p_off p_len in
         let q = get_z_be cs (p_off + p_len) p_len in
         Result.Ok {e; d; p; q}
-      with
-      | Invalid_argument s -> Result.Error s
+      with Invalid_argument s -> Result.Error s
   end
 
   module Public = struct
@@ -53,8 +52,7 @@ module Rsa = struct
         let n_len = e_off in
         let n = get_z_be cs 0 n_len in
         Result.Ok {e; n}
-      with
-      | Invalid_argument s -> Result.Error s
+      with Invalid_argument s -> Result.Error s
   end
 end
 
