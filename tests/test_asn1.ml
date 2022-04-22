@@ -3,7 +3,7 @@ open Test_helpers
 
 module Rsa = struct
   (* This key pair was generated using openssl genrsa*)
-  let (expected_public, expected_private) =
+  let expected_public, expected_private =
     let n =
       Z.of_string
         "0x00B0DF8DE301B3E8D567285E754661230BEDD203F62C7FF101AA3BBAA1D268C85883D9DCAD1CB39FC51857B10D4EF6BEF6B4FE720E67C1978E4B7801FECB1FBB29"

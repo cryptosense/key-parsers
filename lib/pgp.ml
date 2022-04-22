@@ -1,5 +1,4 @@
 let ( >>= ) = Result.bind
-
 let ( >|= ) result f = Result.map f result
 
 module Packet_error = struct
@@ -163,8 +162,8 @@ module Rsa = struct
     [@@deriving ord, eq, show]
 
     let decode packet ~off =
-      let (cs, n) = decode_mpi_shift packet ~off in
-      let (shifted_cs, e) = decode_mpi_shift cs ~off in
+      let cs, n = decode_mpi_shift packet ~off in
+      let shifted_cs, e = decode_mpi_shift cs ~off in
       let public_key = {n; e} in
       (shifted_cs, public_key)
   end
@@ -178,10 +177,10 @@ module Rsa = struct
     [@@deriving ord, eq, show]
 
     let decode packet ~off =
-      let (cs1, d) = decode_mpi_shift packet ~off in
-      let (cs2, p) = decode_mpi_shift cs1 ~off in
-      let (cs3, q) = decode_mpi_shift cs2 ~off in
-      let (shifted_cs, u) = decode_mpi_shift cs3 ~off in
+      let cs1, d = decode_mpi_shift packet ~off in
+      let cs2, p = decode_mpi_shift cs1 ~off in
+      let cs3, q = decode_mpi_shift cs2 ~off in
+      let shifted_cs, u = decode_mpi_shift cs3 ~off in
       (shifted_cs, {d; p; q; u})
   end
 end
@@ -196,10 +195,10 @@ module Dsa = struct
     [@@deriving ord, eq, show]
 
     let decode packet ~off =
-      let (cs1, p) = decode_mpi_shift packet ~off in
-      let (cs2, q) = decode_mpi_shift cs1 ~off in
-      let (cs3, g) = decode_mpi_shift cs2 ~off in
-      let (shifted_cs, y) = decode_mpi_shift cs3 ~off in
+      let cs1, p = decode_mpi_shift packet ~off in
+      let cs2, q = decode_mpi_shift cs1 ~off in
+      let cs3, g = decode_mpi_shift cs2 ~off in
+      let shifted_cs, y = decode_mpi_shift cs3 ~off in
       (shifted_cs, {p; q; g; y})
   end
 
@@ -219,9 +218,9 @@ module Elgamal = struct
     [@@deriving ord, eq, show]
 
     let decode packet ~off =
-      let (cs1, p) = decode_mpi_shift packet ~off in
-      let (cs2, g) = decode_mpi_shift cs1 ~off in
-      let (shifted_cs, y) = decode_mpi_shift cs2 ~off in
+      let cs1, p = decode_mpi_shift packet ~off in
+      let cs2, g = decode_mpi_shift cs1 ~off in
+      let shifted_cs, y = decode_mpi_shift cs2 ~off in
       let public_key = {p; g; y} in
       (shifted_cs, public_key)
   end
@@ -279,19 +278,17 @@ module Packet = struct
     [@@deriving ord, eq, show]
 
     let is_new_type header_code =
-      if header_code >= 192 then
-        Ok true
-      else if header_code >= 128 then
-        Ok false
-      else
-        Error (Packet_error.Fatal "Bad header code")
+      if header_code >= 192
+      then Ok true
+      else if header_code >= 128
+      then Ok false
+      else Error (Packet_error.Fatal "Bad header code")
 
     let get_tag header_code =
       is_new_type header_code >|= fun is_new ->
-      if is_new then
-        (is_new, header_code - 192)
-      else
-        (is_new, (header_code - 128) / 4)
+      if is_new
+      then (is_new, header_code - 192)
+      else (is_new, (header_code - 128) / 4)
 
     let get_old_length_size length_tag =
       match length_tag with
@@ -311,14 +308,15 @@ module Packet = struct
 
     let get_new_length cs =
       let first_byte = Cstruct.get_uint8 cs 1 in
-      if first_byte < 192 then
-        Ok (2, first_byte)
-      else if first_byte < 224 then
+      if first_byte < 192
+      then Ok (2, first_byte)
+      else if first_byte < 224
+      then
         let second_byte = Cstruct.get_uint8 cs 2 in
         let length = 192 + second_byte + (256 * (first_byte - 192)) in
         Ok (3, length)
-      else if first_byte < 255 then
-        Error "Partial body lengths are not treated"
+      else if first_byte < 255
+      then Error "Partial body lengths are not treated"
       else
         let length = Cstruct.BE.get_uint32 cs 2 in
         Ok (6, Int32.to_int length)
@@ -327,10 +325,7 @@ module Packet = struct
       let header_code = Cstruct.get_uint8 cs 0 in
       get_tag header_code >>= fun (is_new, tag) ->
       let length_infos =
-        if is_new then
-          get_new_length cs
-        else
-          get_old_length cs header_code
+        if is_new then get_new_length cs else get_old_length cs header_code
       in
       match length_infos with
       | Error error -> Error (Fatal error)
@@ -369,8 +364,7 @@ module Packet = struct
       let offset =
         (*A public key packet has another header*)
         match version with
-        | 2
-        | 3 ->
+        | 2 | 3 ->
           Ok 8
           (*and a version 2 or 3 public key packet also contains a validity period*)
         | 4 -> Ok 6
@@ -380,20 +374,16 @@ module Packet = struct
       in
       offset >>= fun off ->
       match algo with
-      | Rsa_enc_sign
-      | Rsa_enc_only
-      | Rsa_sign_only ->
-        let (cs, key) = Rsa.Public.decode packet ~off in
+      | Rsa_enc_sign | Rsa_enc_only | Rsa_sign_only ->
+        let cs, key = Rsa.Public.decode packet ~off in
         Ok (cs, Value.Rsa key)
       | Dsa ->
-        let (cs, key) = Dsa.Public.decode packet ~off in
+        let cs, key = Dsa.Public.decode packet ~off in
         Ok (cs, Dsa key)
       | Elgamal_enc_only ->
-        let (cs, key) = Elgamal.Public.decode packet ~off in
+        let cs, key = Elgamal.Public.decode packet ~off in
         Ok (cs, Elgamal key)
-      | Ec
-      | Ecdsa
-      | Unknown ->
+      | Ec | Ecdsa | Unknown ->
         Error ("Unsupported algorithm: " ^ Algo.Public.name algo)
 
     let decode packet =
@@ -403,8 +393,7 @@ module Packet = struct
       | 4 ->
         let algo = Algo.Public.of_int (Cstruct.get_uint8 packet 5) in
         Ok (algo, None)
-      | 2
-      | 3 ->
+      | 2 | 3 ->
         let algo = Algo.Public.of_int (Cstruct.get_uint8 packet 7) in
         let time = Cstruct.BE.get_uint16 packet 5 in
         Ok (algo, Some (Int32.of_int time))
@@ -478,20 +467,16 @@ module Packet = struct
 
     let decode_private_key packet (algo : Algo.Public.t) =
       match algo with
-      | Rsa_enc_sign
-      | Rsa_enc_only
-      | Rsa_sign_only ->
-        let (cs, key) = Rsa.Private.decode packet ~off:0 in
+      | Rsa_enc_sign | Rsa_enc_only | Rsa_sign_only ->
+        let cs, key = Rsa.Private.decode packet ~off:0 in
         Ok (cs, Private_key_value.Rsa key)
       | Dsa ->
-        let (cs, key) = Dsa.Private.decode packet ~off:0 in
+        let cs, key = Dsa.Private.decode packet ~off:0 in
         Ok (cs, Dsa key)
       | Elgamal_enc_only ->
-        let (cs, key) = Elgamal.Private.decode packet ~off:0 in
+        let cs, key = Elgamal.Private.decode packet ~off:0 in
         Ok (cs, Elgamal key)
-      | Ec
-      | Ecdsa
-      | Unknown ->
+      | Ec | Ecdsa | Unknown ->
         Error ("Not implemented for algorithm:" ^ Algo.Public.name algo)
 
     let decode_convention (public_key : Public_key.t) packet convention =
@@ -514,7 +499,8 @@ module Packet = struct
         let s2k_tag = Cstruct.get_uint8 packet 2 in
         let s2k_specifier = S2k.of_int s2k_tag in
         decode_s2k packet s2k_specifier >>= fun (s2k, offset) ->
-        if offset <= Cstruct.length packet then
+        if offset <= Cstruct.length packet
+        then
           let cs_shifted = Cstruct.shift packet offset in
           let cipher_block = Algo.Symmetric.size sym_algo in
           let initial_vector_z = get_z_be cs_shifted ~off:0 ~len:cipher_block in
@@ -526,8 +512,7 @@ module Packet = struct
             ; private_key = None
             ; hash = None
             ; checksum = None }
-        else
-          Error "Bad offset in String2Key"
+        else Error "Bad offset in String2Key"
       | _ -> Error "Private key type not treated."
 
     let decode packet =
@@ -588,9 +573,10 @@ module Packet = struct
 
       let get_length cs =
         let first_byte = Cstruct.get_uint8 cs 0 in
-        if first_byte < 192 then
-          (1, first_byte)
-        else if first_byte < 255 then
+        if first_byte < 192
+        then (1, first_byte)
+        else if first_byte < 255
+        then
           let second_byte = Cstruct.get_uint8 cs 1 in
           let length = 192 + second_byte + (256 * (first_byte - 192)) in
           (2, length)
@@ -608,16 +594,12 @@ module Packet = struct
         let nth_bit x n = x land (1 lsl n) <> 0 in
         let flag_int = Cstruct.get_uint8 cs 1 in
         let map_tag tag flag =
-          if flag then
-            Some (tag_to_keyflag tag)
-          else
-            None
+          if flag then Some (tag_to_keyflag tag) else None
         in
         let flags = List.init 8 (nth_bit flag_int) in
-        if List.nth flags 6 then
-          Error (Printf.sprintf "Bad tag for a key flag: 0x40")
-        else
-          Ok (Uses (keep_some (List.mapi map_tag flags)))
+        if List.nth flags 6
+        then Error (Printf.sprintf "Bad tag for a key flag: 0x40")
+        else Ok (Uses (keep_some (List.mapi map_tag flags)))
 
       let decode_code_reason code : (string -> revocation_reason, string) result
           =
@@ -649,14 +631,14 @@ module Packet = struct
         | _ -> Ok Unknown
 
       let rec decode_rec cs subpacket_list =
-        if Cstruct.length cs != 0 then
-          let (offset, length) = get_length cs in
+        if Cstruct.length cs != 0
+        then
+          let offset, length = get_length cs in
           let next_cs = Cstruct.shift cs (length + offset) in
           let subpacket_cs = Cstruct.sub cs offset length in
           decode_subpacket subpacket_cs >>= fun subpacket ->
           decode_rec next_cs (subpacket :: subpacket_list)
-        else
-          Ok (List.rev subpacket_list)
+        else Ok (List.rev subpacket_list)
 
       let decode cs =
         let is_filter_unknown_subpacket = function
@@ -676,14 +658,8 @@ module Packet = struct
 
     let tag_to_sigtype tag =
       match tag with
-      | 16
-      | 17
-      | 18
-      | 19 ->
-        User_certification
-      | 32
-      | 40 ->
-        Revocation
+      | 16 | 17 | 18 | 19 -> User_certification
+      | 32 | 40 -> Revocation
       | 24 -> Subkey_binding
       | _ -> Other
 
@@ -698,12 +674,12 @@ module Packet = struct
       let hash_material_len = Cstruct.get_uint8 packet 0 in
       let tag = Cstruct.get_uint8 packet 1 in
       let signature_type = tag_to_sigtype tag in
-      if hash_material_len == 5 then
+      if hash_material_len == 5
+      then
         let key_id_int = Cstruct.BE.get_uint64 packet 6 in
         let key_id = Int64.format "%x" key_id_int in
         Ok {tag; version = 3; subpackets = [Issuer_id key_id]; signature_type}
-      else
-        Error "Bad hash material length in v3 signature packet"
+      else Error "Bad hash material length in v3 signature packet"
 
     let decode_v4 packet =
       let tag = Cstruct.get_uint8 packet 0 in
@@ -756,9 +732,7 @@ module Packet = struct
         Secret_key.decode packet >|= fun key -> Secret_subkey key
       | Public_subkey ->
         Public_key.decode packet >|= fun (_, key) -> Public_subkey key
-      | Session_key
-      | Unknown_packet ->
-        Ok Unknown
+      | Session_key | Unknown_packet -> Ok Unknown
   end
 
   type t =
@@ -768,7 +742,8 @@ module Packet = struct
 
   let decode cs =
     Header.decode cs >>= fun (header_length, header) ->
-    if header.packet_length + header_length <= Cstruct.length cs then
+    if header.packet_length + header_length <= Cstruct.length cs
+    then
       let packet_cs = Cstruct.sub cs header_length header.packet_length in
       let res = Body.decode header.packet_type packet_cs in
       match res with
@@ -779,15 +754,14 @@ module Packet = struct
       | Ok packet ->
         let next_cs = Cstruct.shift cs (header_length + header.packet_length) in
         Ok (next_cs, {header; packet})
-    else
-      Error (Fatal "Bad packet header: length is greater than packet size")
+    else Error (Fatal "Bad packet header: length is greater than packet size")
 end
 
 let rec decode_rec cs packet_list =
-  if Cstruct.length cs != 0 then
+  if Cstruct.length cs != 0
+  then
     let decoded_packet =
-      try Packet.decode cs with
-      | _ -> Error (Fatal "Incorrect packet")
+      try Packet.decode cs with _ -> Error (Fatal "Incorrect packet")
     in
     match decoded_packet with
     | Ok (next_cs, packet) -> decode_rec next_cs (Ok packet :: packet_list)
@@ -797,7 +771,6 @@ let rec decode_rec cs packet_list =
       (*When the length of the header can be parsed*)
       let next_cs = Cstruct.shift cs error.skip_length in
       decode_rec next_cs (Error error.message :: packet_list)
-  else
-    List.rev packet_list
+  else List.rev packet_list
 
 let decode cs = decode_rec cs []

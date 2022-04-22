@@ -21,12 +21,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: ocaml/setup-ocaml@v2.0.0-beta3
+        uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
       - run: opam pin add key-parsers.dev . --no-action
-      - run: opam depext key-parsers --yes --with-doc --with-test
-      - run: opam install . --deps-only --with-doc --with-test
+      - run: opam depext key-parsers --yes --with-test
+      - run: opam install . --deps-only --with-test
       - run: opam exec -- dune build @all @runtest
   check-format:
     runs-on: ubuntu-latest
@@ -40,5 +40,5 @@ jobs:
       - run: opam pin add key-parsers.dev . --no-action
       - run: opam depext key-parsers --yes
       - run: opam install . --deps-only
-      - run: opam install ocamlformat.0.19.0
+      - run: opam install ocamlformat.0.21.0
       - run: opam exec -- dune build @fmt
