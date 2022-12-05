@@ -1,3 +1,10 @@
+## Unreleased
+
+*2022-12-05*
+
+- Add alternative algorithm identifier for DSA keys
+- Improve reporting of unknown algorithm identifiers
+
 ## 1.4.0
 
 *2021-09-14*
