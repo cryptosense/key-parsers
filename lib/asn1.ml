@@ -465,6 +465,8 @@ module Algorithm_identifier = struct
 
     let dsa_oid = Asn.OID.(base 1 2 <|| [840; 10040; 4; 1])
 
+    let dsa_oiw = Asn.OID.(base 1 3 <|| [14; 3; 2; 12])
+
     let ec_oid = Asn.OID.(base 1 2 <|| [840; 10045; 2; 1])
 
     let dh_oid = Asn.OID.(base 1 2 <|| [840; 113549; 1; 3; 1])
@@ -480,11 +482,18 @@ module Algorithm_identifier = struct
       | Dh
       | Unknown of Asn.OID.t
 
+    let to_string = function
+      | Dsa -> "DSA"
+      | Rsa -> "RSA"
+      | Ec -> "EC"
+      | Dh -> "DH"
+      | Unknown oid -> Format.asprintf "%a" Asn.OID.pp oid
+
     let grammar =
       let open Asn.S in
       let f = function
         | oid when oid = rsa_oid -> Rsa
-        | oid when oid = dsa_oid -> Dsa
+        | oid when oid = dsa_oid || oid = dsa_oiw -> Dsa
         | oid when oid = ec_oid || oid = ec_dh || oid = ec_mqv -> Ec
         | oid when oid = dh_oid -> Dh
         | oid -> Unknown oid
@@ -503,7 +512,9 @@ module Algorithm_identifier = struct
     let open Asn.S in
     let f = function
       | (Algo.Rsa, _) -> ()
-      | _ -> parse_error "Algorithm OID and parameters don't match"
+      | (algo, _) ->
+        parse_error "Algorithm %s and parameters don't match"
+          (Algo.to_string algo)
     in
     let g () = (Algo.Rsa, Some ()) in
     map f g
@@ -515,7 +526,9 @@ module Algorithm_identifier = struct
     let open Asn.S in
     let f = function
       | (Algo.Dsa, params) -> params
-      | (_, _) -> parse_error "Algorithm OID and parameters don't match"
+      | (algo, _) ->
+        parse_error "Algorithm %s and parameters don't match"
+          (Algo.to_string algo)
     in
     let g params = (Algo.Dsa, params) in
     map f g
@@ -527,7 +540,9 @@ module Algorithm_identifier = struct
     let open Asn.S in
     let f = function
       | (Algo.Ec, params) -> params
-      | (_, _) -> parse_error "Algorithm OID and parameters don't match"
+      | (algo, _) ->
+        parse_error "Algorithm %s and parameters don't match"
+          (Algo.to_string algo)
     in
     let g params = (Algo.Ec, params) in
     map f g
@@ -539,7 +554,9 @@ module Algorithm_identifier = struct
     let open Asn.S in
     let f = function
       | (Algo.Dh, params) -> params
-      | (_, _) -> parse_error "Algorithm OID and parameters don't match"
+      | (algo, _) ->
+        parse_error "Algorithm %s and parameters don't match"
+          (Algo.to_string algo)
     in
     let g params = (Algo.Dh, params) in
     map f g
