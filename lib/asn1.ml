@@ -110,7 +110,6 @@ module Rsa = struct
         -@ optional ~label:"otherPrimeInfo" (sequence_of other_prime_grammar)
 
     let encode = encode_helper grammar
-
     let decode = decode_helper "PKCS1 RSA private key" grammar
   end
 end
@@ -134,7 +133,6 @@ module Dsa = struct
            (required ~label:"g" integer)
 
     let encode = encode_helper grammar
-
     let decode = decode_helper "DSA params" grammar
   end
 
@@ -142,9 +140,7 @@ module Dsa = struct
     type t = Derivable.Z.t [@@deriving ord, eq, show]
 
     let grammar = Asn.S.integer
-
     let encode = encode_helper grammar
-
     let decode = decode_helper "DSA public key" grammar
   end
 
@@ -152,9 +148,7 @@ module Dsa = struct
     type t = Derivable.Z.t [@@deriving ord, eq, show]
 
     let grammar = Asn.S.integer
-
     let encode = encode_helper grammar
-
     let decode = decode_helper "DSA private key" grammar
   end
 end
@@ -166,13 +160,9 @@ module Ec = struct
 
   module Field = struct
     let prime_oid = Asn.OID.(base 1 2 <|| [840; 10045; 1; 1])
-
     let characteristic_two_oid = Asn.OID.(base 1 2 <|| [840; 10045; 1; 2])
-
     let gn_oid = Asn.OID.(characteristic_two_oid <| 3 <| 1)
-
     let tp_oid = Asn.OID.(characteristic_two_oid <| 3 <| 2)
-
     let pp_oid = Asn.OID.(characteristic_two_oid <| 3 <| 3)
 
     type basis_type =
@@ -372,7 +362,6 @@ module Ec = struct
       map f g @@ choice3 oid null Specified_domain.grammar
 
     let encode = encode_helper grammar
-
     let decode = decode_helper "EC parameters" grammar
   end
 
@@ -380,9 +369,7 @@ module Ec = struct
     type t = point [@@deriving ord, eq, show]
 
     let grammar = point_grammar
-
     let encode = encode_helper grammar
-
     let decode = decode_helper "EC public key" grammar
   end
 
@@ -410,7 +397,6 @@ module Ec = struct
            (optional ~label:"publicKey" @@ explicit 1 bit_string_cs)
 
     let encode = encode_helper grammar
-
     let decode = decode_helper "EC private key" grammar
   end
 end
@@ -434,7 +420,6 @@ module Dh = struct
            (optional ~label:"l" integer)
 
     let encode = encode_helper grammar
-
     let decode = decode_helper "DH params" grammar
   end
 
@@ -442,9 +427,7 @@ module Dh = struct
     type t = Derivable.Z.t [@@deriving ord, eq, show]
 
     let grammar = Asn.S.integer
-
     let encode = encode_helper grammar
-
     let decode = decode_helper "DH public key" grammar
   end
 
@@ -452,9 +435,7 @@ module Dh = struct
     type t = Derivable.Z.t [@@deriving ord, eq, show]
 
     let grammar = Asn.S.integer
-
     let encode = encode_helper grammar
-
     let decode = decode_helper "DH private key" grammar
   end
 end
@@ -462,17 +443,11 @@ end
 module Algorithm_identifier = struct
   module Algo = struct
     let rsa_oid = Asn.OID.(base 1 2 <|| [840; 113549; 1; 1; 1])
-
     let dsa_oid = Asn.OID.(base 1 2 <|| [840; 10040; 4; 1])
-
     let dsa_oiw = Asn.OID.(base 1 3 <|| [14; 3; 2; 12])
-
     let ec_oid = Asn.OID.(base 1 2 <|| [840; 10045; 2; 1])
-
     let dh_oid = Asn.OID.(base 1 2 <|| [840; 113549; 1; 3; 1])
-
     let ec_dh = Asn.OID.(base 1 3 <|| [132; 1; 12])
-
     let ec_mqv = Asn.OID.(base 1 3 <|| [132; 1; 13])
 
     type t =
@@ -624,11 +599,8 @@ module X509 = struct
          (required ~label:"subjectPublicKey" bit_string_cs)
 
   let encode_rsa = encode_helper rsa_grammar
-
   let encode_dsa = encode_helper dsa_grammar
-
   let encode_ec = encode_helper ec_grammar
-
   let encode_dh = encode_helper dh_grammar
 
   let encode = function
@@ -638,11 +610,8 @@ module X509 = struct
     | `DH key -> encode_dh key
 
   let decode_rsa = decode_helper "X509 RSA key" rsa_grammar
-
   let decode_dsa = decode_helper "X509 DSA key" dsa_grammar
-
   let decode_ec = decode_helper "X509 EC key" ec_grammar
-
   let decode_dh = decode_helper "X509 DH key" dh_grammar
 
   let decode key : (t, string) Result.result =
@@ -726,11 +695,8 @@ module PKCS8 = struct
          (optional ~label:"attributes" @@ implicit 0 null)
 
   let encode_rsa = encode_helper rsa_grammar
-
   let encode_dsa = encode_helper dsa_grammar
-
   let encode_ec = encode_helper ec_grammar
-
   let encode_dh = encode_helper dh_grammar
 
   let encode = function
@@ -740,11 +706,8 @@ module PKCS8 = struct
     | `DH key -> encode_dh key
 
   let decode_rsa = decode_helper "PKCS8 RSA key" rsa_grammar
-
   let decode_dsa = decode_helper "PKCS8 DSA key" dsa_grammar
-
   let decode_ec = decode_helper "PKCS8 EC key" ec_grammar
-
   let decode_dh = decode_helper "PKCS8 DH key" dh_grammar
 
   let decode key : (t, string) Result.result =
@@ -782,6 +745,5 @@ module Dsa_private_key = struct
          (required ~label:"privateKey" integer)
 
   let encode = encode_helper grammar
-
   let decode = decode_helper "Private DSA key" grammar
 end

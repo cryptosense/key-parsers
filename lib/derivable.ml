@@ -4,7 +4,6 @@ module Z = struct
   type t = Z.t [@@deriving eq, ord]
 
   let show = Z.to_string
-
   let pp = pp_of_to_string show
 end
 
@@ -16,7 +15,6 @@ module Cstruct = struct
     hs
 
   let show = to_hex_string
-
   let pp = pp_of_to_string show
 end
 

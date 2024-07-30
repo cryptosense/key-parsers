@@ -1,5 +1,4 @@
 let ( >>= ) = Result.bind
-
 let ( >|= ) result f = Result.map f result
 
 module Packet_error = struct
