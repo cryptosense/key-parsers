@@ -643,7 +643,7 @@ module Packet = struct
         | 9 -> Ok (Key_expiration_time (Cstruct.BE.get_uint32 cs 1))
         | 16 ->
           let id = Cstruct.BE.get_uint64 cs 1 in
-          Ok (Issuer_id (Int64.format "%x" id))
+          Ok (Issuer_id (Printf.sprintf "%Lx" id))
         | 27 -> decode_uses cs
         | 29 -> decode_revocation_reason cs
         | _ -> Ok Unknown
@@ -700,7 +700,7 @@ module Packet = struct
       let signature_type = tag_to_sigtype tag in
       if hash_material_len == 5 then
         let key_id_int = Cstruct.BE.get_uint64 packet 6 in
-        let key_id = Int64.format "%x" key_id_int in
+        let key_id = Printf.sprintf "%Lx" key_id_int in
         Ok {tag; version = 3; subpackets = [Issuer_id key_id]; signature_type}
       else
         Error "Bad hash material length in v3 signature packet"
