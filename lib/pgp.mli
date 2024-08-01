@@ -20,7 +20,6 @@ module Algo : sig
     [@@deriving ord, eq, show]
 
     val of_int : int -> t
-
     val name : t -> string
   end
 
@@ -39,7 +38,6 @@ module Algo : sig
     [@@deriving ord, eq, show]
 
     val of_int : int -> t
-
     val name : t -> string
   end
 
@@ -57,9 +55,7 @@ module Algo : sig
       | Unknown
 
     val size : t -> int
-
     val name : t -> string
-
     val of_int : int -> t
   end
 end

@@ -1,5 +1,4 @@
 let base_rsa_oid = Asn.OID.(base 0 4 <|| [0; 127; 0; 7; 2; 2; 2; 1])
-
 let base_ecdsa_oid = Asn.OID.(base 0 4 <|| [0; 127; 0; 7; 2; 2; 2; 2])
 
 let rsa_oids =
@@ -155,7 +154,9 @@ let decode bytes =
     | `Type (_, (`MODULUS, _)) :: `Length _ :: `Bytes bytes :: tl ->
       `Modulus (atoz_bigendian bytes) :: parse tl
     | `Type (0x82, ((*`EXPONENT or COEFFICIENT_A *) _, _))
-      :: `Length _ :: `Bytes bytes :: tl ->
+      :: `Length _
+      :: `Bytes bytes
+      :: tl ->
       `Exponent bytes :: parse tl
     | `Type (_, (`COEFFICIENT_B, _)) :: `Length _ :: `Bytes bytes :: tl ->
       `Coefficient_b bytes :: parse tl

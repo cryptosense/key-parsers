@@ -201,7 +201,6 @@ module Elgamal = struct
 end
 
 let id_packet = Packet.Body.Id "Clement <clement@test>"
-
 let id_packet2 = Packet.Body.Id "Dimitri Torterat <kra@diti.me>"
 
 module Test_errors = struct
